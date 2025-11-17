@@ -86,7 +86,7 @@ export function Header() {
                 {role && (
                 <Badge variant="outline" className="mt-1 text-xs">
                     {role === 'user' ? 'Користувач' : 
-                     role === 'developer' ? 'Розробник' : 'Адміністратор'}
+                     role === 'moderator' ? 'Модератор' : 'Адміністратор'}
                   </Badge>
                 )}
               </div>

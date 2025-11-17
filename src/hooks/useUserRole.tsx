@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'user' | 'admin' | 'superadmin';
+export type AppRole = 'user' | 'admin' | 'moderator';
 
 export function useUserRole() {
   const { user } = useAuth();
@@ -14,11 +14,11 @@ export function useUserRole() {
       
       const { data, error } = await supabase
         .from('user_roles')
-        .select('app_role')
+        .select('role')
         .eq('user_id', user.id);
 
       if (error) throw error;
-      return data.map(r => r.app_role as AppRole);
+      return data.map(r => r.role as AppRole);
     },
     enabled: !!user,
   });
@@ -28,14 +28,14 @@ export function useUserRole() {
   };
 
   const isAdmin = hasRole('admin');
-  const isSuperAdmin = hasRole('superadmin');
+  const isModerator = hasRole('moderator');
   const isUser = hasRole('user');
 
   return {
     roles: roles ?? [],
     hasRole,
     isAdmin,
-    isSuperAdmin,
+    isModerator,
     isUser,
     isLoading,
     error,

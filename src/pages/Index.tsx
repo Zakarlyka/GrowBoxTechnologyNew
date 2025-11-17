@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Header } from '@/components/Header';
 import { Navigation } from '@/components/Navigation';
 import { Dashboard } from '@/components/Dashboard';
@@ -11,7 +12,7 @@ import DeveloperCabinet from '@/components/DeveloperCabinet';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('devices');
-  const { profile } = useAuth();
+  const { isAdmin, hasRole } = useUserRole();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -26,7 +27,7 @@ const Index = () => {
       case 'settings':
         return <Settings />;
       case 'developer':
-        return profile?.role === 'developer' || profile?.role === 'admin' ? 
+        return hasRole('moderator') || isAdmin ? 
           <DeveloperCabinet /> : <Settings />;
       default:
         return <Devices />;
@@ -35,9 +36,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSettingsClick={() => setActiveTab('settings')} />
+      <Header />
       <div className="flex min-h-[calc(100vh-4rem)]">
-        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <Navigation />
         <main className="flex-1 overflow-auto pb-16 lg:pb-0">
           {renderContent()}
         </main>

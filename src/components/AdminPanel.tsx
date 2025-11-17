@@ -4,30 +4,27 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { ShieldAlert, Database } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export function AdminPanel() {
   const { t } = useTranslation();
-  const { isAdmin, isSuperAdmin, isLoading: roleLoading } = useUserRole();
+  const { isAdmin, isModerator, isLoading: roleLoading } = useUserRole();
 
-  const { data: logs, isLoading: logsLoading } = useQuery({
-    queryKey: ['admin-device-logs'],
+  const { data: devices, isLoading: devicesLoading } = useQuery({
+    queryKey: ['admin-devices'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('device_logs')
+        .from('devices')
         .select(`
           id,
-          metric,
-          value,
+          name,
+          device_id,
+          status,
+          last_seen,
           created_at,
-          device:devices(
-            id,
-            name,
-            device_id,
-            user:profiles(
-              full_name,
-              email
+          user_id
             )
           )
         `)
@@ -37,7 +34,7 @@ export function AdminPanel() {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin || isSuperAdmin,
+    enabled: isAdmin || isModerator,
   });
 
   if (roleLoading) {
@@ -48,7 +45,7 @@ export function AdminPanel() {
     );
   }
 
-  if (!isAdmin && !isSuperAdmin) {
+  if (!isAdmin && !isModerator) {
     return (
       <div className="p-6">
         <Alert variant="destructive">
@@ -73,47 +70,40 @@ export function AdminPanel() {
           <CardTitle>{t('admin.deviceLogs')}</CardTitle>
         </CardHeader>
         <CardContent>
-          {logsLoading ? (
+          {devicesLoading ? (
             <p className="text-muted-foreground">{t('common.loading')}</p>
-          ) : logs && logs.length > 0 ? (
+          ) : devices && devices.length > 0 ? (
             <div className="overflow-auto max-h-[600px]">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t('admin.timestamp')}</TableHead>
                     <TableHead>{t('admin.device')}</TableHead>
-                    <TableHead>{t('admin.user')}</TableHead>
-                    <TableHead>{t('admin.metric')}</TableHead>
-                    <TableHead className="text-right">{t('admin.value')}</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Last Seen</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {logs.map((log: any) => (
-                    <TableRow key={log.id}>
+                  {devices.map((device: any) => (
+                    <TableRow key={device.id}>
                       <TableCell className="text-sm">
-                        {new Date(log.created_at).toLocaleString()}
+                        {new Date(device.created_at).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{log.device?.name || 'Unknown'}</span>
+                          <span className="font-medium">{device.name || 'Unknown'}</span>
                           <span className="text-xs text-muted-foreground">
-                            {log.device?.device_id || 'N/A'}
+                            {device.device_id || 'N/A'}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {log.device?.user?.full_name || 'Unknown'}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {log.device?.user?.email || 'N/A'}
-                          </span>
-                        </div>
+                        <Badge variant={device.status === 'online' ? 'default' : 'secondary'}>
+                          {device.status || 'offline'}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{log.metric}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {Number(log.value).toFixed(2)}
+                      <TableCell className="text-right text-sm">
+                        {device.last_seen ? new Date(device.last_seen).toLocaleString() : 'Never'}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -122,7 +112,7 @@ export function AdminPanel() {
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">
-              {t('admin.noLogs')}
+              No devices found
             </p>
           )}
         </CardContent>

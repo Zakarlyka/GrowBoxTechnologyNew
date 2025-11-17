@@ -8,13 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Plus, Thermometer, Droplets } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 
 interface Device {
   id: string;
   device_id: string;
   name: string;
-  location: string | null;
   last_temp?: number | null;
   last_hum?: number | null;
   last_seen: string | null;
@@ -212,7 +211,7 @@ const Devices = () => {
                         {device.name || device.device_id}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        {device.location || 'Локацію не вказано'}
+                        ID: {device.device_id}
                       </p>
                     </div>
                     <Badge
@@ -276,7 +275,7 @@ const Devices = () => {
           {qrData && (
             <div className="flex flex-col items-center gap-4 p-4">
               <div className="p-4 bg-white rounded-lg">
-                <QRCodeSVG value={qrData.url} size={256} />
+                <QRCode value={qrData.url} size={256} />
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-2">Або введіть токен вручну:</p>
