@@ -1,0 +1,116 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "devices": "Devices",
+    "remoteControl": "Remote Control",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "dashboard": {
+    "title": "IoT Control Panel",
+    "subtitle": "Manage your ESP32 devices in real-time",
+    "totalDevices": "Total Devices",
+    "onlineDevices": "Online Devices",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "soilMoisture": "Soil Moisture",
+    "lightLevel": "Light Level",
+    "realTimeData": "Real-time Data",
+    "deviceStatus": "Device Status"
+  },
+  "devices": {
+    "title": "My Devices",
+    "addDevice": "Add Device",
+    "online": "Online",
+    "offline": "Offline",
+    "lastSeen": "Last Seen",
+    "controls": "Controls",
+    "telemetry": "Telemetry",
+    "power": "Power",
+    "lighting": "Lighting",
+    "lightControl": "Light Control",
+    "intensity": "Intensity",
+    "ventilation": "Ventilation",
+    "fanControl": "Fan Control",
+    "speed": "Speed",
+    "watering": "Watering",
+    "waterPump": "Water Pump",
+    "waterNow": "Water Now",
+    "duration": "Duration",
+    "joystickControl": "Joystick Control",
+    "terminal": "Terminal",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "enterCommand": "Enter command...",
+    "notConnected": "Device not connected"
+  },
+  "controls": {
+    "waterPump": "Water Pump",
+    "lightSystem": "Light System",
+    "ventilation": "Ventilation",
+    "heater": "Heater",
+    "on": "On",
+    "off": "Off"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "account": "Account"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "add": "Add",
+    "create": "Create",
+    "update": "Update",
+    "remove": "Remove",
+    "confirm": "Confirm"
+  },
+  "sensors": {
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "soilMoisture": "Soil Moisture",
+    "lightLevel": "Light Level",
+    "waterLevel": "Water Level",
+    "realTime": "Real Time",
+    "realTimeChart": "Real-time Chart",
+    "live": "Live",
+    "paused": "Paused"
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "notifications": "Notifications",
+    "groups": "Device Groups",
+    "schedules": "Schedules"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "emailNotifications": "Email Notifications",
+    "pushNotifications": "Push Notifications",
+    "temperatureAlerts": "Temperature Alerts",
+    "humidityAlerts": "Humidity Alerts",
+    "testNotification": "Test Notification"
+  }
+}

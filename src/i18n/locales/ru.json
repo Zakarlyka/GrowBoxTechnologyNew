@@ -1,0 +1,64 @@
+{
+  "navigation": {
+    "dashboard": "Панель управления",
+    "devices": "Устройства",
+    "analytics": "Аналитика",
+    "settings": "Настройки",
+    "logout": "Выйти"
+  },
+  "dashboard": {
+    "title": "IoT Панель управления",
+    "subtitle": "Управляйте своими ESP32 устройствами в реальном времени",
+    "totalDevices": "Всего устройств",
+    "onlineDevices": "Онлайн устройств",
+    "temperature": "Температура",
+    "humidity": "Влажность",
+    "soilMoisture": "Влажность почвы",
+    "lightLevel": "Уровень освещения",
+    "realTimeData": "Данные в реальном времени",
+    "deviceStatus": "Статус устройств"
+  },
+  "devices": {
+    "title": "Мои устройства",
+    "addDevice": "Добавить устройство",
+    "online": "Онлайн",
+    "offline": "Офлайн",
+    "lastSeen": "Последняя активность",
+    "controls": "Управление",
+    "telemetry": "Телеметрия"
+  },
+  "controls": {
+    "waterPump": "Водяная помпа",
+    "lightSystem": "Система освещения",
+    "ventilation": "Вентиляция",
+    "heater": "Обогреватель",
+    "on": "Включено",
+    "off": "Выключено"
+  },
+  "auth": {
+    "signIn": "Войти",
+    "signUp": "Регистрация",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердить пароль",
+    "forgotPassword": "Забыли пароль?",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык",
+    "notifications": "Уведомления",
+    "profile": "Профиль",
+    "account": "Аккаунт"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отменить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно"
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "navigation": {
+    "dashboard": "Панель приладів",
+    "devices": "Пристрої",
+    "remoteControl": "Дистанційне керування",
+    "analytics": "Аналітика",
+    "settings": "Налаштування",
+    "logout": "Вийти"
+  },
+  "dashboard": {
+    "title": "IoT Панель керування",
+    "subtitle": "Керуйте своїми ESP32 пристроями у реальному часі",
+    "totalDevices": "Загалом пристроїв",
+    "onlineDevices": "Онлайн пристроїв",
+    "temperature": "Температура",
+    "humidity": "Вологість",
+    "soilMoisture": "Вологість ґрунту",
+    "lightLevel": "Рівень освітлення",
+    "realTimeData": "Дані у реальному часі",
+    "deviceStatus": "Статус пристроїв"
+  },
+  "devices": {
+    "title": "Мої пристрої",
+    "addDevice": "Додати пристрій",
+    "online": "Онлайн",
+    "offline": "Офлайн",
+    "lastSeen": "Остання активність",
+    "controls": "Керування",
+    "telemetry": "Телеметрія",
+    "power": "Живлення",
+    "lighting": "Освітлення",
+    "lightControl": "Керування світлом",
+    "intensity": "Інтенсивність",
+    "ventilation": "Вентиляція",
+    "fanControl": "Керування вентилятором",
+    "speed": "Швидкість",
+    "watering": "Полив",
+    "waterPump": "Водяна помпа",
+    "waterNow": "Полити зараз",
+    "duration": "Тривалість",
+    "joystickControl": "Джойстик керування",
+    "terminal": "Термінал",
+    "connected": "Підключено",
+    "disconnected": "Відключено",
+    "enterCommand": "Введіть команду...",
+    "notConnected": "Пристрій не підключено"
+  },
+  "controls": {
+    "waterPump": "Водяна помпа",
+    "lightSystem": "Система освітлення",
+    "ventilation": "Вентиляція",
+    "heater": "Обігрівач",
+    "on": "Увімкнено",
+    "off": "Вимкнено",
+    "lightIntensity": "Інтенсивність світла",
+    "fanSpeed": "Швидкість вентилятора",
+    "schedule": "Розклад",
+    "groups": "Групи"
+  },
+  "sensors": {
+    "temperature": "Температура",
+    "humidity": "Вологість",
+    "soilMoisture": "Вологість грунту",
+    "lightLevel": "Рівень освітлення",
+    "waterLevel": "Рівень води",
+    "realTime": "Реальний час",
+    "realTimeChart": "Графік в реальному часі",
+    "live": "Живі дані",
+    "paused": "Призупинено"
+  },
+  "auth": {
+    "signIn": "Увійти",
+    "signUp": "Зареєструватися",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Підтвердити пароль",
+    "forgotPassword": "Забули пароль?",
+    "noAccount": "Немає акаунта?",
+    "hasAccount": "Вже є акаунт?"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "language": "Мова",
+    "notifications": "Сповіщення",
+    "profile": "Профіль",
+    "account": "Акаунт"
+  },
+  "common": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "success": "Успішно",
+    "add": "Додати",
+    "create": "Створити",
+    "update": "Оновити",
+    "remove": "Видалити",
+    "confirm": "Підтвердити"
+  },
+  "profile": {
+    "title": "Профіль",
+    "editProfile": "Редагувати профіль",
+    "changePassword": "Змінити пароль",
+    "deleteAccount": "Видалити акаунт",
+    "fullName": "Повне ім'я",
+    "phone": "Телефон",
+    "notifications": "Сповіщення",
+    "groups": "Групи пристроїв",
+    "schedules": "Розклади"
+  },
+  "notifications": {
+    "title": "Сповіщення",
+    "emailNotifications": "Email сповіщення",
+    "pushNotifications": "Push сповіщення",
+    "temperatureAlerts": "Сповіщення про температуру",
+    "humidityAlerts": "Сповіщення про вологість",
+    "testNotification": "Тестове сповіщення"
+  }
+}
