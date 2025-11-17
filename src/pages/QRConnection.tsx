@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 import { Wifi, ArrowRight } from 'lucide-react';
 
 const QRConnection = () => {
@@ -38,7 +38,7 @@ const QRConnection = () => {
           {/* QR Code */}
           <div className="flex justify-center">
             <div className="bg-white p-6 rounded-lg shadow-lg">
-              <QRCodeSVG value={setupUrl} size={200} level="H" />
+              <QRCode value={setupUrl} size={200} />
             </div>
           </div>
 

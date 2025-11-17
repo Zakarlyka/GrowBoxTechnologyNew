@@ -52,7 +52,6 @@ const UserCabinet = () => {
   const [profileForm, setProfileForm] = useState({
     full_name: profile?.full_name || '',
     email: user?.email || '',
-    phone: profile?.phone || '',
   });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -72,7 +71,6 @@ const UserCabinet = () => {
       setProfileForm({
         full_name: profile.full_name || '',
         email: user?.email || '',
-        phone: profile.phone || '',
       });
     }
   }, [profile, user]);
@@ -195,7 +193,6 @@ const UserCabinet = () => {
         .from('profiles')
         .update({
           full_name: profileForm.full_name,
-          phone: profileForm.phone,
         })
         .eq('user_id', user.id);
 
@@ -538,14 +535,6 @@ const UserCabinet = () => {
                           onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="phone">Телефон</Label>
-                        <Input
-                          id="phone"
-                          value={profileForm.phone}
-                          onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))}
-                        />
-                      </div>
                       <Button onClick={updateProfile} className="w-full">
                         Зберегти зміни
                       </Button>
@@ -567,16 +556,10 @@ const UserCabinet = () => {
                   </p>
                 </div>
                 <div>
-                  <Label>Телефон</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {profile?.phone || 'Не вказано'}
-                  </p>
-                </div>
-                <div>
                   <Label>Роль</Label>
                   <Badge variant="outline" className="mt-1">
                     {role === 'user' ? 'Користувач' : 
-                     role === 'developer' ? 'Розробник' : 'Адміністратор'}
+                     role === 'moderator' ? 'Модератор' : 'Адміністратор'}
                   </Badge>
                 </div>
               </div>

@@ -53,7 +53,7 @@ const DeveloperCabinet = () => {
   
   // 3. ⭐️ ОНОВЛЮЄМО ФУНКЦІЇ ЗАВАНТАЖЕННЯ
   const loadAllUsersData = useCallback(async () => {
-    if (!user || !(role === 'admin' || role === 'superadmin' || role === 'developer')) {
+    if (!user || !(role === 'admin' || role === 'moderator')) {
       setLoading(false);
       return;
     }
@@ -168,7 +168,7 @@ const DeveloperCabinet = () => {
   };
 
   // 6. ⭐️ ПЕРЕВІРКА ДОСТУПУ (БЕЗ ЗМІН)
-  if (role !== 'developer' && role !== 'admin' && role !== 'superadmin') {
+  if (role !== 'moderator' && role !== 'admin') {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
         <Card>
@@ -218,7 +218,7 @@ const DeveloperCabinet = () => {
             <BarChart3 className="w-4 h-4 mr-2" />
             Аналітика
           </TabsTrigger>
-          {(role === 'admin' || role === 'superadmin') && (
+          {role === 'admin' && (
             <TabsTrigger value="admin">
               <Settings className="w-4 h-4 mr-2" />
               Адміністрування
@@ -320,7 +320,7 @@ const DeveloperCabinet = () => {
           </div>
         </TabsContent>
         
-        {(role === 'admin' || role === 'superadmin') && (
+        {role === 'admin' && (
           <TabsContent value="admin" className="space-y-4">
             <Card>
               <CardHeader>

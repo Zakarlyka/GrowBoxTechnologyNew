@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -50,17 +50,19 @@ export default function AddDevice() {
     setIsChecking(true);
 
     try {
-      // Create pairing record in pending_devices (device_token is not needed here, we use device_id)
-      const { error: pairingError } = await supabase
-        .from('device_pairing_temp')
+      // Create device directly without pairing table
+      const { error: deviceError } = await supabase
+        .from('devices')
         .insert({
           device_id: deviceId,
           user_id: user.id,
-          pairing_code: deviceId, // Use device_id as pairing code
+          name: name,
+          type: 'ESP8266',
+          status: 'offline'
         });
 
-      if (pairingError) {
-        console.error('Pairing error:', pairingError);
+      if (deviceError) {
+        console.error('Device error:', deviceError);
         toast.error('Помилка реєстрації пристрою');
         setIsChecking(false);
         return;
@@ -174,7 +176,7 @@ export default function AddDevice() {
 
             {/* QR Code */}
             <div className="flex justify-center p-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <QRCodeSVG value={qrUrl} size={256} level="H" />
+              <QRCode value={qrUrl} size={256} />
             </div>
 
             {/* Instructions */}
