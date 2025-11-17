@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrowBox Setup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 GrowBox Setup</h1>
+        
+        <div class="info">
+            <strong>📱 Token:</strong> <span id="tokenDisplay">Not found</span>
+        </div>
+
+        <form id="setupForm">
+            <div class="form-group">
+                <label for="ssid">Wi-Fi Network:</label>
+                <input type="text" id="ssid" name="ssid" required placeholder="Enter Wi-Fi name">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Wi-Fi Password:</label>
+                <input type="password" id="password" name="password" required placeholder="Enter Wi-Fi password">
+            </div>
+
+            <div class="form-group">
+                <label for="deviceName">Device Name:</label>
+                <input type="text" id="deviceName" name="deviceName" value="GrowBox-1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="deviceType">Device Type:</label>
+                <select id="deviceType" name="deviceType">
+                    <option value="grow_box">Grow Box</option>
+                    <option value="greenhouse">Greenhouse</option>
+                    <option value="hydroponic">Hydroponic System</option>
+                </select>
+            </div>
+
+            <button type="submit" id="submitBtn">Connect Device</button>
+        </form>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Get token from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        
+        console.log('🔍 ESP Setup Page loaded');
+        console.log('🔑 Token from URL:', token);
+        console.log('🌐 Current URL:', window.location.href);
+        
+        if (token) {
+            document.getElementById('tokenDisplay').textContent = token;
+            console.log('✅ Token found and displayed:', token);
+        } else {
+            document.getElementById('tokenDisplay').textContent = 'Missing - Please scan QR code again';
+            document.getElementById('tokenDisplay').style.color = 'red';
+            console.error('❌ No token found in URL');
+        }
+
+        // Save Wi-Fi config to ESP8266 (simulated)
+        async function saveConfig(ssid, password, deviceToken, deviceName) {
+            console.log('💾 Saving config to ESP8266...');
+            console.log('📡 SSID:', ssid);
+            console.log('🔑 Token:', deviceToken);
+            console.log('📛 Device Name:', deviceName);
+            
+            try {
+                // Simulate saving to ESP8266 flash memory
+                // In real ESP, this would be: fetch('/save', {method: 'POST', body: JSON.stringify({ssid, pass, deviceToken, name})})
+                const saveResponse = await fetch('/save', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ssid: ssid,
+                        pass: password,
+                        deviceToken: deviceToken,
+                        name: deviceName
+                    })
+                }).catch(err => {
+                    // Expected to fail in browser, but would work on real ESP
+                    console.log('⚠️ /save endpoint not available (expected in browser simulation)');
+                    return {ok: true}; // Simulate success for demo
+                });
+                
+                console.log('✅ Config saved to ESP flash memory');
+                return true;
+            } catch (error) {
+                console.error('❌ Error saving config:', error);
+                return false;
+            }
+        }
+
+        document.getElementById('setupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!token) {
+                showStatus('Error: Missing token. Please scan QR code again.', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Connecting...';
+
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('password').value;
+            const deviceName = document.getElementById('deviceName').value;
+            const deviceType = document.getElementById('deviceType').value;
+            const deviceId = 'ESP_' + Math.random().toString(36).substring(7).toUpperCase();
+
+            console.log('🚀 Starting device connection process...');
+            console.log('📱 Device ID:', deviceId);
+            console.log('📛 Device Name:', deviceName);
+            console.log('🔧 Device Type:', deviceType);
+            console.log('🔑 Token:', token);
+
+            try {
+                // Step 1: Save config to ESP8266
+                showStatus('Saving Wi-Fi configuration...', 'info');
+                const configSaved = await saveConfig(ssid, password, token, deviceName);
+                
+                if (!configSaved) {
+                    throw new Error('Failed to save configuration to device');
+                }
+
+                // Step 2: Call Supabase confirm-device Edge Function
+                showStatus('Registering device...', 'info');
+                console.log('📤 Calling confirm-device Edge Function...');
+                console.log('🌐 URL: https://ychnmaaximnoxvwnzrgs.supabase.co/functions/v1/confirm-device');
+                
+                const response = await fetch('https://ychnmaaximnoxvwnzrgs.supabase.co/functions/v1/confirm-device', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        device_token: token,
+                        device_id: deviceId,
+                        name: deviceName,
+                        type: deviceType,
+                        location: null
+                    })
+                });
+
+                console.log('📊 Response status:', response.status);
+                console.log('📊 Response ok:', response.ok);
+                
+                const result = await response.json();
+                console.log('📥 Response from confirm-device:', JSON.stringify(result, null, 2));
+
+                if (response.ok && result.success) {
+                    console.log('✅ Device confirmed successfully!');
+                    console.log('🎉 Device data:', result.device);
+                    showStatus('✅ Device connected successfully! You can close this page.', 'success');
+                    
+                    // Simulate ESP restart
+                    console.log('🔄 ESP will restart and connect to Wi-Fi...');
+                    console.log('📡 Connecting to:', ssid);
+                } else {
+                    console.error('❌ Failed to confirm device:', result);
+                    showStatus('Error: ' + (result.error || 'Failed to connect device'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Connection error:', error);
+                console.error('Stack:', error.stack);
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Connect Device';
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            
+            // Add info style if not defined
+            if (type === 'info') {
+                statusDiv.style.background = '#e7f3ff';
+                statusDiv.style.color = '#0066cc';
+            }
+            
+            console.log('📊 Status Update:', type.toUpperCase(), '-', message);
+        }
+    </script>
+</body>
+</html>
