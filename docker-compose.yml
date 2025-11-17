@@ -1,0 +1,209 @@
+# IoT Platform - Complete Docker Stack
+# Includes: Frontend, Backend, MQTT, Databases, Nginx, SSL
+
+version: '3.8'
+
+services:
+  # Frontend - React App
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: iot-platform-frontend
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=https://your-domain.com/api
+      - VITE_MQTT_WS_URL=wss://your-domain.com/mqtt
+    networks:
+      - iot-network
+
+  # Backend - Node.js API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iot-platform-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://iot_user:iot_password@postgres:5432/iot_platform
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=iot-platform
+      - INFLUX_BUCKET=telemetry
+      - JWT_SECRET=${JWT_SECRET}
+      - MQTT_BROKER_URL=mqtt://emqx:1883
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - influxdb
+      - redis
+      - emqx
+    networks:
+      - iot-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # PostgreSQL - Main Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: iot-platform-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=iot_platform
+      - POSTGRES_USER=iot_user
+      - POSTGRES_PASSWORD=iot_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - iot-network
+    ports:
+      - "5432:5432"
+
+  # InfluxDB - Time Series Database for Telemetry
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: iot-platform-influxdb
+    restart: unless-stopped
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin_password
+      - DOCKER_INFLUXDB_INIT_ORG=iot-platform
+      - DOCKER_INFLUXDB_INIT_BUCKET=telemetry
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    networks:
+      - iot-network
+    ports:
+      - "8086:8086"
+
+  # EMQX - MQTT Broker
+  emqx:
+    image: emqx/emqx:5.3.0
+    container_name: iot-platform-mqtt
+    restart: unless-stopped
+    environment:
+      - EMQX_NAME=emqx
+      - EMQX_HOST=127.0.0.1
+      - EMQX_NODE__COOKIE=emqxsecretcookie
+      - EMQX_CLUSTER__DISCOVERY_STRATEGY=static
+      - EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io]
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_logs:/opt/emqx/log
+      - ./mqtt/emqx.conf:/opt/emqx/etc/emqx.conf
+    networks:
+      - iot-network
+    ports:
+      - "1883:1883"     # MQTT
+      - "8883:8883"     # MQTT SSL
+      - "8083:8083"     # MQTT WebSocket
+      - "8084:8084"     # MQTT WebSocket SSL
+      - "18083:18083"   # Dashboard
+
+  # Redis - Caching and Session Storage
+  redis:
+    image: redis:7-alpine
+    container_name: iot-platform-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_password
+    volumes:
+      - redis_data:/data
+    networks:
+      - iot-network
+    ports:
+      - "6379:6379"
+
+  # Nginx - Reverse Proxy and Static Files
+  nginx:
+    image: nginx:alpine
+    container_name: iot-platform-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled
+      - ./ssl:/etc/nginx/ssl
+      - certbot_webroot:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - iot-network
+
+  # Certbot - SSL Certificate Management
+  certbot:
+    image: certbot/certbot
+    container_name: iot-platform-certbot
+    restart: "no"
+    volumes:
+      - certbot_webroot:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@domain.com --agree-tos --no-eff-email -d your-domain.com -d api.your-domain.com
+    networks:
+      - iot-network
+
+  # Grafana - Advanced Analytics Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: iot-platform-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin_grafana
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - iot-network
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+
+  # Node-RED - Visual IoT Flow Programming (Optional)
+  nodered:
+    image: nodered/node-red:latest
+    container_name: iot-platform-nodered
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Kiev
+    volumes:
+      - nodered_data:/data
+    networks:
+      - iot-network
+    ports:
+      - "1880:1880"
+    depends_on:
+      - emqx
+
+networks:
+  iot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  influxdb_data:
+  influxdb_config:
+  emqx_data:
+  emqx_logs:
+  redis_data:
+  grafana_data:
+  nodered_data:
+  certbot_webroot:
+  certbot_certs:
