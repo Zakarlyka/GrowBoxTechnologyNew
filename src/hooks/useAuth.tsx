@@ -71,8 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfile(finalProfile);
 
       // 3. ЗАВАНТАЖУЄМО РОЛЬ
-      const { data: roleData, error: roleError } = await supabase
-        .rpc('get_my_role');
+      const { data: roleData, error: roleError } = await (supabase.rpc as any)('get_my_role');
       
       if (roleError) throw roleError;
       

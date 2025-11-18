@@ -20,9 +20,7 @@ export function UserManager() {
     try {
       setLoading(true);
       
-      const { data, error } = await (supabase.rpc as any)(
-        'admin_get_all_users'
-      );
+      const { data, error } = await (supabase.rpc as any)('admin_get_all_users');
 
       if (error) {
         console.error("RPC error:", error);
@@ -59,9 +57,8 @@ export function UserManager() {
   const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdatingId(userId);
     try {
-      const { error } = await supabase
-        .from("user_roles")
-        .update({ app_role: newRole } as any)
+      const { error } = await (supabase.from("user_roles") as any)
+        .update({ app_role: newRole })
         .eq("user_id", userId);
 
       if (error) throw error;
