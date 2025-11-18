@@ -27,7 +27,7 @@ const Index = () => {
       case 'settings':
         return <Settings />;
       case 'developer':
-        return hasRole('moderator') || isAdmin ? 
+        return hasRole('developer') || isAdmin ? 
           <DeveloperCabinet /> : <Settings />;
       default:
         return <Devices />;

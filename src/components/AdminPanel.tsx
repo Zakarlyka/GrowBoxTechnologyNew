@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 export function AdminPanel() {
   const { t } = useTranslation();
-  const { isAdmin, isModerator, isLoading: roleLoading } = useUserRole();
+  const { isAdmin, isDeveloper, isLoading: roleLoading } = useUserRole();
 
   const { data: devices, isLoading: devicesLoading } = useQuery({
     queryKey: ['admin-devices'],
@@ -34,7 +34,7 @@ export function AdminPanel() {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin || isModerator,
+    enabled: isAdmin || isDeveloper,
   });
 
   if (roleLoading) {
@@ -45,7 +45,7 @@ export function AdminPanel() {
     );
   }
 
-  if (!isAdmin && !isModerator) {
+  if (!isAdmin && !isDeveloper) {
     return (
       <div className="p-6">
         <Alert variant="destructive">

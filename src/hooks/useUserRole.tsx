@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'user' | 'admin' | 'moderator' | 'developer' | 'superadmin';
+export type AppRole = 'user' | 'admin' | 'developer' | 'superadmin';
 
 export function useUserRole() {
   const { user } = useAuth();
@@ -27,14 +27,14 @@ export function useUserRole() {
   };
 
   const isAdmin = hasRole('admin');
-  const isModerator = hasRole('moderator');
+  const isDeveloper = hasRole('developer');
   const isUser = hasRole('user');
 
   return {
     roles: roles ?? [],
     hasRole,
     isAdmin,
-    isModerator,
+    isDeveloper,
     isUser,
     isLoading,
     error,

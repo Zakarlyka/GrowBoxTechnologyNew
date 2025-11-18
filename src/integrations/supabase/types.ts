@@ -16,34 +16,55 @@ export type Database = {
     Tables: {
       articles: {
         Row: {
-          author_id: string | null
-          category: string
-          content: string
-          created_at: string
+          category: string | null
+          content: string | null
+          created_at: string | null
           id: string
-          published: boolean | null
           title: string
-          updated_at: string
         }
         Insert: {
-          author_id?: string | null
-          category: string
-          content: string
-          created_at?: string
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
           id?: string
-          published?: boolean | null
           title: string
-          updated_at?: string
         }
         Update: {
-          author_id?: string | null
-          category?: string
-          content?: string
-          created_at?: string
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
           id?: string
-          published?: boolean | null
           title?: string
-          updated_at?: string
+        }
+        Relationships: []
+      }
+      custom_strains: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          start_date: string | null
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          start_date?: string | null
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          start_date?: string | null
+          type?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -51,26 +72,38 @@ export type Database = {
         Row: {
           control_name: string
           control_type: string
+          created_at: string
           device_id: string
           id: string
+          intensity: number | null
+          schedule: Json | null
           updated_at: string
-          value: Json
+          user_id: string | null
+          value: boolean | null
         }
         Insert: {
           control_name: string
           control_type: string
+          created_at?: string
           device_id: string
           id?: string
+          intensity?: number | null
+          schedule?: Json | null
           updated_at?: string
-          value: Json
+          user_id?: string | null
+          value?: boolean | null
         }
         Update: {
           control_name?: string
           control_type?: string
+          created_at?: string
           device_id?: string
           id?: string
+          intensity?: number | null
+          schedule?: Json | null
           updated_at?: string
-          value?: Json
+          user_id?: string | null
+          value?: boolean | null
         }
         Relationships: [
           {
@@ -82,36 +115,192 @@ export type Database = {
           },
         ]
       }
-      device_schedules: {
+      device_group_members: {
         Row: {
-          action: Json
-          created_at: string
-          days_of_week: number[]
+          added_at: string | null
           device_id: string
-          enabled: boolean | null
-          id: string
-          name: string
-          schedule_time: string
+          group_id: string
         }
         Insert: {
-          action: Json
-          created_at?: string
-          days_of_week: number[]
+          added_at?: string | null
           device_id: string
-          enabled?: boolean | null
-          id?: string
-          name: string
-          schedule_time: string
+          group_id: string
         }
         Update: {
-          action?: Json
-          created_at?: string
-          days_of_week?: number[]
+          added_at?: string | null
           device_id?: string
-          enabled?: boolean | null
+          group_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_group_members_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "device_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_groups: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
           id?: string
           name?: string
-          schedule_time?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      device_logs: {
+        Row: {
+          created_at: string | null
+          device_id: string
+          device_id_uuid: string | null
+          hum: number | null
+          id: string
+          irrigation_time: string | null
+          light_cycle_hours: number | null
+          light_level: number | null
+          metric: string | null
+          soil_moisture: number | null
+          temp: number | null
+          user_id: string | null
+          value: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_id: string
+          device_id_uuid?: string | null
+          hum?: number | null
+          id?: string
+          irrigation_time?: string | null
+          light_cycle_hours?: number | null
+          light_level?: number | null
+          metric?: string | null
+          soil_moisture?: number | null
+          temp?: number | null
+          user_id?: string | null
+          value?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string
+          device_id_uuid?: string | null
+          hum?: number | null
+          id?: string
+          irrigation_time?: string | null
+          light_cycle_hours?: number | null
+          light_level?: number | null
+          metric?: string | null
+          soil_moisture?: number | null
+          temp?: number | null
+          user_id?: string | null
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_logs_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "fk_device_logs_device_id_uuid"
+            columns: ["device_id_uuid"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_pairing_temp: {
+        Row: {
+          created_at: string | null
+          device_id: string
+          pairing_code: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_id: string
+          pairing_code: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string
+          pairing_code?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      device_schedules: {
+        Row: {
+          control_name: string
+          created_at: string | null
+          days_of_week: number[] | null
+          device_id: string
+          end_time: string | null
+          id: string
+          interval_minutes: number | null
+          is_active: boolean | null
+          schedule_type: string
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          control_name: string
+          created_at?: string | null
+          days_of_week?: number[] | null
+          device_id: string
+          end_time?: string | null
+          id?: string
+          interval_minutes?: number | null
+          is_active?: boolean | null
+          schedule_type: string
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          control_name?: string
+          created_at?: string | null
+          days_of_week?: number[] | null
+          device_id?: string
+          end_time?: string | null
+          id?: string
+          interval_minutes?: number | null
+          is_active?: boolean | null
+          schedule_type?: string
+          start_time?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -125,77 +314,142 @@ export type Database = {
       }
       devices: {
         Row: {
-          config: Json | null
           created_at: string
           device_id: string
+          group_id: string | null
           id: string
+          last_activity: string | null
+          last_hum: number | null
           last_seen: string | null
+          last_seen_at: string | null
+          last_temp: number | null
+          location: string | null
           name: string
-          status: string | null
+          settings: Json | null
+          status: string
           type: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          config?: Json | null
           created_at?: string
           device_id: string
+          group_id?: string | null
           id?: string
+          last_activity?: string | null
+          last_hum?: number | null
           last_seen?: string | null
-          name: string
-          status?: string | null
-          type: string
+          last_seen_at?: string | null
+          last_temp?: number | null
+          location?: string | null
+          name?: string
+          settings?: Json | null
+          status?: string
+          type?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          config?: Json | null
           created_at?: string
           device_id?: string
+          group_id?: string | null
           id?: string
+          last_activity?: string | null
+          last_hum?: number | null
           last_seen?: string | null
+          last_seen_at?: string | null
+          last_temp?: number | null
+          location?: string | null
           name?: string
-          status?: string | null
+          settings?: Json | null
+          status?: string
           type?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "devices_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "device_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_settings: {
         Row: {
-          created_at: string
-          device_id: string | null
-          enabled: boolean | null
+          created_at: string | null
+          email_enabled: boolean | null
+          humidity_max: number | null
+          humidity_min: number | null
           id: string
-          max_value: number | null
-          min_value: number | null
-          parameter: string
+          push_enabled: boolean | null
+          temperature_max: number | null
+          temperature_min: number | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
-          device_id?: string | null
-          enabled?: boolean | null
+          created_at?: string | null
+          email_enabled?: boolean | null
+          humidity_max?: number | null
+          humidity_min?: number | null
           id?: string
-          max_value?: number | null
-          min_value?: number | null
-          parameter: string
+          push_enabled?: boolean | null
+          temperature_max?: number | null
+          temperature_min?: number | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
+          email_enabled?: boolean | null
+          humidity_max?: number | null
+          humidity_min?: number | null
+          id?: string
+          push_enabled?: boolean | null
+          temperature_max?: number | null
+          temperature_min?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          device_id: string | null
+          enabled: boolean | null
+          id: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
           device_id?: string | null
           enabled?: boolean | null
           id?: string
-          max_value?: number | null
-          min_value?: number | null
-          parameter?: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          device_id?: string | null
+          enabled?: boolean | null
+          id?: string
+          type?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notification_settings_device_id_fkey"
+            foreignKeyName: "notifications_device_id_fkey"
             columns: ["device_id"]
             isOneToOne: false
             referencedRelation: "devices"
@@ -203,72 +457,166 @@ export type Database = {
           },
         ]
       }
+      pending_devices: {
+        Row: {
+          created_at: string | null
+          device_token: string
+          expires_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_token: string
+          expires_at: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_token?: string
+          expires_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          category: string | null
           created_at: string
+          developer_id: string | null
+          email: string
           full_name: string | null
           id: string
+          phone: string | null
+          units: Database["public"]["Enums"]["preferred_units"]
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          category?: string | null
           created_at?: string
+          developer_id?: string | null
+          email: string
           full_name?: string | null
           id?: string
+          phone?: string | null
+          units?: Database["public"]["Enums"]["preferred_units"]
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          category?: string | null
           created_at?: string
+          developer_id?: string | null
+          email?: string
           full_name?: string | null
           id?: string
+          phone?: string | null
+          units?: Database["public"]["Enums"]["preferred_units"]
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedules: {
+        Row: {
+          action: string
+          created_at: string | null
+          days_of_week: number[] | null
+          device_id: string
+          enabled: boolean | null
+          end_time: string | null
+          id: string
+          name: string
+          repeat: string
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          days_of_week?: number[] | null
+          device_id: string
+          enabled?: boolean | null
+          end_time?: string | null
+          id?: string
+          name: string
+          repeat?: string
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          days_of_week?: number[] | null
+          device_id?: string
+          enabled?: boolean | null
+          end_time?: string | null
+          id?: string
+          name?: string
+          repeat?: string
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sensor_data: {
         Row: {
-          co2: number | null
-          data: Json | null
           device_id: string
-          ec: number | null
+          ec_level: number | null
           humidity: number | null
           id: string
-          light: number | null
-          ph: number | null
+          light_level: number | null
+          ph_level: number | null
           soil_moisture: number | null
           temperature: number | null
           timestamp: string
+          water_level: number | null
         }
         Insert: {
-          co2?: number | null
-          data?: Json | null
           device_id: string
-          ec?: number | null
+          ec_level?: number | null
           humidity?: number | null
           id?: string
-          light?: number | null
-          ph?: number | null
+          light_level?: number | null
+          ph_level?: number | null
           soil_moisture?: number | null
           temperature?: number | null
           timestamp?: string
+          water_level?: number | null
         }
         Update: {
-          co2?: number | null
-          data?: Json | null
           device_id?: string
-          ec?: number | null
+          ec_level?: number | null
           humidity?: number | null
           id?: string
-          light?: number | null
-          ph?: number | null
+          light_level?: number | null
+          ph_level?: number | null
           soil_moisture?: number | null
           temperature?: number | null
           timestamp?: string
+          water_level?: number | null
         }
         Relationships: [
           {
@@ -282,64 +630,52 @@ export type Database = {
       }
       strains: {
         Row: {
-          cbd_content: string | null
-          created_at: string
+          created_at: string | null
           description: string | null
-          difficulty: string | null
-          effects: string[] | null
-          flowering_time: string | null
+          fertilizer_schedule: Json | null
           id: string
           name: string
-          thc_content: string | null
+          settings_by_phase: Json | null
           type: string
-          yield_info: string | null
         }
         Insert: {
-          cbd_content?: string | null
-          created_at?: string
+          created_at?: string | null
           description?: string | null
-          difficulty?: string | null
-          effects?: string[] | null
-          flowering_time?: string | null
+          fertilizer_schedule?: Json | null
           id?: string
           name: string
-          thc_content?: string | null
-          type: string
-          yield_info?: string | null
+          settings_by_phase?: Json | null
+          type?: string
         }
         Update: {
-          cbd_content?: string | null
-          created_at?: string
+          created_at?: string | null
           description?: string | null
-          difficulty?: string | null
-          effects?: string[] | null
-          flowering_time?: string | null
+          fertilizer_schedule?: Json | null
           id?: string
           name?: string
-          thc_content?: string | null
+          settings_by_phase?: Json | null
           type?: string
-          yield_info?: string | null
         }
         Relationships: []
       }
       user_roles: {
         Row: {
-          created_at: string
+          app_role: Database["public"]["Enums"]["app_role"] | null
+          created_at: string | null
           id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
+          app_role?: Database["public"]["Enums"]["app_role"] | null
+          created_at?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
+          app_role?: Database["public"]["Enums"]["app_role"] | null
+          created_at?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -348,21 +684,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_all_users: {
+        Args: never
+        Returns: {
+          app_role: Database["public"]["Enums"]["app_role"]
+          email: string
+          full_name: string
+          user_id: string
+        }[]
+      }
+      cleanup_old_pairing_records: { Args: never; Returns: undefined }
       get_my_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
-      has_role: {
+      has_role:
+        | { Args: { _role: string; _user: string }; Returns: boolean }
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+      is_admin: { Args: never; Returns: boolean }
+      mark_devices_offline: { Args: never; Returns: undefined }
+      secure_register_device: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
+          p_device_id: string
+          p_location?: string
+          p_name: string
+          p_type: string
         }
-        Returns: boolean
+        Returns: {
+          device_id: string
+          id: string
+          name: string
+          type: string
+          user_id: string
+        }[]
       }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      verify_and_consume_pending_token: {
+        Args: { p_token: string }
+        Returns: {
+          device_id: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "user" | "admin" | "superadmin" | "developer"
+      preferred_units: "metric" | "imperial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -490,7 +862,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["user", "admin", "superadmin", "developer"],
+      preferred_units: ["metric", "imperial"],
     },
   },
 } as const
