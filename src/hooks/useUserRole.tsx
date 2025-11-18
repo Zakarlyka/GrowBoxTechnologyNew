@@ -14,7 +14,8 @@ export function useUserRole() {
       
       const { data, error } = await supabase
         .from('user_roles')
-        .select('app_role') as any;
+        .select('app_role')
+        .eq('user_id', user.id) as any;
 
       if (error) throw error;
       return (data as any[]).map((r: any) => r.app_role as AppRole);

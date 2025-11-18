@@ -25,8 +25,6 @@ export function AdminPanel() {
           last_seen,
           created_at,
           user_id
-            )
-          )
         `)
         .order('created_at', { ascending: false })
         .limit(100);
