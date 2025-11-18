@@ -53,7 +53,7 @@ const DeveloperCabinet = () => {
   
   // 3. ⭐️ ОНОВЛЮЄМО ФУНКЦІЇ ЗАВАНТАЖЕННЯ
   const loadAllUsersData = useCallback(async () => {
-    if (!user || !(role === 'admin' || role === 'moderator')) {
+    if (!user || !(role === 'admin' || role === 'developer')) {
       setLoading(false);
       return;
     }
@@ -168,7 +168,7 @@ const DeveloperCabinet = () => {
   };
 
   // 6. ⭐️ ПЕРЕВІРКА ДОСТУПУ (БЕЗ ЗМІН)
-  if (role !== 'moderator' && role !== 'admin') {
+  if (role !== 'developer' && role !== 'admin') {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
         <Card>
