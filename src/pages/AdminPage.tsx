@@ -18,7 +18,7 @@ export default function AdminPage() {
     );
   }
 
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'superadmin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Alert variant="destructive" className="max-w-md">

@@ -27,8 +27,9 @@ export function useUserRole() {
     return roles?.includes(role) ?? false;
   };
 
-  const isAdmin = hasRole('admin');
+  const isAdmin = hasRole('admin') || hasRole('superadmin');
   const isDeveloper = hasRole('developer');
+  const isSuperadmin = hasRole('superadmin');
   const isUser = hasRole('user');
 
   return {
@@ -36,6 +37,7 @@ export function useUserRole() {
     hasRole,
     isAdmin,
     isDeveloper,
+    isSuperadmin,
     isUser,
     isLoading,
     error,
