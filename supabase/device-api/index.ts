@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -6,266 +6,118 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface DeviceLogRequest {
-  device_id: string;
-  temp?: number;
-  hum?: number;
-  soil_moisture?: number;
-  light_level?: number;
-  light_cycle_hours?: number;
-  irrigation_time?: string;
-}
-
-interface DeviceActionRequest {
-  device_id: string;
-  control_name: string;
-  value?: boolean;
-  intensity?: number;
-}
-
-const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
-  const url = new URL(req.url);
-  const segments = url.pathname.split('/').filter(Boolean);
-  
   try {
-    // GET /device-api/device/:id/logs - Get device sensor logs
-    if (req.method === 'GET' && segments[1] === 'device' && segments[3] === 'logs') {
-      const deviceId = segments[2];
-      const limit = url.searchParams.get('limit') || '100';
-      const hours = url.searchParams.get('hours') || '24';
-      
-      const cutoffTime = new Date();
-      cutoffTime.setHours(cutoffTime.getHours() - parseInt(hours));
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-      const { data: logs, error } = await supabase
-        .from('device_logs')
+    const { device_id, temp, hum, soil_moisture, light_level, climate_relay, vent_relay } = await req.json();
+
+    // 1. Перевіряємо, чи пристрій вже існує
+    const { data: existingDevice } = await supabase
+      .from('devices')
+      .select('id')
+      .eq('device_id', device_id)
+      .maybeSingle();
+
+    let finalDeviceUuid = existingDevice?.id;
+
+    // 2. Активація (якщо пристрій новий)
+    if (!finalDeviceUuid) {
+      console.log(`New device check: ${device_id}`);
+      const { data: pending } = await supabase
+        .from('pending_devices')
         .select('*')
-        .eq('device_id', deviceId)
-        .gte('created_at', cutoffTime.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(parseInt(limit));
+        .eq('device_token', device_id)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
 
-      if (error) throw error;
+      if (pending) {
+        const { data: newDevice, error: createError } = await supabase
+          .from('devices')
+          .insert({
+            user_id: pending.user_id,
+            device_id: device_id,
+            name: 'New GrowBox',
+            status: 'online',
+            type: 'grow_box',
+            last_seen_at: new Date().toISOString(),
+            // ВАЖЛИВО: Повний набір налаштувань за замовчуванням для прошивки v19.0
+            settings: { 
+              target_temp: 25.0, 
+              temp_hyst: 2.0,
+              target_hum: 60,
+              hum_hyst: 5,
+              soil_min: 30,
+              soil_max: 80,
+              light_mode: 1, // Auto
+              light_start_h: 6,
+              light_start_m: 0,
+              light_end_h: 22,
+              light_end_m: 0,
+              pump_mode: 0, // Auto
+              seasonal_mode: 0, // Winter
+              vent_mode: 1, // Auto
+              vent_duration_sec: 60,
+              vent_interval_sec: 300
+            } 
+          })
+          .select()
+          .single();
 
-      return new Response(JSON.stringify({ logs }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // POST /device-api/device/:id/log - Add sensor data
-    if (req.method === 'POST' && segments[1] === 'device' && segments[3] === 'log') {
-      const deviceId = segments[2];
-      const logData: DeviceLogRequest = await req.json();
-
-      // Update device last_seen_at
-      await supabase
-        .from('devices')
-        .update({ 
-          last_seen_at: new Date().toISOString(),
-          status: 'online'
-        })
-        .eq('device_id', deviceId);
-
-      // Insert sensor data to device_logs
-      const { data, error } = await supabase
-        .from('device_logs')
-        .insert({
-          device_id: deviceId,
-          temp: logData.temp,
-          hum: logData.hum,
-          soil_moisture: logData.soil_moisture,
-          light_level: logData.light_level,
-          light_cycle_hours: logData.light_cycle_hours,
-          irrigation_time: logData.irrigation_time
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Check for alerts
-      if (logData.temp !== undefined || logData.hum !== undefined) {
-        await checkAlerts(supabase, deviceId, logData);
+        if (createError) throw createError;
+        finalDeviceUuid = newDevice.id;
+        await supabase.from('pending_devices').delete().eq('device_token', device_id);
+      } else {
+        throw new Error(`Device ${device_id} not found and no pending token.`);
       }
-
-      return new Response(JSON.stringify({ success: true, data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
-    // GET /device-api/device/:id/settings - Get device settings
-    if (req.method === 'GET' && segments[1] === 'device' && segments[3] === 'settings') {
-      const deviceId = segments[2];
-
-      const { data: device, error } = await supabase
-        .from('devices')
-        .select('configuration, device_controls(*)')
-        .eq('device_id', deviceId)
-        .single();
-
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ settings: device }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // 3. Запис логів
+    const { error: logError } = await supabase
+      .from('device_logs')
+      .insert({
+        device_id: device_id,
+        temp,
+        hum,
+        soil_moisture, // Записуємо в історію
+        light_level,
+        // Зберігаємо статуси реле в extra_data (опціонально, але корисно для відладки)
+        // extra_data: { climate: climate_relay, vent: vent_relay }
       });
-    }
 
-    // PUT /device-api/device/:id/settings - Update device settings
-    if (req.method === 'PUT' && segments[1] === 'device' && segments[3] === 'settings') {
-      const deviceId = segments[2];
-      const settings = await req.json();
+    if (logError) throw logError;
 
-      const { data, error } = await supabase
-        .from('devices')
-        .update({ 
-          configuration: settings,
-          updated_at: new Date().toISOString()
-        })
-        .eq('device_id', deviceId)
-        .select()
-        .single();
+    // 4. Оновлення статусу "Online" та ПОТОЧНИХ показників на картці
+    await supabase
+      .from('devices')
+      .update({
+        status: 'online',
+        last_seen_at: new Date().toISOString(),
+        last_temp: temp,
+        last_hum: hum,
+        last_soil_moisture: soil_moisture // <--- Це виправляє баг з пустим ґрунтом
+      })
+      .eq('device_id', device_id);
 
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ success: true, data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // POST /device-api/device/:id/action - Control device
-    if (req.method === 'POST' && segments[1] === 'device' && segments[3] === 'action') {
-      const deviceId = segments[2];
-      const actionData: DeviceActionRequest = await req.json();
-
-      // Update or insert device control
-      const { data, error } = await supabase
-        .from('device_controls')
-        .upsert({
-          device_id: deviceId,
-          control_name: actionData.control_name,
-          control_type: actionData.intensity !== undefined ? 'slider' : 'switch',
-          value: actionData.value,
-          intensity: actionData.intensity,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'device_id,control_name'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ success: true, data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // GET /device-api/device/:id/schedules - Get device schedules
-    if (req.method === 'GET' && segments[1] === 'device' && segments[3] === 'schedules') {
-      const deviceId = segments[2];
-
-      const { data: schedules, error } = await supabase
-        .from('device_schedules')
-        .select('*')
-        .eq('device_id', deviceId)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ schedules }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // POST /device-api/register - Register new device
-    if (req.method === 'POST' && segments[1] === 'register') {
-      const { device_id, name, type, user_id } = await req.json();
-
-      const { data, error } = await supabase
-        .from('devices')
-        .insert({
-          device_id,
-          name,
-          type: type || 'grow_box',
-          user_id,
-          status: 'online',
-          last_seen_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ success: true, data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response('Not Found', { status: 404, headers: corsHeaders });
-
-  } catch (error: any) {
-    console.error('Error in device-api function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ success: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error("Error:", error);
+    // Безпечне повернення помилки (перевірка типу)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-};
-
-async function checkAlerts(supabase: any, deviceId: string, data: DeviceLogRequest) {
-  // Get device owner's notification settings
-  const { data: device } = await supabase
-    .from('devices')
-    .select('user_id, notification_settings(*)')
-    .eq('device_id', deviceId)
-    .single();
-
-  if (!device?.notification_settings) return;
-
-  const settings = device.notification_settings;
-  let alertTriggered = false;
-  let alertMessage = '';
-
-  if (data.temp !== undefined) {
-    if (settings.temperature_min && data.temp < settings.temperature_min) {
-      alertTriggered = true;
-      alertMessage += `Temperature too low: ${data.temp}°C (min: ${settings.temperature_min}°C). `;
-    }
-    if (settings.temperature_max && data.temp > settings.temperature_max) {
-      alertTriggered = true;
-      alertMessage += `Temperature too high: ${data.temp}°C (max: ${settings.temperature_max}°C). `;
-    }
-  }
-
-  if (data.hum !== undefined) {
-    if (settings.humidity_min && data.hum < settings.humidity_min) {
-      alertTriggered = true;
-      alertMessage += `Humidity too low: ${data.hum}% (min: ${settings.humidity_min}%). `;
-    }
-    if (settings.humidity_max && data.hum > settings.humidity_max) {
-      alertTriggered = true;
-      alertMessage += `Humidity too high: ${data.hum}% (max: ${settings.humidity_max}%). `;
-    }
-  }
-
-  if (alertTriggered && (settings.email_enabled || settings.push_enabled)) {
-    // Trigger notification (could call another edge function for email/telegram)
-    console.log(`Alert triggered for device ${deviceId}: ${alertMessage}`);
-    // TODO: Implement actual notification sending
-  }
-}
-
-serve(handler);
+});
