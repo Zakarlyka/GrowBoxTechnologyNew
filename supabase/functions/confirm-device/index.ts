@@ -1,121 +1,101 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('🔄 confirm-device called');
-    
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Missing Supabase environment variables');
-      throw new Error('Missing Supabase environment variables');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Parse request body
-    const body = await req.json();
-    console.log('📦 Request body:', JSON.stringify(body, null, 2));
-    
-    const { device_token, device_id, name, type, location } = body;
-
-    if (!device_token || !device_id) {
-      console.error('❌ Missing required fields:', { device_token: !!device_token, device_id: !!device_id });
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: device_token and device_id' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('🔍 Confirming device:', { device_id, device_token, name, type, location });
-
-    // Verify token in pending_devices
-    const { data: pendingDevice, error: tokenError } = await supabase
-      .from('pending_devices')
-      .select('*')
-      .eq('device_token', device_token)
-      .gt('expires_at', new Date().toISOString())
-      .single();
-
-    if (tokenError || !pendingDevice) {
-      console.error('❌ Invalid or expired token:', tokenError);
-      console.log('🔍 Token searched:', device_token);
-      console.log('📅 Current time:', new Date().toISOString());
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('✅ Valid token found for user:', pendingDevice.user_id);
-
-    // Create device record
-    const deviceData = {
-      user_id: pendingDevice.user_id,
-      device_id: device_id,
-      name: name || 'New Device',
-      type: type || 'grow_box',
-      location: location || null,
-      status: 'online',
-      last_seen: new Date().toISOString(),
-    };
-    
-    console.log('📝 Creating device with data:', JSON.stringify(deviceData, null, 2));
-
-    const { data: newDevice, error: deviceError } = await supabase
-      .from('devices')
-      .insert(deviceData)
-      .select()
-      .single();
-
-    if (deviceError) {
-      console.error('❌ Error creating device:', deviceError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create device', details: deviceError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('✅ Device created successfully:', newDevice.id);
-
-    // Delete used token
-    const { error: deleteError } = await supabase
-      .from('pending_devices')
-      .delete()
-      .eq('device_token', device_token);
-
-    if (deleteError) {
-      console.error('⚠️ Error deleting token:', deleteError);
-    } else {
-      console.log('✅ Token deleted from pending_devices');
-    }
-
-    console.log('🎉 Device confirmed successfully:', newDevice);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Device confirmed',
-        device: newDevice,
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-  } catch (error) {
-    console.error('❌ Error in confirm-device function:', error);
+
+    const { device_id, temp, hum, soil_moisture, light_level, climate_relay, vent_relay } = await req.json();
+
+    // 1. Перевіряємо, чи пристрій вже існує
+    const { data: existingDevice } = await supabase
+      .from('devices')
+      .select('id')
+      .eq('device_id', device_id)
+      .maybeSingle();
+
+    let finalDeviceUuid = existingDevice?.id;
+
+    // 2. Активація (якщо пристрій новий)
+    if (!finalDeviceUuid) {
+      console.log(`New device check: ${device_id}`);
+      const { data: pending } = await supabase
+        .from('pending_devices')
+        .select('*')
+        .eq('device_token', device_id)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (pending) {
+        const { data: newDevice, error: createError } = await supabase
+          .from('devices')
+          .insert({
+            user_id: pending.user_id,
+            device_id: device_id,
+            name: 'New GrowBox',
+            status: 'online',
+            type: 'grow_box',
+            last_seen_at: new Date().toISOString(),
+            settings: { target_temp: 25, target_hum: 60 } 
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        finalDeviceUuid = newDevice.id;
+        await supabase.from('pending_devices').delete().eq('device_token', device_id);
+      } else {
+        throw new Error(`Device ${device_id} not found and no pending token.`);
+      }
+    }
+
+    // 3. Запис логів
+    const { error: logError } = await supabase
+      .from('device_logs')
+      .insert({
+        device_id: device_id,
+        temp,
+        hum,
+        soil_moisture, // Записуємо в історію
+        light_level
+      });
+
+    if (logError) throw logError;
+
+    // 4. Оновлення статусу "Online" та ПОТОЧНИХ показників
+    await supabase
+      .from('devices')
+      .update({
+        status: 'online',
+        last_seen_at: new Date().toISOString(),
+        last_temp: temp,
+        last_hum: hum,
+        last_soil_moisture: soil_moisture // <--- ДОДАНО: Оновлення ґрунту на картці
+      })
+      .eq('device_id', device_id);
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error("Error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
