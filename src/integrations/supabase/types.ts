@@ -322,6 +322,7 @@ export type Database = {
           last_hum: number | null
           last_seen: string | null
           last_seen_at: string | null
+          last_soil_moisture: number | null
           last_temp: number | null
           location: string | null
           name: string
@@ -340,6 +341,7 @@ export type Database = {
           last_hum?: number | null
           last_seen?: string | null
           last_seen_at?: string | null
+          last_soil_moisture?: number | null
           last_temp?: number | null
           location?: string | null
           name?: string
@@ -358,6 +360,7 @@ export type Database = {
           last_hum?: number | null
           last_seen?: string | null
           last_seen_at?: string | null
+          last_soil_moisture?: number | null
           last_temp?: number | null
           location?: string | null
           name?: string

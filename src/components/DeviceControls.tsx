@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Droplets, Lightbulb, Wind, Flame, Thermometer, Snowflake, CloudRain } from 'lucide-react';
+import { Save, Droplets, Sun, Wind, Thermometer } from 'lucide-react';
 import { useDeviceControls } from '../hooks/useDeviceControls';
 
 interface DeviceControlsProps {
@@ -14,57 +14,63 @@ interface DeviceControlsProps {
 }
 
 export function DeviceControls({ deviceId }: DeviceControlsProps) {
-  // --- Хук ---
   const { settings, controls, loading, isSaving, saveSettings, updateControl } = useDeviceControls(deviceId);
   
-  // --- Локальний стан ---
-  const [localIntensities, setLocalIntensities] = useState<Record<string, number>>({});
-  const [targetTemp, setTargetTemp] = useState(26.0);
-  const [hysteresis, setHysteresis] = useState(2.0);
-  const [targetHumidity, setTargetHumidity] = useState(60);
-  const [humidityHysteresis, setHumidityHysteresis] = useState(5);
-  const [isACInstalled, setIsACInstalled] = useState(false);
+  // 🌡️ Клімат
+  const [targetTemp, setTargetTemp] = useState(25);
+  const [tempHyst, setTempHyst] = useState(2);
+  const [targetHum, setTargetHum] = useState(60);
+  const [humHyst, setHumHyst] = useState(5);
   const [seasonalMode, setSeasonalMode] = useState(0);
-  const [ventMode, setVentMode] = useState(1);
-  const [minSoilMoisture, setMinSoilMoisture] = useState(30);
-  const [maxSoilMoisture, setMaxSoilMoisture] = useState(80);
-  const [irrigationDuration, setIrrigationDuration] = useState(10);
-  const [irrigationPause, setIrrigationPause] = useState(1);
-  const [ventWorkMinutes, setVentWorkMinutes] = useState(2);
-  const [ventPauseMinutes, setVentPauseMinutes] = useState(5);
-  const [ventIntervalSec, setVentIntervalSec] = useState(300);
-  const [ventDurationSec, setVentDurationSec] = useState(120);
+  
+  // 💡 Освітлення
+  const [lightMode, setLightMode] = useState(1);
   const [lightStartH, setLightStartH] = useState(8);
   const [lightStartM, setLightStartM] = useState(0);
   const [lightEndH, setLightEndH] = useState(20);
   const [lightEndM, setLightEndM] = useState(0);
+  
+  // 💧 Полив
+  const [pumpMode, setPumpMode] = useState(0);
+  const [soilMin, setSoilMin] = useState(30);
+  const [soilMax, setSoilMax] = useState(80);
+  
+  // 🌬️ Вентиляція
+  const [ventMode, setVentMode] = useState(0);
+  const [ventDurationSec, setVentDurationSec] = useState(60);
+  const [ventIntervalSec, setVentIntervalSec] = useState(300);
 
-  // --- Завантаження даних в стан ---
+  // Локальні інтенсивності для слайдерів
+  const [localIntensities, setLocalIntensities] = useState<Record<string, number>>({});
+
   useEffect(() => {
     if (settings) {
-      setTargetTemp(settings.target_temp ?? 26.0);
-      setHysteresis(settings.temp_hyst ?? 2.0);
-      setTargetHumidity(settings.target_hum ?? 60);
-      setHumidityHysteresis(settings.hum_hyst ?? 5);
-      setIsACInstalled(settings.is_ac_installed ?? false);
+      // 🌡️ Клімат
+      setTargetTemp(settings.target_temp ?? 25);
+      setTempHyst(settings.temp_hyst ?? 2);
+      setTargetHum(settings.target_hum ?? 60);
+      setHumHyst(settings.hum_hyst ?? 5);
       setSeasonalMode(settings.seasonal_mode ?? 0);
-      setVentMode(settings.vent_mode ?? 1);
-      setMinSoilMoisture(settings.min_soil_moisture ?? 30);
-      setMaxSoilMoisture(settings.max_soil_moisture ?? 80);
-      setIrrigationDuration(settings.irrigation_duration_sec ?? 10);
-      setIrrigationPause(settings.irrigation_pause_min ?? 1);
-      setVentWorkMinutes(settings.vent_work_minutes ?? 2);
-      setVentPauseMinutes(settings.vent_pause_minutes ?? 5);
-      setVentIntervalSec(settings.vent_interval_sec ?? 300);
-      setVentDurationSec(settings.vent_duration_sec ?? 120);
+      
+      // 💡 Освітлення
+      setLightMode(settings.light_mode ?? 1);
       setLightStartH(settings.light_start_h ?? 8);
       setLightStartM(settings.light_start_m ?? 0);
       setLightEndH(settings.light_end_h ?? 20);
       setLightEndM(settings.light_end_m ?? 0);
+      
+      // 💧 Полив
+      setPumpMode(settings.pump_mode ?? 0);
+      setSoilMin(settings.soil_min ?? 30);
+      setSoilMax(settings.soil_max ?? 80);
+      
+      // 🌬️ Вентиляція
+      setVentMode(settings.vent_mode ?? 0);
+      setVentDurationSec(settings.vent_duration_sec ?? 60);
+      setVentIntervalSec(settings.vent_interval_sec ?? 300);
     }
   }, [settings]);
-  
-  // --- Обробники ---
+
   const getControlState = (controlName: string) => {
     const control = controls.find(c => c.control_name === controlName);
     return {
@@ -90,33 +96,33 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   const handleSaveSettings = async () => {
     const newSettings = {
+      // 🌡️ Клімат
       target_temp: targetTemp,
-      temp_hyst: hysteresis,
-      target_hum: targetHumidity,
-      hum_hyst: humidityHysteresis,
-      is_ac_installed: isACInstalled,
+      temp_hyst: tempHyst,
+      target_hum: targetHum,
+      hum_hyst: humHyst,
       seasonal_mode: seasonalMode,
-      vent_mode: ventMode,
-      vent_work_minutes: ventWorkMinutes,
-      vent_pause_minutes: ventPauseMinutes,
-      vent_interval_sec: ventIntervalSec,
-      vent_duration_sec: ventDurationSec,
-      min_soil_moisture: minSoilMoisture,
-      max_soil_moisture: maxSoilMoisture,
-      irrigation_duration_sec: irrigationDuration,
-      irrigation_pause_min: irrigationPause,
+      
+      // 💡 Освітлення
+      light_mode: lightMode,
       light_start_h: lightStartH,
       light_start_m: lightStartM,
       light_end_h: lightEndH,
       light_end_m: lightEndM,
-      // Deprecated fields (for backward compatibility):
-      light_start_time: `${String(lightStartH).padStart(2, '0')}:${String(lightStartM).padStart(2, '0')}`,
-      light_end_time: `${String(lightEndH).padStart(2, '0')}:${String(lightEndM).padStart(2, '0')}`,
+      
+      // 💧 Полив
+      pump_mode: pumpMode,
+      soil_min: soilMin,
+      soil_max: soilMax,
+      
+      // 🌬️ Вентиляція
+      vent_mode: ventMode,
+      vent_duration_sec: ventDurationSec,
+      vent_interval_sec: ventIntervalSec,
     };
     await saveSettings(newSettings);
   };
 
-  // --- Стан завантаження ---
   if (loading) {
     return (
       <div className="gradient-card border border-border/50 rounded-lg p-6">
@@ -125,21 +131,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
     );
   }
 
-  // --- Отримання станів для UI ---
-  const heaterState = getControlState('heater');
-  const acState = getControlState('air_conditioner');
-  const ventState = getControlState('ventilation');
-  const ventIntensity = localIntensities['ventilation'] ?? ventState.intensity;
-  const pumpState = getControlState('water_pump');
   const lightState = getControlState('light');
   const lightIntensity = localIntensities['light'] ?? lightState.intensity;
 
-  // --- Рендер ---
   return (
     <div className="relative space-y-4">
-      <h2 className="text-2xl font-bold">Панель Керування</h2>
+      <h2 className="text-2xl font-bold">🎛️ Панель Керування</h2>
       
-      {/* --- Кнопка Зберегти --- */}
       <Button
         onClick={handleSaveSettings}
         disabled={isSaving}
@@ -147,181 +145,125 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         size="lg"
       >
         <Save className="h-5 w-5 mr-2" />
-        {isSaving ? 'Збереження...' : 'Зберегти'}
+        {isSaving ? 'Збереження...' : 'Зберегти Налаштування'}
       </Button>
       
-      {/* --- Сітка Карток (ЗІ ЗМІНЕНИМ ПОРЯДКОМ) --- */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         
-        {/* === 1. Картка "Клімат-Контроль" === */}
+        {/* 🌡️ КЛІМАТ-КОНТРОЛЬ */}
         <Card className="gradient-card border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Thermometer className="h-5 w-5 text-orange-400" />
-              Клімат-Контроль
+              <Thermometer className="w-5 h-5" />
+              🌡️ Клімат-Контроль
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Seasonal Mode */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Сезонний Режим</Label>
+            <div>
+              <Label>Сезонний Режим (seasonal_mode)</Label>
               <Select value={String(seasonalMode)} onValueChange={(v) => setSeasonalMode(Number(v))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="0">❄️ Зима (Обігрів)</SelectItem>
-                  <SelectItem value="1">☀️ Літо (Кондиціонер)</SelectItem>
+                  <SelectItem value="1">☀️ Літо (Охолодження)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Humidity settings */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
-              <Label className="text-sm font-medium">Вологість</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Бажана Вологість (%)</Label>
-                  <Input
-                    type="number"
-                    value={targetHumidity}
-                    onChange={(e) => setTargetHumidity(Number(e.target.value))}
-                    min={0}
-                    max={100}
-                    className="mt-1 h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Гістерезис (+/- %)</Label>
-                  <Input
-                    type="number"
-                    value={humidityHysteresis}
-                    onChange={(e) => setHumidityHysteresis(Number(e.target.value))}
-                    min={0}
-                    max={50}
-                    className="mt-1 h-9"
-                  />
-                </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Цільова Темп. (target_temp)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={targetTemp}
+                  onChange={(e) => setTargetTemp(Number(e.target.value))}
+                />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20">
-                <div className="flex items-center gap-2">
-                  <CloudRain className="h-4 w-4 text-indigo-400" />
-                  <Label htmlFor="humidifier" className="text-sm cursor-pointer">Зволожувач</Label>
-                </div>
-                <Switch
-                  id="humidifier"
-                  checked={getControlState('humidifier').value}
-                  onCheckedChange={(checked) => handleToggle('humidifier', checked)}
+              <div>
+                <Label className="text-xs">Гістерезис (temp_hyst)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={tempHyst}
+                  onChange={(e) => setTempHyst(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Цільова Вол. (target_hum)</Label>
+                <Input
+                  type="number"
+                  value={targetHum}
+                  onChange={(e) => setTargetHum(Number(e.target.value))}
+                  min="0"
+                  max="100"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Гістерезис (hum_hyst)</Label>
+                <Input
+                  type="number"
+                  value={humHyst}
+                  onChange={(e) => setHumHyst(Number(e.target.value))}
+                  min="0"
+                  max="50"
                 />
               </div>
             </div>
 
-            {/* Temperature settings */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
-              <Label className="text-sm font-medium">Температура</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Бажана Темп. (°C)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={targetTemp}
-                    onChange={(e) => setTargetTemp(Number(e.target.value))}
-                    className="mt-1 h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Гістерезис (+/- °C)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={hysteresis}
-                    onChange={(e) => setHysteresis(Number(e.target.value))}
-                    className="mt-1 h-9"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20">
-                <div className="flex items-center gap-2">
-                  <Flame className="h-4 w-4 text-orange-400" />
-                  <Label htmlFor="heater" className="text-sm cursor-pointer">Обігрівач</Label>
-                </div>
-                <Switch
-                  id="heater"
-                  checked={heaterState.value}
-                  onCheckedChange={(checked) => handleToggle('heater', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20">
-                <div className="flex items-center gap-2">
-                  <Snowflake className="h-4 w-4 text-blue-300" />
-                  <Label htmlFor="ac-installed" className="text-sm cursor-pointer">Кондиціонер підключено</Label>
-                </div>
-                <Switch
-                  id="ac-installed"
-                  checked={isACInstalled}
-                  onCheckedChange={setIsACInstalled}
-                />
-              </div>
-              {isACInstalled && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20 ml-4">
-                  <div className="flex items-center gap-2">
-                    <Snowflake className="h-4 w-4 text-blue-300" />
-                    <Label htmlFor="ac" className="text-sm cursor-pointer">Кондиціонер</Label>
-                  </div>
-                  <Switch
-                    id="ac"
-                    checked={acState.value}
-                    onCheckedChange={(checked) => handleToggle('air_conditioner', checked)}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Explanation text */}
             <div className="pt-3 border-t border-border/30">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong>Автоматична логіка:</strong><br />
-                • Обігрівач (якщо &lt; {(targetTemp - hysteresis).toFixed(1)}°C)<br />
-                • Зволожувач (якщо &lt; {targetHumidity - humidityHysteresis}%)<br />
-                • Витяжку (якщо вологість &gt; {targetHumidity + humidityHysteresis}%)<br />
-                {isACInstalled ? (
-                  <>• Кондиціонер (якщо темп. &gt; {(targetTemp + hysteresis).toFixed(1)}°C)</>
-                ) : (
-                  <>• Витяжку (якщо темп. &gt; {(targetTemp + hysteresis).toFixed(1)}°C)</>
-                )}
+              <p className="text-xs text-muted-foreground">
+                <strong>Автоматика:</strong><br />
+                • Обігрів: &lt; {(targetTemp - tempHyst).toFixed(1)}°C<br />
+                • Охолодження: &gt; {(targetTemp + tempHyst).toFixed(1)}°C<br />
+                • Вологість: {targetHum - humHyst}% - {targetHum + humHyst}%
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* === 2. Картка "Освітлення" (ПЕРЕМІЩЕНО) === */}
+        {/* 💡 ОСВІТЛЕННЯ */}
         <Card className="gradient-card border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-yellow-400" />
-              Освітлення
+              <Sun className="w-5 h-5" />
+              💡 Освітлення
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Manual control */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20">
-                <div className="flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-yellow-400" />
-                  <Label htmlFor="light" className="text-sm cursor-pointer font-medium">Світло</Label>
-                </div>
+            <div>
+              <Label>Режим Світла (light_mode)</Label>
+              <Select value={String(lightMode)} onValueChange={(v) => setLightMode(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">🔴 Manual OFF (Вимкн)</SelectItem>
+                  <SelectItem value="1">🔵 AUTO / Schedule (Таймер)</SelectItem>
+                  <SelectItem value="2">🟢 Manual ON (Ввімкн)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ручне керування (коли Manual ON) */}
+            <div className="space-y-3 pt-3 border-t border-border/30">
+              <div className="flex items-center justify-between">
+                <Label>Ручне керування</Label>
                 <Switch
-                  id="light"
                   checked={lightState.value}
                   onCheckedChange={(checked) => handleToggle('light', checked)}
                 />
               </div>
-
+              
               {lightState.value && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Інтенсивність</Label>
+                    <Label className="text-xs">Інтенсивність</Label>
                     <span className="text-sm font-medium">{lightIntensity}%</span>
                   </div>
                   <Slider
@@ -336,268 +278,156 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               )}
             </div>
 
-            {/* Schedule settings */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
+            <div className="space-y-2 pt-3 border-t border-border/30">
               <Label className="text-sm font-medium">Розклад (Години:Хвилини)</Label>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Початок</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Год</Label>
-                    <Input
-                      type="number"
-                      value={lightStartH}
-                      onChange={(e) => setLightStartH(Number(e.target.value))}
-                      min={0}
-                      max={23}
-                      className="mt-1 h-9"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Хв</Label>
-                    <Input
-                      type="number"
-                      value={lightStartM}
-                      onChange={(e) => setLightStartM(Number(e.target.value))}
-                      min={0}
-                      max={59}
-                      className="mt-1 h-9"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Початок (Год)</Label>
+                  <Input
+                    type="number"
+                    value={lightStartH}
+                    onChange={(e) => setLightStartH(Number(e.target.value))}
+                    min="0"
+                    max="23"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Початок (Хв)</Label>
+                  <Input
+                    type="number"
+                    value={lightStartM}
+                    onChange={(e) => setLightStartM(Number(e.target.value))}
+                    min="0"
+                    max="59"
+                  />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Кінець</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Год</Label>
-                    <Input
-                      type="number"
-                      value={lightEndH}
-                      onChange={(e) => setLightEndH(Number(e.target.value))}
-                      min={0}
-                      max={23}
-                      className="mt-1 h-9"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Хв</Label>
-                    <Input
-                      type="number"
-                      value={lightEndM}
-                      onChange={(e) => setLightEndM(Number(e.target.value))}
-                      min={0}
-                      max={59}
-                      className="mt-1 h-9"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Кінець (Год)</Label>
+                  <Input
+                    type="number"
+                    value={lightEndH}
+                    onChange={(e) => setLightEndH(Number(e.target.value))}
+                    min="0"
+                    max="23"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Кінець (Хв)</Label>
+                  <Input
+                    type="number"
+                    value={lightEndM}
+                    onChange={(e) => setLightEndM(Number(e.target.value))}
+                    min="0"
+                    max="59"
+                  />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground pt-1">
                 Світло: {String(lightStartH).padStart(2, '0')}:{String(lightStartM).padStart(2, '0')} - {String(lightEndH).padStart(2, '0')}:{String(lightEndM).padStart(2, '0')}
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* === 3. Картка "Вентиляція" === */}
+        {/* 💧 ПОЛИВ */}
         <Card className="gradient-card border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wind className="h-5 w-5 text-cyan-400" />
-              Вентиляція
+              <Droplets className="w-5 h-5" />
+              💧 Полив
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Ventilation Mode Toggle */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20">
-                <div className="flex items-center gap-2">
-                  <Wind className="h-4 w-4 text-cyan-400" />
-                  <Label htmlFor="vent-mode" className="text-sm cursor-pointer font-medium">Дозвіл роботи вентилятора</Label>
-                </div>
-                <Switch
-                  id="vent-mode"
-                  checked={ventMode === 1}
-                  onCheckedChange={(checked) => setVentMode(checked ? 1 : 0)}
-                />
-              </div>
+            <div>
+              <Label>Режим Помпи (pump_mode)</Label>
+              <Select value={String(pumpMode)} onValueChange={(v) => setPumpMode(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">🔵 AUTO (Сенсор)</SelectItem>
+                  <SelectItem value="1">🟢 Manual ON (Полив зараз)</SelectItem>
+                  <SelectItem value="2">🔴 Manual OFF (Блокування)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            {/* Manual control */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
-              <Label className="text-sm font-medium">Ручне керування</Label>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/20">
-                <div className="flex items-center gap-2">
-                  <Wind className="h-4 w-4 text-cyan-400" />
-                  <Label htmlFor="vent" className="text-sm cursor-pointer">Витяжка</Label>
-                </div>
-                <Switch
-                  id="vent"
-                  checked={ventState.value}
-                  onCheckedChange={(checked) => handleToggle('ventilation', checked)}
-                />
-              </div>
-
-              {ventState.value && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Швидкість</Label>
-                    <span className="text-sm font-medium">{ventIntensity}%</span>
-                  </div>
-                  <Slider
-                    value={[ventIntensity]}
-                    min={0}
-                    max={100}
-                    step={5}
-                    onValueChange={(value) => handleIntensityChange('ventilation', value)}
-                    onValueCommit={() => handleIntensityCommit('ventilation')}
-                  />
-                </div>
-              )}
+            
+            <div>
+              <Label>Мін. вологість ґрунту (soil_min, %)</Label>
+              <Input
+                type="number"
+                value={soilMin}
+                onChange={(e) => setSoilMin(Number(e.target.value))}
+                min="0"
+                max="100"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Старт поливу при &lt; {soilMin}%</p>
             </div>
-
-            {/* Ventilation Settings */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
-              <Label className="text-sm font-medium">Налаштування Провітрювання</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Інтервал (СЕК)</Label>
-                  <Input
-                    type="number"
-                    value={ventIntervalSec}
-                    onChange={(e) => setVentIntervalSec(Number(e.target.value))}
-                    min={1}
-                    className="mt-1 h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Тривалість (СЕК)</Label>
-                  <Input
-                    type="number"
-                    value={ventDurationSec}
-                    onChange={(e) => setVentDurationSec(Number(e.target.value))}
-                    min={1}
-                    className="mt-1 h-9"
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Провітрювання: {ventDurationSec} сек кожні {ventIntervalSec} сек
-              </p>
-            </div>
-
-            {/* Legacy Timer settings */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
-              <Label className="text-sm font-medium">Таймер (Застарілий)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Робота (ХВ)</Label>
-                  <Input
-                    type="number"
-                    value={ventWorkMinutes}
-                    onChange={(e) => setVentWorkMinutes(Number(e.target.value))}
-                    min={1}
-                    className="mt-1 h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Пауза (ХВ)</Label>
-                  <Input
-                    type="number"
-                    value={ventPauseMinutes}
-                    onChange={(e) => setVentPauseMinutes(Number(e.target.value))}
-                    min={1}
-                    className="mt-1 h-9"
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Цикл: {ventWorkMinutes} хв робота, {ventPauseMinutes} хв пауза
-              </p>
+            
+            <div>
+              <Label>Макс. вологість ґрунту (soil_max, %)</Label>
+              <Input
+                type="number"
+                value={soilMax}
+                onChange={(e) => setSoilMax(Number(e.target.value))}
+                min="0"
+                max="100"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Стоп поливу при &gt; {soilMax}%</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* === 4. Картка "Полив" === */}
+        {/* 🌬️ ВЕНТИЛЯЦІЯ */}
         <Card className="gradient-card border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Droplets className="h-5 w-5 text-blue-400" />
-              Полив
+              <Wind className="w-5 h-5" />
+              🌬️ Вентиляція
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Manual control */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Ручний полив</Label>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => handleToggle('water_pump', !pumpState.value)}
-              >
-                <Droplets className="h-4 w-4 mr-2" />
-                {pumpState.value ? 'Зупинити полив' : 'Полив (10 сек)'}
-              </Button>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Режим Вентиляції</Label>
+                <p className="text-xs text-muted-foreground">
+                  {ventMode === 0 ? '🔴 OFF' : '🔵 AUTO (Клімат + Таймер)'}
+                </p>
+              </div>
+              <Switch
+                checked={ventMode === 1}
+                onCheckedChange={(checked) => setVentMode(checked ? 1 : 0)}
+              />
+            </div>
+            
+            <div>
+              <Label>Тривалість роботи (vent_duration_sec)</Label>
+              <Input
+                type="number"
+                value={ventDurationSec}
+                onChange={(e) => setVentDurationSec(Number(e.target.value))}
+                min="0"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{ventDurationSec} секунд</p>
+            </div>
+            
+            <div>
+              <Label>Інтервал паузи (vent_interval_sec)</Label>
+              <Input
+                type="number"
+                value={ventIntervalSec}
+                onChange={(e) => setVentIntervalSec(Number(e.target.value))}
+                min="0"
+              />
+              <p className="text-xs text-muted-foreground mt-1">{ventIntervalSec} секунд</p>
             </div>
 
-            {/* Auto settings */}
-            <div className="space-y-3 pt-3 border-t border-border/30">
-              <Label className="text-sm font-medium">Автоматичний цикл</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Мін. ґрунт (%)</Label>
-                  <Input
-                    type="number"
-                    value={minSoilMoisture}
-                    onChange={(e) => setMinSoilMoisture(Number(e.target.value))}
-                    min={0}
-                    max={100}
-                    className="mt-1 h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Макс. ґрунт (%)</Label>
-                  <Input
-                    type="number"
-                    value={maxSoilMoisture}
-                    onChange={(e) => setMaxSoilMoisture(Number(e.target.value))}
-                    min={0}
-                    max={100}
-                    className="mt-1 h-9"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Тривалість (СЕК)</Label>
-                  <Input
-                    type="number"
-                    value={irrigationDuration}
-                    onChange={(e) => setIrrigationDuration(Number(e.target.value))}
-                    min={1}
-                    className="mt-1 h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Пауза (ХВ)</Label>
-                  <Input
-                    type="number"
-                    value={irrigationPause}
-                    onChange={(e) => setIrrigationPause(Number(e.target.value))}
-                    min={1}
-                    className="mt-1 h-9"
-                  />
-                </div>
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-xs text-muted-foreground">
-                  • Вмикається при &lt; {minSoilMoisture}%
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  • Вимикається при &gt; {maxSoilMoisture}%
-                </p>
-              </div>
+            <div className="pt-3 border-t border-border/30">
+              <p className="text-xs text-muted-foreground">
+                <strong>Цикл:</strong> {ventDurationSec}с Вкл / {ventIntervalSec}с Пауза
+              </p>
             </div>
           </CardContent>
         </Card>
