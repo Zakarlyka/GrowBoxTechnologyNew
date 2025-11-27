@@ -1,11 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { type DeviceSettings, type DeviceControl } from '@/types';
+import { type DeviceSettings } from '@/types';
 import { toast } from 'sonner';
 
+interface DeviceData {
+  settings: DeviceSettings | null;
+  lastTemp: number | null;
+  lastHum: number | null;
+  lastSoilMoisture: number | null;
+  lastSeenAt: string | null;
+}
+
 export function useDeviceControls(deviceId: string | null) {
-  const [settings, setSettings] = useState<DeviceSettings | null>(null);
-  const [controls, setControls] = useState<DeviceControl[]>([]);
+  const [deviceData, setDeviceData] = useState<DeviceData>({
+    settings: null,
+    lastTemp: null,
+    lastHum: null,
+    lastSoilMoisture: null,
+    lastSeenAt: null,
+  });
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -14,27 +27,23 @@ export function useDeviceControls(deviceId: string | null) {
     setLoading(true);
     
     try {
-      // 1. Завантажити НАЛАШТУВАННЯ з 'devices.settings'
-      const result: any = await supabase
+      const { data, error } = await supabase
         .from('devices')
-        .select('settings')
+        .select('settings, last_temp, last_hum, last_soil_moisture, last_seen_at')
         .eq('device_id', deviceId)
         .single();
 
-      if (result.error) throw new Error(`Помилка завантаження налаштувань: ${result.error.message}`);
-      setSettings(result.data?.settings as DeviceSettings);
-
-      // 2. Завантажити СТАНИ з 'device_controls'
-      const { data: controlsData, error: controlsError } = await supabase
-        .from('device_controls')
-        .select('control_name, value')
-        .eq('device_id', deviceId);
-
-      if (controlsError) throw new Error(`Помилка завантаження станів: ${controlsError.message}`);
-      setControls((controlsData as any) || []);
-
+      if (error) throw error;
+      
+      setDeviceData({
+        settings: (data?.settings as any) || null,
+        lastTemp: data?.last_temp || null,
+        lastHum: data?.last_hum || null,
+        lastSoilMoisture: data?.last_soil_moisture || null,
+        lastSeenAt: data?.last_seen_at || null,
+      });
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(`Помилка завантаження: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -45,19 +54,18 @@ export function useDeviceControls(deviceId: string | null) {
 
     if (!deviceId) return;
 
-    // Subscribe to realtime updates
+    // Subscribe to settings changes
     const channel = supabase
-      .channel(`controls-${deviceId}`)
+      .channel(`device-${deviceId}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
-          table: 'device_controls',
+          table: 'devices',
           filter: `device_id=eq.${deviceId}`,
         },
-        (payload) => {
-          console.log('Control change:', payload);
+        () => {
           fetchData();
         }
       )
@@ -68,75 +76,48 @@ export function useDeviceControls(deviceId: string | null) {
     };
   }, [fetchData, deviceId]);
 
-  // Функція збереження, яка оновлює 'devices.configuration' в Supabase
-  const saveSettings = async (newSettings: DeviceSettings) => {
+  const saveSettings = async (settingsPatch: Partial<DeviceSettings>) => {
     if (!deviceId) return;
     setIsSaving(true);
     
     try {
-      const result: any = await supabase
+      // Merge patch with existing settings
+      const updatedSettings = {
+        ...(deviceData.settings || {}),
+        ...settingsPatch,
+      };
+
+      const { error } = await supabase
         .from('devices')
-        .update({ settings: newSettings } as any)
+        .update({ settings: updatedSettings })
         .eq('device_id', deviceId);
 
-      if (result.error) throw result.error;
-      setSettings(newSettings);
-      toast.success('Налаштування збережено в Supabase!');
+      if (error) throw error;
+      
+      setDeviceData(prev => ({
+        ...prev,
+        settings: updatedSettings as DeviceSettings,
+      }));
+      
+      toast.success('Налаштування збережено!');
     } catch (error: any) {
-      toast.error(`Помилка збереження: ${error.message}`);
+      toast.error(`Помилка: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Функція оновлення стану, яка оновлює 'device_controls' в Supabase
-  const updateControl = async (controlName: string, value: boolean, intensity?: number) => {
-    if (!deviceId) return;
-    
-    // Оптимістичне оновлення UI
-    setControls(prev => {
-      const existing = prev.find(c => c.control_name === controlName);
-      if (existing) {
-        return prev.map(c =>
-          c.control_name === controlName
-            ? { ...c, value, intensity: intensity ?? c.intensity }
-            : c
-        );
-      }
-      return [...prev, { control_name: controlName, value, intensity: intensity ?? 50 }];
-    });
-
-    // Запит до Supabase
-    try {
-      const { error } = await (supabase as any)
-        .from('device_controls')
-        .upsert({
-          device_id: deviceId,
-          control_name: controlName,
-          control_type: intensity !== undefined ? 'slider' : 'switch',
-          value,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'device_id,control_name'
-        });
-
-      if (error) throw error;
-      
-      toast.success('Керування оновлено', {
-        description: `${controlName} ${value ? 'увімкнено' : 'вимкнено'}`,
-      });
-    } catch (error: any) {
-      toast.error(`Помилка перемикача: ${error.message}`);
-      fetchData(); // Відкат
-    }
-  };
-
   return {
-    settings,
-    controls,
+    settings: deviceData.settings,
+    sensorData: {
+      temperature: deviceData.lastTemp,
+      humidity: deviceData.lastHum,
+      soilMoisture: deviceData.lastSoilMoisture,
+    },
+    lastSeenAt: deviceData.lastSeenAt,
     loading,
     isSaving,
     saveSettings,
-    updateControl,
+    refetch: fetchData,
   };
 }

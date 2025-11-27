@@ -40,7 +40,7 @@ export default function DeviceDetail() {
   const { devices, loading, deleteDevice } = useDevices();
   const device = devices.find(d => d.id === id);
   const { logs, latestLog } = useDeviceLogs(id);
-  const { controls } = useDeviceControls(device?.device_id || null);
+  const { settings } = useDeviceControls(device?.device_id || null);
   const { schedules } = useDeviceSchedules(id || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [timeInterval, setTimeInterval] = useState('24h');
@@ -74,29 +74,17 @@ export default function DeviceDetail() {
 
   const isOnline = device.status === 'online';
 
-  // Get light control state and schedule
-  const lightControl = controls.find(c => c.control_name === 'light');
-  const lightSchedule = schedules.find(s => s.control_name === 'light' && s.schedule_type === 'time');
-
-  // Calculate day/night mode
+  // Get light mode from settings
   const getLightMode = () => {
-    if (!lightSchedule || !lightSchedule.start_time || !lightSchedule.end_time) {
-      return null;
-    }
+    if (!settings) return null;
 
-    const startHour = parseInt(lightSchedule.start_time.split(':')[0]);
-    const endHour = parseInt(lightSchedule.end_time.split(':')[0]);
-    
-    let dayDuration = endHour - startHour;
-    if (dayDuration < 0) dayDuration += 24;
-    const nightDuration = 24 - dayDuration;
-
-    const isDay = lightControl?.value || false;
+    const lightMode = (settings as any).light_mode ?? 1;
+    const isDay = lightMode === 2; // Manual ON = Day, otherwise check schedule
 
     return {
       isDay,
-      dayDuration,
-      nightDuration,
+      dayDuration: 12,
+      nightDuration: 12,
     };
   };
 
