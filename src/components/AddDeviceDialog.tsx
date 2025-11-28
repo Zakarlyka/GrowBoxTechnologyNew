@@ -96,10 +96,10 @@ export function AddDeviceDialog({ open, onOpenChange, onDeviceAdded }: AddDevice
   };
 
   const handleManualAdd = async () => {
-    if (!manualData.device_id || !manualData.name) {
+    if (!manualData.device_id) {
       toast({
         title: 'Помилка',
-        description: 'Заповніть всі обов\'язкові поля',
+        description: 'Заповніть ID пристрою',
         variant: 'destructive',
       });
       return;
@@ -112,7 +112,7 @@ export function AddDeviceDialog({ open, onOpenChange, onDeviceAdded }: AddDevice
         .insert({
           user_id: user?.id,
           device_id: manualData.device_id,
-          name: manualData.name,
+          name: `Пристрій ${manualData.device_id}`,
           type: manualData.type,
           location: manualData.location,
           status: 'offline',
@@ -194,16 +194,6 @@ export function AddDeviceDialog({ open, onOpenChange, onDeviceAdded }: AddDevice
                 placeholder="esp32-grow-001"
                 value={manualData.device_id}
                 onChange={(e) => setManualData({ ...manualData, device_id: e.target.value })}
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="device-name">Назва *</Label>
-              <Input
-                id="device-name"
-                placeholder="Grow Box Alpha"
-                value={manualData.name}
-                onChange={(e) => setManualData({ ...manualData, name: e.target.value })}
                 disabled={loading}
               />
             </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   ArrowLeft, 
   Thermometer, 
@@ -12,7 +13,10 @@ import {
   Moon,
   Wifi,
   WifiOff,
-  Trash2
+  Trash2,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceLogs } from '@/hooks/useDeviceLogs';
@@ -23,6 +27,8 @@ import { LogsTable } from '@/components/LogsTable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart-simple';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,12 +50,47 @@ export default function DeviceDetail() {
   const { schedules } = useDeviceSchedules(id || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [timeInterval, setTimeInterval] = useState('24h');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(device?.name || '');
 
   const handleDelete = async () => {
     if (id) {
       await deleteDevice(id);
       navigate('/');
     }
+  };
+
+  const handleSaveName = async () => {
+    if (!editedName.trim() || !device) return;
+
+    try {
+      const { error } = await supabase
+        .from('devices')
+        .update({ name: editedName.trim() })
+        .eq('id', device.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успіх',
+        description: 'Назву пристрою оновлено',
+      });
+
+      setIsEditingName(false);
+      window.location.reload(); // Simple refresh to update the name
+    } catch (error: any) {
+      console.error('Rename error:', error);
+      toast({
+        title: 'Помилка',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(device?.name || '');
+    setIsEditingName(false);
   };
 
   if (loading) {
@@ -169,7 +210,42 @@ export default function DeviceDetail() {
       {/* Device Info Card */}
       <Card className="gradient-card border-border/50">
         <CardHeader>
-          <CardTitle className="text-xl">{device.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            {isEditingName ? (
+              <>
+                <Input
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="text-xl font-semibold max-w-md"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                />
+                <Button size="sm" variant="ghost" onClick={handleSaveName}>
+                  <Check className="h-4 w-4 text-success" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                  <X className="h-4 w-4 text-destructive" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <CardTitle className="text-xl">{device.name}</CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => {
+                    setEditedName(device.name);
+                    setIsEditingName(true);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
           {device.location && (
             <p className="text-sm text-muted-foreground">{device.location}</p>
           )}
