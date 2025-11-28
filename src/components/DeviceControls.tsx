@@ -307,15 +307,6 @@ export function DeviceControls({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Large Force Water Button */}
-            <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-            setPumpMode(1);
-            setHasChanges(true);
-          }}>
-              <Droplets className="w-6 h-6 mr-2" />
-              Полив Зараз
-            </Button>
-
             {/* Button Group: OFF | ON | AI */}
             <div className="flex gap-2">
               <Button variant={pumpMode === 2 ? "destructive" : "outline"} className={cn("flex-1 transition-all", pumpMode === 2 && "bg-destructive text-destructive-foreground")} onClick={() => {
@@ -335,6 +326,15 @@ export function DeviceControls({
                 AI
               </Button>
             </div>
+
+            {/* Large Force Water Button */}
+            <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+            setPumpMode(1);
+            setHasChanges(true);
+          }}>
+              <Droplets className="w-6 h-6 mr-2" />
+              Полив Зараз
+            </Button>
 
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
