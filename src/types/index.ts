@@ -28,10 +28,8 @@ export interface DeviceSettings {
   vent_duration_sec: number;  // Тривалість роботи (секунди)
   vent_interval_sec: number;  // Інтервал паузи (секунди)
   
-  // 🤖 AI Features (Freemium)
-  ai_mode?: number;           // 0: OFF, 1: ON (AI Light Schedule)
-  ai_vpd_mode?: number;       // 0: OFF, 1: ON (Smart VPD - Premium)
-  ai_watering_mode?: number;  // 0: OFF, 1: ON (Adaptive Watering - Premium)
+  // 🤖 AI Features (Global AI Pilot)
+  ai_mode?: number;           // 0: User Control, 1: AI Pilot (Premium)
   
   // Deprecated (для зворотної сумісності)
   is_ac_installed?: boolean;
