@@ -4,20 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  ArrowLeft, 
-  Thermometer, 
-  Droplets, 
-  Sprout, 
-  Sun,
-  Moon,
-  Wifi,
-  WifiOff,
-  Trash2,
-  Pencil,
-  Check,
-  X
-} from 'lucide-react';
+import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Trash2, Pencil, Check, X } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceLogs } from '@/hooks/useDeviceLogs';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
@@ -29,53 +16,53 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart-simple';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 export default function DeviceDetail() {
-  const { id } = useParams<{ id: string }>();
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
-  const { devices, loading, deleteDevice } = useDevices();
+  const {
+    devices,
+    loading,
+    deleteDevice
+  } = useDevices();
   const device = devices.find(d => d.id === id);
-  const { logs, latestLog } = useDeviceLogs(id);
-  const { settings } = useDeviceControls(device?.device_id || null);
-  const { schedules } = useDeviceSchedules(id || '');
+  const {
+    logs,
+    latestLog
+  } = useDeviceLogs(id);
+  const {
+    settings
+  } = useDeviceControls(device?.device_id || null);
+  const {
+    schedules
+  } = useDeviceSchedules(id || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [timeInterval, setTimeInterval] = useState('24h');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(device?.name || '');
-
   const handleDelete = async () => {
     if (id) {
       await deleteDevice(id);
       navigate('/');
     }
   };
-
   const handleSaveName = async () => {
     if (!editedName.trim() || !device) return;
-
     try {
-      const { error } = await supabase
-        .from('devices')
-        .update({ name: editedName.trim() })
-        .eq('id', device.id);
-
+      const {
+        error
+      } = await supabase.from('devices').update({
+        name: editedName.trim()
+      }).eq('id', device.id);
       if (error) throw error;
-
       toast({
         title: 'Успіх',
-        description: 'Назву пристрою оновлено',
+        description: 'Назву пристрою оновлено'
       });
-
       setIsEditingName(false);
       window.location.reload(); // Simple refresh to update the name
     } catch (error: any) {
@@ -83,52 +70,42 @@ export default function DeviceDetail() {
       toast({
         title: 'Помилка',
         description: error.message,
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
-
   const handleCancelEdit = () => {
     setEditedName(device?.name || '');
     setIsEditingName(false);
   };
-
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
+    return <div className="flex-1 flex items-center justify-center p-6">
         <p className="text-muted-foreground">Завантаження...</p>
-      </div>
-    );
+      </div>;
   }
-
   if (!device) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
+    return <div className="flex-1 flex flex-col items-center justify-center p-6">
         <p className="text-xl text-muted-foreground mb-4">Пристрій не знайдено</p>
         <Button onClick={() => navigate('/')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Повернутися
         </Button>
-      </div>
-    );
+      </div>;
   }
-
   const isOnline = device.status === 'online';
 
   // Get light mode from settings
   const getLightMode = () => {
     if (!settings) return null;
-
     const lightMode = (settings as any).light_mode ?? 1;
     const isDay = lightMode === 2; // Manual ON = Day, otherwise check schedule
 
     return {
       isDay,
       dayDuration: 12,
-      nightDuration: 12,
+      nightDuration: 12
     };
   };
-
   const lightMode = getLightMode();
 
   // Prepare chart data based on selected interval
@@ -139,31 +116,24 @@ export default function DeviceDetail() {
       '6h': 6,
       '12h': 12,
       '24h': 24,
-      '7d': 168,
+      '7d': 168
     };
-    
     const hours = hoursMap[timeInterval] || 24;
     const cutoffTime = new Date(now.getTime() - hours * 60 * 60 * 1000);
-    
     return logs.filter(log => new Date(log.timestamp) >= cutoffTime);
   };
-
   const filteredLogs = getFilteredLogs();
-  
   const chartData = filteredLogs.slice(0, 100).reverse().map(log => ({
-    time: new Date(log.timestamp).toLocaleTimeString('uk-UA', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    time: new Date(log.timestamp).toLocaleTimeString('uk-UA', {
+      hour: '2-digit',
+      minute: '2-digit'
     }),
     temperature: log.temperature || 0,
     humidity: log.humidity || 0,
     soil_moisture: log.soil_moisture || 0,
-    light_level: log.light_level || 0,
+    light_level: log.light_level || 0
   }));
-
-
-  return (
-    <div className="flex-1 space-y-6 p-6">
+  return <div className="flex-1 space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -171,36 +141,23 @@ export default function DeviceDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Панель приладів
-            </h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Панель керування</h1>
             <p className="text-muted-foreground">
               Моніторинг та керування пристроєм
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Badge 
-            variant={isOnline ? 'default' : 'destructive'}
-            className="flex items-center gap-1"
-          >
-            {isOnline ? (
-              <>
+          <Badge variant={isOnline ? 'default' : 'destructive'} className="flex items-center gap-1">
+            {isOnline ? <>
                 <Wifi className="h-3 w-3" />
                 Online
-              </>
-            ) : (
-              <>
+              </> : <>
                 <WifiOff className="h-3 w-3" />
                 Offline
-              </>
-            )}
+              </>}
           </Badge>
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={() => setDeleteDialogOpen(true)}
-          >
+          <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="h-4 w-4 mr-2" />
             Видалити
           </Button>
@@ -211,44 +168,28 @@ export default function DeviceDetail() {
       <Card className="gradient-card border-border/50">
         <CardHeader>
           <div className="flex items-center gap-2">
-            {isEditingName ? (
-              <>
-                <Input
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  className="text-xl font-semibold max-w-md"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') handleCancelEdit();
-                  }}
-                />
+            {isEditingName ? <>
+                <Input value={editedName} onChange={e => setEditedName(e.target.value)} className="text-xl font-semibold max-w-md" autoFocus onKeyDown={e => {
+              if (e.key === 'Enter') handleSaveName();
+              if (e.key === 'Escape') handleCancelEdit();
+            }} />
                 <Button size="sm" variant="ghost" onClick={handleSaveName}>
                   <Check className="h-4 w-4 text-success" />
                 </Button>
                 <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
                   <X className="h-4 w-4 text-destructive" />
                 </Button>
-              </>
-            ) : (
-              <>
+              </> : <>
                 <CardTitle className="text-xl">{device.name}</CardTitle>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  onClick={() => {
-                    setEditedName(device.name);
-                    setIsEditingName(true);
-                  }}
-                >
+                <Button size="sm" variant="ghost" onClick={() => {
+              setEditedName(device.name);
+              setIsEditingName(true);
+            }}>
                   <Pencil className="h-4 w-4" />
                 </Button>
-              </>
-            )}
+              </>}
           </div>
-          {device.location && (
-            <p className="text-sm text-muted-foreground">{device.location}</p>
-          )}
+          {device.location && <p className="text-sm text-muted-foreground">{device.location}</p>}
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -282,43 +223,31 @@ export default function DeviceDetail() {
               </span>
             </div>
 
-            <div 
-              className={`flex items-center justify-between p-3 rounded-lg border border-border/30 transition-colors ${
-                lightMode?.isDay 
-                  ? 'bg-yellow-500/10 border-yellow-500/30' 
-                  : 'bg-blue-500/10 border-blue-500/30'
-              }`}
-            >
+            <div className={`flex items-center justify-between p-3 rounded-lg border border-border/30 transition-colors ${lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
               <div className="flex items-center space-x-2">
-                {lightMode?.isDay ? (
-                  <Sun className="h-4 w-4 text-yellow-500" />
-                ) : (
-                  <Moon className="h-4 w-4 text-blue-500" />
-                )}
+                {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
                 <span className="text-sm text-muted-foreground">Світло</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
-                {lightMode ? (lightMode.isDay ? 'День' : 'Ніч') : '--'}
+                {lightMode ? lightMode.isDay ? 'День' : 'Ніч' : '--'}
               </span>
             </div>
           </div>
 
-          {(device.last_seen || device.last_seen_at) && (
-            <div className="pt-2 border-t border-border/30">
+          {(device.last_seen || device.last_seen_at) && <div className="pt-2 border-t border-border/30">
               <p className="text-xs text-muted-foreground text-center">
                 Остання активність: {(() => {
-                  const date = new Date(device.last_seen_at || device.last_seen!);
-                  const day = String(date.getDate()).padStart(2, '0');
-                  const month = String(date.getMonth() + 1).padStart(2, '0');
-                  const year = date.getFullYear();
-                  const hours = String(date.getHours()).padStart(2, '0');
-                  const minutes = String(date.getMinutes()).padStart(2, '0');
-                  const seconds = String(date.getSeconds()).padStart(2, '0');
-                  return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
-                })()}
+              const date = new Date(device.last_seen_at || device.last_seen!);
+              const day = String(date.getDate()).padStart(2, '0');
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const year = date.getFullYear();
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              const seconds = String(date.getSeconds()).padStart(2, '0');
+              return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
+            })()}
               </p>
-            </div>
-          )}
+            </div>}
         </CardContent>
       </Card>
 
@@ -331,10 +260,7 @@ export default function DeviceDetail() {
           <div className="flex items-center justify-between">
             <CardTitle>
               Історія показників (
-              {timeInterval === '1h' ? '1 год' : 
-               timeInterval === '6h' ? '6 год' : 
-               timeInterval === '12h' ? '12 год' :
-               timeInterval === '24h' ? '24 год' : '7 днів'})
+              {timeInterval === '1h' ? '1 год' : timeInterval === '6h' ? '6 год' : timeInterval === '12h' ? '12 год' : timeInterval === '24h' ? '24 год' : '7 днів'})
             </CardTitle>
             <Tabs value={timeInterval} onValueChange={setTimeInterval}>
               <TabsList>
@@ -349,43 +275,21 @@ export default function DeviceDetail() {
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full">
-            {chartData.length > 0 ? (
-              <ChartContainer config={{}}>
+            {chartData.length > 0 ? <ChartContainer config={{}}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" />
                     <YAxis stroke="hsl(var(--muted-foreground))" />
                     <Tooltip content={<ChartTooltipContent />} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="temperature" 
-                      stroke="hsl(0 75% 60%)" 
-                      strokeWidth={2} 
-                      name="Температура"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="humidity" 
-                      stroke="hsl(210 100% 56%)" 
-                      strokeWidth={2}
-                      name="Вологість"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="soil_moisture" 
-                      stroke="hsl(120 60% 45%)" 
-                      strokeWidth={2}
-                      name="Вологість ґрунту"
-                    />
+                    <Line type="monotone" dataKey="temperature" stroke="hsl(0 75% 60%)" strokeWidth={2} name="Температура" />
+                    <Line type="monotone" dataKey="humidity" stroke="hsl(210 100% 56%)" strokeWidth={2} name="Вологість" />
+                    <Line type="monotone" dataKey="soil_moisture" stroke="hsl(120 60% 45%)" strokeWidth={2} name="Вологість ґрунту" />
                   </LineChart>
                 </ResponsiveContainer>
-              </ChartContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full">
+              </ChartContainer> : <div className="flex items-center justify-center h-full">
                 <p className="text-muted-foreground">Немає даних для відображення</p>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
@@ -393,11 +297,9 @@ export default function DeviceDetail() {
       {/* Logs Table */}
       <LogsTable deviceId={device.id} />
 
-      {device.last_seen && (
-        <p className="text-sm text-muted-foreground text-center">
+      {device.last_seen && <p className="text-sm text-muted-foreground text-center">
           Останнє оновлення: {new Date(device.last_seen).toLocaleString('uk-UA')}
-        </p>
-      )}
+        </p>}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -415,6 +317,5 @@ export default function DeviceDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 }
