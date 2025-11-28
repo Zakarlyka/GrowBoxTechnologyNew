@@ -333,7 +333,7 @@ export function DeviceControls({
             setHasChanges(true);
           }}>
               <Droplets className="w-6 h-6 mr-2" />
-              Полив Зараз
+              Полити Зараз
             </Button>
 
             {/* Irrigation Inputs */}
