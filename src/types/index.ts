@@ -5,6 +5,7 @@
  */
 export interface DeviceSettings {
   // 🌡️ Клімат (Climate)
+  climate_mode: number;       // 0: OFF (Disabled), 1: ON (Active)
   target_temp: number;        // Цільова температура (Float)
   temp_hyst: number;          // Гістерезис температури (Float)
   target_hum: number;         // Цільова вологість (Int)
