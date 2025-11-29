@@ -38,6 +38,7 @@ export function DeviceControls({
   const [lightEndM, setLightEndM] = useState(0);
 
   // 🌡️ Climate
+  const [climateMode, setClimateMode] = useState(1);
   const [seasonalMode, setSeasonalMode] = useState(0);
   const [targetTemp, setTargetTemp] = useState(25);
   const [tempHyst, setTempHyst] = useState(2);
@@ -69,6 +70,7 @@ export function DeviceControls({
       setLightEndM(settings.light_end_m ?? 0);
 
       // Climate
+      setClimateMode(settings.climate_mode ?? 1);
       setSeasonalMode(settings.seasonal_mode ?? 0);
       setTargetTemp(settings.target_temp ?? 25);
       setTempHyst(settings.temp_hyst ?? 2);
@@ -98,6 +100,7 @@ export function DeviceControls({
       light_end_h: lightEndH,
       light_end_m: lightEndM,
       // Climate
+      climate_mode: climateMode,
       seasonal_mode: seasonalMode,
       target_temp: targetTemp,
       temp_hyst: tempHyst,
@@ -226,12 +229,16 @@ export function DeviceControls({
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON | AI */}
             <div className="flex gap-2">
-              <Button variant="outline" className={cn("flex-1 transition-all", "bg-destructive/10 hover:bg-destructive/20")} onClick={() => {
-              /* Climate OFF logic */setHasChanges(true);
+              <Button variant={climateMode === 0 ? "destructive" : "outline"} className={cn("flex-1 transition-all", climateMode === 0 && "bg-destructive text-destructive-foreground")} onClick={() => {
+              setClimateMode(0);
+              setHasChanges(true);
             }} disabled={isAiActive}>
                 OFF
               </Button>
-              <Button variant={!isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} disabled={isAiActive}>
+              <Button variant={climateMode === 1 && !isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", climateMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} onClick={() => {
+              setClimateMode(1);
+              setHasChanges(true);
+            }} disabled={isAiActive}>
                 ON
               </Button>
               <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium}>
