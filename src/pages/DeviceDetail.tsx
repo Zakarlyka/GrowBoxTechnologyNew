@@ -357,7 +357,7 @@ export default function DeviceDetail() {
           <div className="space-y-4">
             <div className="flex justify-center p-6 bg-white rounded-lg">
               <QRCode 
-                value={`https://ychnmaaximnoxvwnzrgs.supabase.co/functions/v1/device-api/connect?token=${device.device_id}`} 
+                value={`http://192.168.4.1/?token=${device.device_id}`} 
                 size={200} 
               />
             </div>
