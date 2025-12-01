@@ -129,22 +129,21 @@ export function DeviceControls({
     setHasChanges(true);
   };
 
-  // Force Water Now (Pulse logic)
+  // Force Water Now (Pulse logic using pump_pulse trigger)
   const handleWaterNow = async () => {
     if (!deviceId || isWatering) return;
     
     setIsWatering(true);
-    const originalMode = pumpMode; // Store current mode (0 or 2)
     
     try {
-      // Step 1: Turn on pump (pump_mode: 1)
-      await saveSettings({ pump_mode: 1 });
+      // Step 1: Trigger pump pulse (pump_pulse: 1)
+      await saveSettings({ pump_pulse: 1 });
       
       // Step 2: Wait 10 seconds
       setTimeout(async () => {
         try {
-          // Step 3: Revert to original mode
-          await saveSettings({ pump_mode: originalMode });
+          // Step 3: Reset pulse trigger (pump_pulse: 0)
+          await saveSettings({ pump_pulse: 0 });
           setIsWatering(false);
         } catch (error: any) {
           toast.error(`Помилка відновлення режиму: ${error.message}`);

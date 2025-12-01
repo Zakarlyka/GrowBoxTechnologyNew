@@ -21,6 +21,7 @@ export interface DeviceSettings {
   
   // 💧 Полив (Irrigation/Pump)
   pump_mode: number;          // 0: AUTO (Сенсор), 1: Manual ON, 2: Manual OFF
+  pump_pulse?: number;        // 1: Trigger Manual Watering (10s), 0: Idle
   soil_min: number;           // Мінімальна вологість ґрунту (%)
   soil_max: number;           // Максимальна вологість ґрунту (%)
   
