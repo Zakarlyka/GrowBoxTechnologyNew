@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Trash2, Pencil, Check, X } from 'lucide-react';
+import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Trash2, Pencil, Check, X, QrCode } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceLogs } from '@/hooks/useDeviceLogs';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
@@ -17,6 +17,9 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart-simpl
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { calculatePhotoperiod, isWithinLightSchedule, formatTime } from '@/lib/utils';
+import QRCode from 'react-qr-code';
 export default function DeviceDetail() {
   const {
     id
@@ -41,6 +44,7 @@ export default function DeviceDetail() {
     schedules
   } = useDeviceSchedules(id || '');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [timeInterval, setTimeInterval] = useState('24h');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(device?.name || '');
@@ -97,13 +101,22 @@ export default function DeviceDetail() {
   // Get light mode from settings
   const getLightMode = () => {
     if (!settings) return null;
+    
     const lightMode = (settings as any).light_mode ?? 1;
-    const isDay = lightMode === 2; // Manual ON = Day, otherwise check schedule
+    const startH = (settings as any).light_start_h ?? 6;
+    const startM = (settings as any).light_start_m ?? 0;
+    const endH = (settings as any).light_end_h ?? 22;
+    const endM = (settings as any).light_end_m ?? 0;
+
+    const { dayHours, nightHours } = calculatePhotoperiod(startH, endH);
+    const isDay = isWithinLightSchedule(startH, startM, endH, endM);
 
     return {
       isDay,
-      dayDuration: 12,
-      nightDuration: 12
+      dayHours,
+      nightHours,
+      startTime: formatTime(startH, startM),
+      endTime: formatTime(endH, endM),
     };
   };
   const lightMode = getLightMode();
@@ -157,6 +170,10 @@ export default function DeviceDetail() {
                 Offline
               </>}
           </Badge>
+          <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)}>
+            <QrCode className="h-4 w-4 mr-2" />
+            Показати QR / Перепідключити
+          </Button>
           <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="h-4 w-4 mr-2" />
             Видалити
@@ -223,14 +240,25 @@ export default function DeviceDetail() {
               </span>
             </div>
 
-            <div className={`flex items-center justify-between p-3 rounded-lg border border-border/30 transition-colors ${lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
-              <div className="flex items-center space-x-2">
-                {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
-                <span className="text-sm text-muted-foreground">Світло</span>
+            <div className={`flex flex-col gap-2 p-3 rounded-lg border border-border/30 transition-colors ${lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
+                  <span className="text-sm text-muted-foreground">Світло</span>
+                </div>
+                {lightMode && (
+                  <span className="text-lg font-semibold text-foreground flex items-center gap-1">
+                    {lightMode.isDay ? '☀️ День' : '🌙 Ніч'}
+                  </span>
+                )}
               </div>
-              <span className="text-lg font-semibold text-foreground">
-                {lightMode ? lightMode.isDay ? 'День' : 'Ніч' : '--'}
-              </span>
+              {lightMode ? (
+                <div className="text-sm text-muted-foreground">
+                  День {lightMode.dayHours}год / Ніч {lightMode.nightHours}год
+                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">--</span>
+              )}
             </div>
           </div>
 
@@ -317,5 +345,35 @@ export default function DeviceDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>QR-код для перепідключення</DialogTitle>
+            <DialogDescription>
+              Використовуйте цей QR-код для повторного підключення пристрою до мережі
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex justify-center p-6 bg-white rounded-lg">
+              <QRCode 
+                value={`https://ychnmaaximnoxvwnzrgs.supabase.co/functions/v1/device-api/connect?token=${device.device_id}`} 
+                size={200} 
+              />
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                ID пристрою: <span className="font-mono font-semibold">{device.device_id}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Відскануйте QR-код через додаток або камеру для перепідключення
+              </p>
+            </div>
+            <Button onClick={() => setQrDialogOpen(false)} className="w-full">
+              Закрити
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>;
 }
