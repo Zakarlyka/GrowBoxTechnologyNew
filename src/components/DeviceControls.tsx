@@ -222,8 +222,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {(lightMode === 1 || isAiActive) && (
               <div className="space-y-4 pt-2 border-t border-border/30">
                 {/* Group 1: Start Time */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Початок дня</Label>
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-2">Початок дня</p>
                   <div className="flex gap-2">
                     <Select
                       value={String(lightStartH).padStart(2, '0')}
@@ -267,8 +267,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
 
                 {/* Group 2: End Time */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Кінець дня</Label>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Кінець дня</p>
                   <div className="flex gap-2">
                     <Select
                       value={String(lightEndH).padStart(2, '0')}
