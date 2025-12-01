@@ -86,10 +86,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       ai_mode: aiMode,
       // Lighting
       light_mode: lightMode,
-      light_start_h: lightStartH,
-      light_start_m: lightStartM,
-      light_end_h: lightEndH,
-      light_end_m: lightEndM,
+      light_start_h: parseInt(String(lightStartH), 10),
+      light_start_m: parseInt(String(lightStartM), 10),
+      light_end_h: parseInt(String(lightEndH), 10),
+      light_end_m: parseInt(String(lightEndM), 10),
       // Climate
       climate_mode: climateMode,
       seasonal_mode: seasonalMode,
@@ -222,28 +222,40 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <Label className="text-xs text-muted-foreground">Початок Дня</Label>
                     <div className="flex gap-1">
                       <Input
-                        type="number"
-                        value={lightStartH}
+                        type="text"
+                        value={String(lightStartH).padStart(2, '0')}
                         onChange={(e) => {
-                          setLightStartH(Number(e.target.value));
-                          setHasChanges(true);
+                          const val = e.target.value.replace(/\D/g, '');
+                          const num = parseInt(val, 10);
+                          if (!isNaN(num) && num >= 0 && num <= 23) {
+                            setLightStartH(num);
+                            setHasChanges(true);
+                          } else if (val === '') {
+                            setLightStartH(0);
+                            setHasChanges(true);
+                          }
                         }}
-                        min="0"
-                        max="23"
                         disabled={isAiActive}
                         className={cn(isAiActive && "opacity-50")}
+                        maxLength={2}
                       />
                       <Input
-                        type="number"
-                        value={lightStartM}
+                        type="text"
+                        value={String(lightStartM).padStart(2, '0')}
                         onChange={(e) => {
-                          setLightStartM(Number(e.target.value));
-                          setHasChanges(true);
+                          const val = e.target.value.replace(/\D/g, '');
+                          const num = parseInt(val, 10);
+                          if (!isNaN(num) && num >= 0 && num <= 59) {
+                            setLightStartM(num);
+                            setHasChanges(true);
+                          } else if (val === '') {
+                            setLightStartM(0);
+                            setHasChanges(true);
+                          }
                         }}
-                        min="00"
-                        max="59"
                         disabled={isAiActive}
                         className={cn(isAiActive && "opacity-50")}
+                        maxLength={2}
                       />
                     </div>
                   </div>
@@ -251,28 +263,40 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <Label className="text-xs text-muted-foreground">Кінець</Label>
                     <div className="flex gap-1">
                       <Input
-                        type="number"
-                        value={lightEndH}
+                        type="text"
+                        value={String(lightEndH).padStart(2, '0')}
                         onChange={(e) => {
-                          setLightEndH(Number(e.target.value));
-                          setHasChanges(true);
+                          const val = e.target.value.replace(/\D/g, '');
+                          const num = parseInt(val, 10);
+                          if (!isNaN(num) && num >= 0 && num <= 23) {
+                            setLightEndH(num);
+                            setHasChanges(true);
+                          } else if (val === '') {
+                            setLightEndH(0);
+                            setHasChanges(true);
+                          }
                         }}
-                        min="0"
-                        max="23"
                         disabled={isAiActive}
                         className={cn(isAiActive && "opacity-50")}
+                        maxLength={2}
                       />
                       <Input
-                        type="number"
-                        value={lightEndM}
+                        type="text"
+                        value={String(lightEndM).padStart(2, '0')}
                         onChange={(e) => {
-                          setLightEndM(Number(e.target.value));
-                          setHasChanges(true);
+                          const val = e.target.value.replace(/\D/g, '');
+                          const num = parseInt(val, 10);
+                          if (!isNaN(num) && num >= 0 && num <= 59) {
+                            setLightEndM(num);
+                            setHasChanges(true);
+                          } else if (val === '') {
+                            setLightEndM(0);
+                            setHasChanges(true);
+                          }
                         }}
-                        min="0"
-                        max="59"
                         disabled={isAiActive}
                         className={cn(isAiActive && "opacity-50")}
+                        maxLength={2}
                       />
                     </div>
                   </div>
