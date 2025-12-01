@@ -9,6 +9,7 @@ import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock } from 'lu
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 interface DeviceControlsProps {
   deviceId: string;
 }
@@ -49,6 +50,7 @@ export function DeviceControls({
   const [pumpMode, setPumpMode] = useState(0);
   const [soilMin, setSoilMin] = useState(30);
   const [soilMax, setSoilMax] = useState(80);
+  const [isWatering, setIsWatering] = useState(false);
 
   // 🌬️ Ventilation
   const [ventMode, setVentMode] = useState(0);
@@ -125,6 +127,34 @@ export function DeviceControls({
     const newMode = aiMode === 1 ? 0 : 1;
     setAiMode(newMode);
     setHasChanges(true);
+  };
+
+  // Force Water Now (Pulse logic)
+  const handleWaterNow = async () => {
+    if (!deviceId || isWatering) return;
+    
+    setIsWatering(true);
+    const originalMode = pumpMode; // Store current mode (0 or 2)
+    
+    try {
+      // Step 1: Turn on pump (pump_mode: 1)
+      await saveSettings({ pump_mode: 1 });
+      
+      // Step 2: Wait 10 seconds
+      setTimeout(async () => {
+        try {
+          // Step 3: Revert to original mode
+          await saveSettings({ pump_mode: originalMode });
+          setIsWatering(false);
+        } catch (error: any) {
+          toast.error(`Помилка відновлення режиму: ${error.message}`);
+          setIsWatering(false);
+        }
+      }, 10000);
+    } catch (error: any) {
+      toast.error(`Помилка поливу: ${error.message}`);
+      setIsWatering(false);
+    }
   };
 
   // Online status
@@ -319,28 +349,25 @@ export function DeviceControls({
               <Button variant={pumpMode === 2 ? "destructive" : "outline"} className={cn("flex-1 transition-all", pumpMode === 2 && "bg-destructive text-destructive-foreground")} onClick={() => {
               setPumpMode(2);
               setHasChanges(true);
-            }} disabled={isAiActive}>
+            }} disabled={isAiActive || isWatering}>
                 OFF
               </Button>
               <Button variant={pumpMode === 0 && !isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", pumpMode === 0 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} onClick={() => {
               setPumpMode(0);
               setHasChanges(true);
-            }} disabled={isAiActive}>
+            }} disabled={isAiActive || isWatering}>
                 ON
               </Button>
-              <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium}>
+              <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium || isWatering}>
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
                 AI
               </Button>
             </div>
 
             {/* Large Force Water Button */}
-            <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-            setPumpMode(1);
-            setHasChanges(true);
-          }}>
-              <Droplets className="w-6 h-6 mr-2" />
-              Полити Зараз
+            <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50" onClick={handleWaterNow} disabled={isWatering}>
+              <Droplets className={cn("w-6 h-6 mr-2", isWatering && "animate-pulse")} />
+              {isWatering ? 'Полив... (10 сек)' : 'Полити Зараз'}
             </Button>
 
             {/* Irrigation Inputs */}
