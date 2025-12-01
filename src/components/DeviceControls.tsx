@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
@@ -26,6 +27,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [lightStartM, setLightStartM] = useState(0);
   const [lightEndH, setLightEndH] = useState(20);
   const [lightEndM, setLightEndM] = useState(0);
+
+  // Generate dropdown options
+  const hourOptions = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minuteOptions = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
   // 🌡️ Climate
   const [climateMode, setClimateMode] = useState(1);
@@ -221,83 +226,87 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   <div>
                     <Label className="text-xs text-muted-foreground">Початок Дня</Label>
                     <div className="flex gap-1">
-                      <Input
-                        type="text"
+                      <Select
                         value={String(lightStartH).padStart(2, '0')}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          const num = parseInt(val, 10);
-                          if (!isNaN(num) && num >= 0 && num <= 23) {
-                            setLightStartH(num);
-                            setHasChanges(true);
-                          } else if (val === '') {
-                            setLightStartH(0);
-                            setHasChanges(true);
-                          }
+                        onValueChange={(value) => {
+                          setLightStartH(parseInt(value, 10));
+                          setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn(isAiActive && "opacity-50")}
-                        maxLength={2}
-                      />
-                      <Input
-                        type="text"
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hourOptions.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
                         value={String(lightStartM).padStart(2, '0')}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          const num = parseInt(val, 10);
-                          if (!isNaN(num) && num >= 0 && num <= 59) {
-                            setLightStartM(num);
-                            setHasChanges(true);
-                          } else if (val === '') {
-                            setLightStartM(0);
-                            setHasChanges(true);
-                          }
+                        onValueChange={(value) => {
+                          setLightStartM(parseInt(value, 10));
+                          setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn(isAiActive && "opacity-50")}
-                        maxLength={2}
-                      />
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {minuteOptions.map((minute) => (
+                            <SelectItem key={minute} value={minute}>
+                              {minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Кінець</Label>
                     <div className="flex gap-1">
-                      <Input
-                        type="text"
+                      <Select
                         value={String(lightEndH).padStart(2, '0')}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          const num = parseInt(val, 10);
-                          if (!isNaN(num) && num >= 0 && num <= 23) {
-                            setLightEndH(num);
-                            setHasChanges(true);
-                          } else if (val === '') {
-                            setLightEndH(0);
-                            setHasChanges(true);
-                          }
+                        onValueChange={(value) => {
+                          setLightEndH(parseInt(value, 10));
+                          setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn(isAiActive && "opacity-50")}
-                        maxLength={2}
-                      />
-                      <Input
-                        type="text"
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hourOptions.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
                         value={String(lightEndM).padStart(2, '0')}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          const num = parseInt(val, 10);
-                          if (!isNaN(num) && num >= 0 && num <= 59) {
-                            setLightEndM(num);
-                            setHasChanges(true);
-                          } else if (val === '') {
-                            setLightEndM(0);
-                            setHasChanges(true);
-                          }
+                        onValueChange={(value) => {
+                          setLightEndM(parseInt(value, 10));
+                          setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn(isAiActive && "opacity-50")}
-                        maxLength={2}
-                      />
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {minuteOptions.map((minute) => (
+                            <SelectItem key={minute} value={minute}>
+                              {minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
