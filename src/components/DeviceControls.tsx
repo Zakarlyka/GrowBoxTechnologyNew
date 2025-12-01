@@ -1,32 +1,21 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock } from 'lucide-react';
-import { useDeviceControls } from '@/hooks/useDeviceControls';
-import { usePremiumStatus } from '@/hooks/usePremiumStatus';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock } from "lucide-react";
+import { useDeviceControls } from "@/hooks/useDeviceControls";
+import { usePremiumStatus } from "@/hooks/usePremiumStatus";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 interface DeviceControlsProps {
   deviceId: string;
 }
-export function DeviceControls({
-  deviceId
-}: DeviceControlsProps) {
-  const {
-    settings,
-    sensorData,
-    lastSeenAt,
-    loading,
-    isSaving,
-    saveSettings
-  } = useDeviceControls(deviceId);
-  const {
-    isPremium
-  } = usePremiumStatus();
+export function DeviceControls({ deviceId }: DeviceControlsProps) {
+  const { settings, sensorData, lastSeenAt, loading, isSaving, saveSettings } = useDeviceControls(deviceId);
+  const { isPremium } = usePremiumStatus();
 
   // GLOBAL AI MODE (Single source of truth)
   const [aiMode, setAiMode] = useState(0);
@@ -115,7 +104,7 @@ export function DeviceControls({
       // Ventilation
       vent_mode: ventMode,
       vent_duration_sec: ventDurationSec,
-      vent_interval_sec: ventIntervalSec
+      vent_interval_sec: ventIntervalSec,
     };
     await saveSettings(patch);
     setHasChanges(false);
@@ -132,13 +121,13 @@ export function DeviceControls({
   // Force Water Now (Pulse logic using pump_pulse trigger)
   const handleWaterNow = async () => {
     if (!deviceId || isWatering) return;
-    
+
     setIsWatering(true);
-    
+
     try {
       // Step 1: Trigger pump pulse (pump_pulse: 1)
       await saveSettings({ pump_pulse: 1 });
-      
+
       // Step 2: Wait 10 seconds
       setTimeout(async () => {
         try {
@@ -159,20 +148,20 @@ export function DeviceControls({
   // Online status
   const isOnline = lastSeenAt ? new Date().getTime() - new Date(lastSeenAt).getTime() < 60000 : false;
   if (loading) {
-    return <div className="gradient-card border border-border/50 rounded-lg p-6">
+    return (
+      <div className="gradient-card border border-border/50 rounded-lg p-6">
         <p className="text-center text-muted-foreground">Завантаження...</p>
-      </div>;
+      </div>
+    );
   }
   const isAiActive = aiMode === 1;
-  return <div className="relative space-y-4">
+  return (
+    <div className="relative space-y-4">
       {/* Header with Status */}
-      <div className="flex items-center justify-between">
-        
-      </div>
+      <div className="flex items-center justify-between"></div>
 
       {/* 4-Card Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        
         {/* Card A: Lighting 💡 */}
         <Card className="gradient-card border-border/50">
           <CardHeader>
@@ -184,66 +173,124 @@ export function DeviceControls({
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON | AI */}
             <div className="flex gap-2">
-              <Button variant={lightMode === 0 ? "destructive" : "outline"} className={cn("flex-1 transition-all", lightMode === 0 && "bg-destructive text-destructive-foreground")} onClick={() => {
-              setLightMode(0);
-              setHasChanges(true);
-            }} disabled={isAiActive}>
+              <Button
+                variant={lightMode === 0 ? "destructive" : "outline"}
+                className={cn("flex-1 transition-all", lightMode === 0 && "bg-destructive text-destructive-foreground")}
+                onClick={() => {
+                  setLightMode(0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+              >
                 OFF
               </Button>
-              <Button variant={lightMode === 1 && !isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", lightMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} onClick={() => {
-              setLightMode(1);
-              setHasChanges(true);
-            }} disabled={isAiActive}>
+              <Button
+                variant={lightMode === 1 && !isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  lightMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                )}
+                onClick={() => {
+                  setLightMode(1);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+              >
                 ON
               </Button>
-              <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium}>
+              <Button
+                variant={isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
+                  !isPremium && "opacity-50 cursor-not-allowed",
+                )}
+                onClick={toggleAiMode}
+                disabled={!isPremium}
+              >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
                 AI
               </Button>
             </div>
 
             {/* Time Inputs (visible if ON or AI) */}
-            {(lightMode === 1 || isAiActive) && <div className="space-y-3 pt-2 border-t border-border/30">
+            {(lightMode === 1 || isAiActive) && (
+              <div className="space-y-3 pt-2 border-t border-border/30">
                 <Label className="text-sm">Розклад</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs text-muted-foreground">Початок</Label>
                     <div className="flex gap-1">
-                      <Input type="number" value={lightStartH} onChange={e => {
-                    setLightStartH(Number(e.target.value));
-                    setHasChanges(true);
-                  }} min="0" max="23" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
-                      <Input type="number" value={lightStartM} onChange={e => {
-                    setLightStartM(Number(e.target.value));
-                    setHasChanges(true);
-                  }} min="0" max="59" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                      <Input
+                        type="number"
+                        value={lightStartH}
+                        onChange={(e) => {
+                          setLightStartH(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        min="0"
+                        max="23"
+                        disabled={isAiActive}
+                        className={cn(isAiActive && "opacity-50")}
+                      />
+                      <Input
+                        type="number"
+                        value={lightStartM}
+                        onChange={(e) => {
+                          setLightStartM(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        min="00"
+                        max="59"
+                        disabled={isAiActive}
+                        className={cn(isAiActive && "opacity-50")}
+                      />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {String(lightStartH).padStart(2, '0')}:{String(lightStartM).padStart(2, '0')}
+                      {String(lightStartH).padStart(2, "0")}:{String(lightStartM).padStart(2, "0")}
                     </p>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Кінець</Label>
                     <div className="flex gap-1">
-                      <Input type="number" value={lightEndH} onChange={e => {
-                    setLightEndH(Number(e.target.value));
-                    setHasChanges(true);
-                  }} min="0" max="23" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
-                      <Input type="number" value={lightEndM} onChange={e => {
-                    setLightEndM(Number(e.target.value));
-                    setHasChanges(true);
-                  }} min="0" max="59" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                      <Input
+                        type="number"
+                        value={lightEndH}
+                        onChange={(e) => {
+                          setLightEndH(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        min="0"
+                        max="23"
+                        disabled={isAiActive}
+                        className={cn(isAiActive && "opacity-50")}
+                      />
+                      <Input
+                        type="number"
+                        value={lightEndM}
+                        onChange={(e) => {
+                          setLightEndM(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        min="0"
+                        max="59"
+                        disabled={isAiActive}
+                        className={cn(isAiActive && "opacity-50")}
+                      />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {String(lightEndH).padStart(2, '0')}:{String(lightEndM).padStart(2, '0')}
+                      {String(lightEndH).padStart(2, "0")}:{String(lightEndM).padStart(2, "0")}
                     </p>
                   </div>
                 </div>
-                {isAiActive && <div className="flex items-center gap-1 text-xs text-yellow-600">
+                {isAiActive && (
+                  <div className="flex items-center gap-1 text-xs text-yellow-600">
                     <Sparkles className="w-3 h-3" />
                     <span>AI керує розкладом</span>
-                  </div>}
-              </div>}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -258,19 +305,44 @@ export function DeviceControls({
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON | AI */}
             <div className="flex gap-2">
-              <Button variant={climateMode === 0 ? "destructive" : "outline"} className={cn("flex-1 transition-all", climateMode === 0 && "bg-destructive text-destructive-foreground")} onClick={() => {
-              setClimateMode(0);
-              setHasChanges(true);
-            }} disabled={isAiActive}>
+              <Button
+                variant={climateMode === 0 ? "destructive" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  climateMode === 0 && "bg-destructive text-destructive-foreground",
+                )}
+                onClick={() => {
+                  setClimateMode(0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+              >
                 OFF
               </Button>
-              <Button variant={climateMode === 1 && !isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", climateMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} onClick={() => {
-              setClimateMode(1);
-              setHasChanges(true);
-            }} disabled={isAiActive}>
+              <Button
+                variant={climateMode === 1 && !isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  climateMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                )}
+                onClick={() => {
+                  setClimateMode(1);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+              >
                 ON
               </Button>
-              <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium}>
+              <Button
+                variant={isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
+                  !isPremium && "opacity-50 cursor-not-allowed",
+                )}
+                onClick={toggleAiMode}
+                disabled={!isPremium}
+              >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
                 AI
               </Button>
@@ -278,16 +350,24 @@ export function DeviceControls({
 
             {/* Seasonal Toggle */}
             <div className="flex gap-2 pt-2 border-t border-border/30">
-              <Button variant={seasonalMode === 0 ? "default" : "outline"} className="flex-1" onClick={() => {
-              setSeasonalMode(0);
-              setHasChanges(true);
-            }}>
+              <Button
+                variant={seasonalMode === 0 ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => {
+                  setSeasonalMode(0);
+                  setHasChanges(true);
+                }}
+              >
                 ❄️ Зима
               </Button>
-              <Button variant={seasonalMode === 1 ? "default" : "outline"} className="flex-1" onClick={() => {
-              setSeasonalMode(1);
-              setHasChanges(true);
-            }}>
+              <Button
+                variant={seasonalMode === 1 ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => {
+                  setSeasonalMode(1);
+                  setHasChanges(true);
+                }}
+              >
                 ☀️ Літо
               </Button>
             </div>
@@ -297,39 +377,71 @@ export function DeviceControls({
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs">Темп. (°C)</Label>
-                  <Input type="number" step="0.1" value={targetTemp} onChange={e => {
-                  setTargetTemp(Number(e.target.value));
-                  setHasChanges(true);
-                }} disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={targetTemp}
+                    onChange={(e) => {
+                      setTargetTemp(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    disabled={isAiActive}
+                    className={cn(isAiActive && "opacity-50")}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs">±</Label>
-                  <Input type="number" step="0.1" value={tempHyst} onChange={e => {
-                  setTempHyst(Number(e.target.value));
-                  setHasChanges(true);
-                }} disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={tempHyst}
+                    onChange={(e) => {
+                      setTempHyst(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    disabled={isAiActive}
+                    className={cn(isAiActive && "opacity-50")}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs">Волог. (%)</Label>
-                  <Input type="number" value={targetHum} onChange={e => {
-                  setTargetHum(Number(e.target.value));
-                  setHasChanges(true);
-                }} min="0" max="100" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                  <Input
+                    type="number"
+                    value={targetHum}
+                    onChange={(e) => {
+                      setTargetHum(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    min="0"
+                    max="100"
+                    disabled={isAiActive}
+                    className={cn(isAiActive && "opacity-50")}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs">±</Label>
-                  <Input type="number" value={humHyst} onChange={e => {
-                  setHumHyst(Number(e.target.value));
-                  setHasChanges(true);
-                }} min="0" max="50" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                  <Input
+                    type="number"
+                    value={humHyst}
+                    onChange={(e) => {
+                      setHumHyst(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    min="0"
+                    max="50"
+                    disabled={isAiActive}
+                    className={cn(isAiActive && "opacity-50")}
+                  />
                 </div>
               </div>
-              {isAiActive && <div className="flex items-center gap-1 text-xs text-yellow-600">
+              {isAiActive && (
+                <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />
                   <span>AI керує кліматом</span>
-                </div>}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -345,56 +457,97 @@ export function DeviceControls({
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON | AI */}
             <div className="flex gap-2">
-              <Button variant={pumpMode === 2 ? "destructive" : "outline"} className={cn("flex-1 transition-all", pumpMode === 2 && "bg-destructive text-destructive-foreground")} onClick={() => {
-              setPumpMode(2);
-              setHasChanges(true);
-            }} disabled={isAiActive || isWatering}>
+              <Button
+                variant={pumpMode === 2 ? "destructive" : "outline"}
+                className={cn("flex-1 transition-all", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
+                onClick={() => {
+                  setPumpMode(2);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive || isWatering}
+              >
                 OFF
               </Button>
-              <Button variant={pumpMode === 0 && !isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", pumpMode === 0 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} onClick={() => {
-              setPumpMode(0);
-              setHasChanges(true);
-            }} disabled={isAiActive || isWatering}>
+              <Button
+                variant={pumpMode === 0 && !isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  pumpMode === 0 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                )}
+                onClick={() => {
+                  setPumpMode(0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive || isWatering}
+              >
                 ON
               </Button>
-              <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium || isWatering}>
+              <Button
+                variant={isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
+                  !isPremium && "opacity-50 cursor-not-allowed",
+                )}
+                onClick={toggleAiMode}
+                disabled={!isPremium || isWatering}
+              >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
                 AI
               </Button>
             </div>
 
             {/* Large Force Water Button */}
-            <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50" onClick={handleWaterNow} disabled={isWatering}>
+            <Button
+              size="lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+              onClick={handleWaterNow}
+              disabled={isWatering}
+            >
               <Droplets className={cn("w-6 h-6 mr-2", isWatering && "animate-pulse")} />
-              {isWatering ? 'Полив... (10 сек)' : 'Полити Зараз'}
+              {isWatering ? "Полив... (10 сек)" : "Полити Зараз"}
             </Button>
 
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div>
                 <Label className="text-xs">Мін. Вологість Ґрунту (%)</Label>
-                <Input type="number" value={soilMin} onChange={e => {
-                setSoilMin(Number(e.target.value));
-                setHasChanges(true);
-              }} min="0" max="100" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Старт поливу при &lt; {soilMin}%
-                </p>
+                <Input
+                  type="number"
+                  value={soilMin}
+                  onChange={(e) => {
+                    setSoilMin(Number(e.target.value));
+                    setHasChanges(true);
+                  }}
+                  min="0"
+                  max="100"
+                  disabled={isAiActive}
+                  className={cn(isAiActive && "opacity-50")}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Старт поливу при &lt; {soilMin}%</p>
               </div>
               <div>
                 <Label className="text-xs">Макс. Вологість Ґрунту (%)</Label>
-                <Input type="number" value={soilMax} onChange={e => {
-                setSoilMax(Number(e.target.value));
-                setHasChanges(true);
-              }} min="0" max="100" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Стоп поливу при &gt; {soilMax}%
-                </p>
+                <Input
+                  type="number"
+                  value={soilMax}
+                  onChange={(e) => {
+                    setSoilMax(Number(e.target.value));
+                    setHasChanges(true);
+                  }}
+                  min="0"
+                  max="100"
+                  disabled={isAiActive}
+                  className={cn(isAiActive && "opacity-50")}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Стоп поливу при &gt; {soilMax}%</p>
               </div>
-              {isAiActive && <div className="flex items-center gap-1 text-xs text-yellow-600">
+              {isAiActive && (
+                <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />
                   <span>AI керує поливом</span>
-                </div>}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -410,19 +563,41 @@ export function DeviceControls({
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON | AI */}
             <div className="flex gap-2">
-              <Button variant={ventMode === 0 ? "destructive" : "outline"} className={cn("flex-1 transition-all", ventMode === 0 && "bg-destructive text-destructive-foreground")} onClick={() => {
-              setVentMode(0);
-              setHasChanges(true);
-            }} disabled={isAiActive}>
+              <Button
+                variant={ventMode === 0 ? "destructive" : "outline"}
+                className={cn("flex-1 transition-all", ventMode === 0 && "bg-destructive text-destructive-foreground")}
+                onClick={() => {
+                  setVentMode(0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+              >
                 OFF
               </Button>
-              <Button variant={ventMode === 1 && !isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", ventMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white")} onClick={() => {
-              setVentMode(1);
-              setHasChanges(true);
-            }} disabled={isAiActive}>
+              <Button
+                variant={ventMode === 1 && !isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  ventMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                )}
+                onClick={() => {
+                  setVentMode(1);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+              >
                 ON
               </Button>
-              <Button variant={isAiActive ? "default" : "outline"} className={cn("flex-1 transition-all", isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black", !isPremium && "opacity-50 cursor-not-allowed")} onClick={toggleAiMode} disabled={!isPremium}>
+              <Button
+                variant={isAiActive ? "default" : "outline"}
+                className={cn(
+                  "flex-1 transition-all",
+                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
+                  !isPremium && "opacity-50 cursor-not-allowed",
+                )}
+                onClick={toggleAiMode}
+                disabled={!isPremium}
+              >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
                 AI
               </Button>
@@ -432,22 +607,38 @@ export function DeviceControls({
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div>
                 <Label className="text-xs">Тривалість (сек)</Label>
-                <Input type="number" value={ventDurationSec} onChange={e => {
-                setVentDurationSec(Number(e.target.value));
-                setHasChanges(true);
-              }} min="0" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                <Input
+                  type="number"
+                  value={ventDurationSec}
+                  onChange={(e) => {
+                    setVentDurationSec(Number(e.target.value));
+                    setHasChanges(true);
+                  }}
+                  min="0"
+                  disabled={isAiActive}
+                  className={cn(isAiActive && "opacity-50")}
+                />
               </div>
               <div>
                 <Label className="text-xs">Інтервал (сек)</Label>
-                <Input type="number" value={ventIntervalSec} onChange={e => {
-                setVentIntervalSec(Number(e.target.value));
-                setHasChanges(true);
-              }} min="0" disabled={isAiActive} className={cn(isAiActive && "opacity-50")} />
+                <Input
+                  type="number"
+                  value={ventIntervalSec}
+                  onChange={(e) => {
+                    setVentIntervalSec(Number(e.target.value));
+                    setHasChanges(true);
+                  }}
+                  min="0"
+                  disabled={isAiActive}
+                  className={cn(isAiActive && "opacity-50")}
+                />
               </div>
-              {isAiActive && <div className="flex items-center gap-1 text-xs text-yellow-600">
+              {isAiActive && (
+                <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />
                   <span>AI керує вентиляцією</span>
-                </div>}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -457,8 +648,9 @@ export function DeviceControls({
       <div className="fixed bottom-6 right-6 z-50">
         <Button size="lg" className="shadow-lg" onClick={handleSave} disabled={!hasChanges || isSaving}>
           <Save className="w-5 h-5 mr-2" />
-          {isSaving ? 'Збереження...' : 'Зберегти Налаштування'}
+          {isSaving ? "Збереження..." : "Зберегти Налаштування"}
         </Button>
       </div>
-    </div>;
+    </div>
+  );
 }
