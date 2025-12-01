@@ -220,96 +220,97 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
             {/* Time Inputs (visible if ON or AI) */}
             {(lightMode === 1 || isAiActive) && (
-              <div className="space-y-3 pt-2 border-t border-border/30">
-                <Label className="text-sm">Розклад</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Початок Дня</Label>
-                    <div className="flex gap-1">
-                      <Select
-                        value={String(lightStartH).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightStartH(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {hourOptions.map((hour) => (
-                            <SelectItem key={hour} value={hour}>
-                              {hour}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={String(lightStartM).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightStartM(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {minuteOptions.map((minute) => (
-                            <SelectItem key={minute} value={minute}>
-                              {minute}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Кінець</Label>
-                    <div className="flex gap-1">
-                      <Select
-                        value={String(lightEndH).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightEndH(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {hourOptions.map((hour) => (
-                            <SelectItem key={hour} value={hour}>
-                              {hour}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={String(lightEndM).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightEndM(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {minuteOptions.map((minute) => (
-                            <SelectItem key={minute} value={minute}>
-                              {minute}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+              <div className="space-y-4 pt-2 border-t border-border/30">
+                {/* Group 1: Start Time */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Початок дня</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={String(lightStartH).padStart(2, '0')}
+                      onValueChange={(value) => {
+                        setLightStartH(parseInt(value, 10));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                    >
+                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hourOptions.map((hour) => (
+                          <SelectItem key={hour} value={hour}>
+                            {hour}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={String(lightStartM).padStart(2, '0')}
+                      onValueChange={(value) => {
+                        setLightStartM(parseInt(value, 10));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                    >
+                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {minuteOptions.map((minute) => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
+                {/* Group 2: End Time */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Кінець дня</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={String(lightEndH).padStart(2, '0')}
+                      onValueChange={(value) => {
+                        setLightEndH(parseInt(value, 10));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                    >
+                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hourOptions.map((hour) => (
+                          <SelectItem key={hour} value={hour}>
+                            {hour}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={String(lightEndM).padStart(2, '0')}
+                      onValueChange={(value) => {
+                        setLightEndM(parseInt(value, 10));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                    >
+                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {minuteOptions.map((minute) => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 {isAiActive && (
                   <div className="flex items-center gap-1 text-xs text-yellow-600">
                     <Sparkles className="w-3 h-3" />
