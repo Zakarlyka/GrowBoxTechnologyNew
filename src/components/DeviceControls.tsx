@@ -246,9 +246,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         className={cn(isAiActive && "opacity-50")}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {String(lightStartH).padStart(2, "0")}:{String(lightStartM).padStart(2, "0")}
-                    </p>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">Кінець</Label>
@@ -278,9 +275,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         className={cn(isAiActive && "opacity-50")}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {String(lightEndH).padStart(2, "0")}:{String(lightEndM).padStart(2, "0")}
-                    </p>
                   </div>
                 </div>
                 {isAiActive && (
