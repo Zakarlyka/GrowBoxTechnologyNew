@@ -219,7 +219,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Label className="text-sm">Розклад</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Початок</Label>
+                    <Label className="text-xs text-muted-foreground">Початок Дня</Label>
                     <div className="flex gap-1">
                       <Input
                         type="number"
