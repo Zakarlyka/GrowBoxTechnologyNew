@@ -100,7 +100,7 @@ export function Dashboard() {
     };
 
     calculateOnline();
-    const interval = setInterval(calculateOnline, 10000);
+    const interval = setInterval(calculateOnline, 5000);
     return () => clearInterval(interval);
   }, [devices]);
   const StatCard = ({
