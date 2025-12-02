@@ -133,7 +133,32 @@ export function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard 
+          title="Всього пристроїв" 
+          value={totalDevices} 
+          unit="" 
+          icon={Cpu} 
+        />
+        <StatCard 
+          title="Онлайн" 
+          value={onlineDevices} 
+          unit="" 
+          icon={Wifi} 
+        />
+        <StatCard 
+          title="Офлайн" 
+          value={totalDevices - onlineDevices} 
+          unit="" 
+          icon={WifiOff} 
+        />
+        <StatCard 
+          title="Активність" 
+          value={onlineDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0} 
+          unit="%" 
+          icon={Activity} 
+        />
+      </div>
 
       {loading ? <div className="text-center py-12">
           <p className="text-muted-foreground">Завантаження пристроїв...</p>
