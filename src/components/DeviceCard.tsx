@@ -58,17 +58,30 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
 
   const lightMode = getLightMode();
 
-  const SensorValue = ({ icon: Icon, label, value, unit }: any) => (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
-      <div className="flex items-center space-x-2">
-        <Icon className="h-4 w-4 text-accent" />
-        <span className="text-sm text-muted-foreground">{label}</span>
+  // Check if value should be shown as inactive (offline or zero)
+  const isValueInactive = (value: number | null | undefined) => {
+    if (!isOnline) return true;
+    if (value === null || value === undefined) return true;
+    if (value === 0) return true;
+    return false;
+  };
+
+  const SensorValue = ({ icon: Icon, label, value, unit }: any) => {
+    const inactive = isValueInactive(value);
+    const displayValue = value !== null && value !== undefined ? `${value}${unit}` : '--';
+    
+    return (
+      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
+        <div className="flex items-center space-x-2">
+          <Icon className={`h-4 w-4 ${inactive ? 'text-muted-foreground/50' : 'text-accent'}`} />
+          <span className="text-sm text-muted-foreground">{label}</span>
+        </div>
+        <span className={`text-lg font-semibold ${inactive ? 'text-muted-foreground' : 'text-foreground'}`}>
+          {inactive && value === 0 ? '0' + unit : displayValue}
+        </span>
       </div>
-      <span className="text-lg font-semibold text-foreground">
-        {value !== null && value !== undefined ? `${value}${unit}` : '--'}
-      </span>
-    </div>
-  );
+    );
+  };
 
   return (
     <Card 
