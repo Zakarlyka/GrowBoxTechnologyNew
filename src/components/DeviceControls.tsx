@@ -225,7 +225,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <div className="mb-4">
                   <p className="text-sm text-muted-foreground mb-2">Початок дня</p>
                   <div className="flex gap-2">
-                    <Select
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Години</p>
+                      <Select
                       value={String(lightStartH).padStart(2, '0')}
                       onValueChange={(value) => {
                         setLightStartH(parseInt(value, 10));
@@ -233,36 +235,40 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       }}
                       disabled={isAiActive}
                     >
-                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {hourOptions.map((hour) => (
-                          <SelectItem key={hour} value={hour}>
-                            {hour}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hourOptions.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Хвилини</p>
+                      <Select
                       value={String(lightStartM).padStart(2, '0')}
                       onValueChange={(value) => {
                         setLightStartM(parseInt(value, 10));
                         setHasChanges(true);
                       }}
-                      disabled={isAiActive}
-                    >
-                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {minuteOptions.map((minute) => (
-                          <SelectItem key={minute} value={minute}>
-                            {minute}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        disabled={isAiActive}
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {minuteOptions.map((minute) => (
+                            <SelectItem key={minute} value={minute}>
+                              {minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -270,44 +276,50 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Кінець дня</p>
                   <div className="flex gap-2">
-                    <Select
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Години</p>
+                      <Select
                       value={String(lightEndH).padStart(2, '0')}
                       onValueChange={(value) => {
                         setLightEndH(parseInt(value, 10));
                         setHasChanges(true);
                       }}
-                      disabled={isAiActive}
-                    >
-                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {hourOptions.map((hour) => (
-                          <SelectItem key={hour} value={hour}>
-                            {hour}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
+                        disabled={isAiActive}
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hourOptions.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Хвилини</p>
+                      <Select
                       value={String(lightEndM).padStart(2, '0')}
                       onValueChange={(value) => {
                         setLightEndM(parseInt(value, 10));
                         setHasChanges(true);
                       }}
-                      disabled={isAiActive}
-                    >
-                      <SelectTrigger className={cn("flex-1 h-9", isAiActive && "opacity-50")}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {minuteOptions.map((minute) => (
-                          <SelectItem key={minute} value={minute}>
-                            {minute}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        disabled={isAiActive}
+                      >
+                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {minuteOptions.map((minute) => (
+                            <SelectItem key={minute} value={minute}>
+                              {minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -404,64 +416,84 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs">Темп. (°C)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={targetTemp}
-                    onChange={(e) => {
-                      setTargetTemp(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    disabled={isAiActive}
-                    className={cn(isAiActive && "opacity-50")}
-                  />
+                  <Label className="text-xs">Температура</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={targetTemp}
+                      onChange={(e) => {
+                        setTargetTemp(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      °C
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-xs">±</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={tempHyst}
-                    onChange={(e) => {
-                      setTempHyst(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    disabled={isAiActive}
-                    className={cn(isAiActive && "opacity-50")}
-                  />
+                  <Label className="text-xs">± Гістерезис</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={tempHyst}
+                      onChange={(e) => {
+                        setTempHyst(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      °C
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs">Волог. (%)</Label>
-                  <Input
-                    type="number"
-                    value={targetHum}
-                    onChange={(e) => {
-                      setTargetHum(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    min="0"
-                    max="100"
-                    disabled={isAiActive}
-                    className={cn(isAiActive && "opacity-50")}
-                  />
+                  <Label className="text-xs">Вологість</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      value={targetHum}
+                      onChange={(e) => {
+                        setTargetHum(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      max="100"
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      %
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  <Label className="text-xs">±</Label>
-                  <Input
-                    type="number"
-                    value={humHyst}
-                    onChange={(e) => {
-                      setHumHyst(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    min="0"
-                    max="50"
-                    disabled={isAiActive}
-                    className={cn(isAiActive && "opacity-50")}
-                  />
+                  <Label className="text-xs">± Гістерезис</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      value={humHyst}
+                      onChange={(e) => {
+                        setHumHyst(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      max="50"
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      %
+                    </span>
+                  </div>
                 </div>
               </div>
               {isAiActive && (
@@ -539,35 +571,45 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div>
-                <Label className="text-xs">Мін. Вологість Ґрунту (%)</Label>
-                <Input
-                  type="number"
-                  value={soilMin}
-                  onChange={(e) => {
-                    setSoilMin(Number(e.target.value));
-                    setHasChanges(true);
-                  }}
-                  min="0"
-                  max="100"
-                  disabled={isAiActive}
-                  className={cn(isAiActive && "opacity-50")}
-                />
+                <Label className="text-xs">Мін. Вологість Ґрунту</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={soilMin}
+                    onChange={(e) => {
+                      setSoilMin(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    min="0"
+                    max="100"
+                    disabled={isAiActive}
+                    className={cn("pr-12", isAiActive && "opacity-50")}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    %
+                  </span>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Старт поливу при &lt; {soilMin}%</p>
               </div>
               <div>
-                <Label className="text-xs">Макс. Вологість Ґрунту (%)</Label>
-                <Input
-                  type="number"
-                  value={soilMax}
-                  onChange={(e) => {
-                    setSoilMax(Number(e.target.value));
-                    setHasChanges(true);
-                  }}
-                  min="0"
-                  max="100"
-                  disabled={isAiActive}
-                  className={cn(isAiActive && "opacity-50")}
-                />
+                <Label className="text-xs">Макс. Вологість Ґрунту</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={soilMax}
+                    onChange={(e) => {
+                      setSoilMax(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    min="0"
+                    max="100"
+                    disabled={isAiActive}
+                    className={cn("pr-12", isAiActive && "opacity-50")}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    %
+                  </span>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Стоп поливу при &gt; {soilMax}%</p>
               </div>
               {isAiActive && (
@@ -634,32 +676,42 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {/* Ventilation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div>
-                <Label className="text-xs">Тривалість (сек)</Label>
-                <Input
-                  type="number"
-                  value={ventDurationSec}
-                  onChange={(e) => {
-                    setVentDurationSec(Number(e.target.value));
-                    setHasChanges(true);
-                  }}
-                  min="0"
-                  disabled={isAiActive}
-                  className={cn(isAiActive && "opacity-50")}
-                />
+                <Label className="text-xs">Час роботи</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={ventDurationSec}
+                    onChange={(e) => {
+                      setVentDurationSec(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    min="0"
+                    disabled={isAiActive}
+                    className={cn("pr-12", isAiActive && "opacity-50")}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    сек
+                  </span>
+                </div>
               </div>
               <div>
-                <Label className="text-xs">Інтервал (сек)</Label>
-                <Input
-                  type="number"
-                  value={ventIntervalSec}
-                  onChange={(e) => {
-                    setVentIntervalSec(Number(e.target.value));
-                    setHasChanges(true);
-                  }}
-                  min="0"
-                  disabled={isAiActive}
-                  className={cn(isAiActive && "opacity-50")}
-                />
+                <Label className="text-xs">Час паузи</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={ventIntervalSec}
+                    onChange={(e) => {
+                      setVentIntervalSec(Number(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    min="0"
+                    disabled={isAiActive}
+                    className={cn("pr-12", isAiActive && "opacity-50")}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    сек
+                  </span>
+                </div>
               </div>
               {isAiActive && (
                 <div className="flex items-center gap-1 text-xs text-yellow-600">
