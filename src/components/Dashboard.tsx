@@ -83,7 +83,13 @@ export function Dashboard() {
     const interval = setInterval(generateData, 5000);
     return () => clearInterval(interval);
   }, []);
-  const onlineDevices = devices.filter(d => d.status === 'online').length;
+  // Calculate online/offline status dynamically based on last_seen_at
+  const now = new Date().getTime();
+  const onlineDevices = devices.filter(d => {
+    if (!d.last_seen_at) return false;
+    const lastSeen = new Date(d.last_seen_at).getTime();
+    return (now - lastSeen) < 60000; // Online if seen within 60 seconds
+  }).length;
   const totalDevices = devices.length;
   const StatCard = ({
     title,

@@ -28,13 +28,7 @@ export function Navigation() {
     },
     {
       path: '/dashboard',
-      label: t('navigation.dashboard'),
-      icon: LayoutDashboard,
-      roles: ['user', 'developer', 'admin']
-    },
-    {
-      path: '/remote-control',
-      label: t('navigation.remoteControl'),
+      label: 'Панель керування',
       icon: Wifi,
       roles: ['user', 'developer', 'admin']
     },
