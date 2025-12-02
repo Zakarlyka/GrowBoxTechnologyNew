@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,24 @@ export function Devices() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<string | null>(null);
+  const [onlineCount, setOnlineCount] = useState(0);
+
+  // Recalculate online count every 5 seconds based on last_seen_at
+  useEffect(() => {
+    const calculateOnline = () => {
+      const now = Date.now();
+      const count = devices.filter(d => {
+        if (!(d as any).last_seen_at) return false;
+        const lastSeen = new Date((d as any).last_seen_at).getTime();
+        return (now - lastSeen) < 90000; // Online if seen within 90 seconds
+      }).length;
+      setOnlineCount(count);
+    };
+
+    calculateOnline();
+    const interval = setInterval(calculateOnline, 5000);
+    return () => clearInterval(interval);
+  }, [devices]);
   const handleDeleteClick = (deviceId: string) => {
     setDeviceToDelete(deviceId);
     setDeleteDialogOpen(true);
@@ -55,7 +73,7 @@ export function Devices() {
               <div>
                 <p className="text-sm text-muted-foreground">Онлайн пристрої</p>
                 <p className="text-3xl font-bold text-success">
-                  {devices.filter(d => d.status === 'online').length}
+                  {onlineCount}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-success/10">
@@ -71,7 +89,7 @@ export function Devices() {
               <div>
                 <p className="text-sm text-muted-foreground">Офлайн пристрої</p>
                 <p className="text-3xl font-bold text-destructive">
-                  {devices.filter(d => d.status === 'offline').length}
+                  {devices.length - onlineCount}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-destructive/10">
