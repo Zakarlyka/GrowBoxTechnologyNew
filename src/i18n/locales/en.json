@@ -8,7 +8,7 @@
     "logout": "Logout"
   },
   "dashboard": {
-    "title": "IoT Control Panel",
+    "title": "Control Panel",
     "subtitle": "Manage your ESP32 devices in real-time",
     "totalDevices": "Total Devices",
     "onlineDevices": "Online Devices",
