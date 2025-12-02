@@ -92,8 +92,7 @@ export function Dashboard() {
     icon: Icon,
     trend
   }: any) => {
-    return (
-      <Card className="gradient-card border-border/50">
+    return <Card className="gradient-card border-border/50">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             {title}
@@ -104,15 +103,12 @@ export function Dashboard() {
           <div className="text-2xl font-bold">
             {value}{unit}
           </div>
-          {trend && (
-            <p className="text-xs text-muted-foreground flex items-center mt-1">
+          {trend && <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
               <span>+2.5% from last hour</span>
-            </p>
-          )}
+            </p>}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
   return <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -131,12 +127,7 @@ export function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title={t('dashboard.totalDevices')} value={devices.length} unit="" icon={Cpu} />
-        <StatCard title={t('dashboard.onlineDevices')} value={onlineDevices} unit="" icon={Activity} />
-        <StatCard title={t('dashboard.temperature')} value={devices.length > 0 && devices[0].last_temp ? devices[0].last_temp.toFixed(1) : '--'} unit="°C" icon={Thermometer} trend={true} />
-        <StatCard title={t('dashboard.humidity')} value={devices.length > 0 && devices[0].last_hum ? devices[0].last_hum.toFixed(0) : '--'} unit="%" icon={Droplets} />
-      </div>
+      
 
       {loading ? <div className="text-center py-12">
           <p className="text-muted-foreground">Завантаження пристроїв...</p>
