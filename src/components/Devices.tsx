@@ -34,12 +34,8 @@ export function Devices() {
   return <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            IoT Панель керування
-          </h1>
-          <p className="text-muted-foreground">
-            Управліть за даними своїх пристроїв через панель керування
-          </p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Мої пристрої</h1>
+          
         </div>
         <Button className="gradient-primary" onClick={() => setAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
