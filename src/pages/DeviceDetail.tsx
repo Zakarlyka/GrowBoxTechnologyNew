@@ -228,7 +228,7 @@ export default function DeviceDetail() {
                 <span className="text-sm text-muted-foreground">Ґрунт</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
-                {device.last_soil_moisture ? `${device.last_soil_moisture.toFixed(0)}%` : '-- %'}
+                {device.last_soil_moisture !== null && device.last_soil_moisture !== undefined ? `${device.last_soil_moisture.toFixed(0)}%` : '-- %'}
               </span>
             </div>
 
