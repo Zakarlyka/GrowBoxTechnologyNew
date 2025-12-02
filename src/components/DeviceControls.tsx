@@ -223,7 +223,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="space-y-4 pt-2 border-t border-border/30">
                 {/* Group 1: Start Time */}
                 <div className="mb-4">
-                  <Label className="text-sm text-muted-foreground mb-2 block">Час Ввімкнення</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">☀️ Час Ввімкнення</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">Години</p>
@@ -274,7 +274,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
                 {/* Group 2: End Time */}
                 <div>
-                  <Label className="text-sm text-muted-foreground mb-2 block">Час Вимкнення</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">🌙 Час Вимкнення</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">Години</p>
@@ -417,7 +417,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Цільова Температура (°C)
+                    🌡️ Цільова Темп. (°C)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -440,7 +440,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Гістерезис (±°C)
+                    ± Гістерезис (°C)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -465,7 +465,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Цільова Вологість (%)
+                    💧 Цільова Вологість (%)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -489,7 +489,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    Гістерезис (±%)
+                    ± Гістерезис (%)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -588,7 +588,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Старт Поливу (Мін %)
+                  📉 Старт: мін. вологість %
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -612,7 +612,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Стоп Поливу (Макс %)
+                  📈 Стоп: макс. вологість %
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -699,7 +699,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Час Роботи (сек)
+                  ⏱️ Час Роботи (сек)
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -722,7 +722,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Час Паузи (сек)
+                  ⏸️ Час Паузи (сек)
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
