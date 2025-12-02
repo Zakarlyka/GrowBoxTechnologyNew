@@ -304,12 +304,25 @@ export default function DeviceDetail() {
             <div className="flex justify-center p-6 bg-white rounded-lg">
               <QRCode value={`http://192.168.4.1/?token=${device.device_id}`} size={200} />
             </div>
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
                 ID пристрою: <span className="font-mono font-semibold">{device.device_id}</span>
               </p>
+              <div className="space-y-1">
+                <a 
+                  href={`http://192.168.4.1/?token=${device.device_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-500 hover:text-blue-600 underline break-all"
+                >
+                  http://192.168.4.1/?token={device.device_id}
+                </a>
+                <p className="text-xs text-muted-foreground">
+                  Натисніть на посилання після підключення до Wi-Fi мережі GrowBox-Setup
+                </p>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Відскануйте QR-код через додаток або камеру для перепідключення
+                Або відскануйте QR-код через додаток або камеру
               </p>
             </div>
             <Button onClick={() => setQrDialogOpen(false)} className="w-full">
