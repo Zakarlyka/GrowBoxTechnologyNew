@@ -20,7 +20,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
 
   // Fixed: Use last_seen_at timestamp comparison instead of status column
   const isOnline = device.last_seen_at 
-    ? (new Date().getTime() - new Date(device.last_seen_at).getTime()) < 60000
+    ? (new Date().getTime() - new Date(device.last_seen_at).getTime()) < 90000
     : false;
 
   // Calculate "last seen" time

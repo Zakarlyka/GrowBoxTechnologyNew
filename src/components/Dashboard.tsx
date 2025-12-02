@@ -84,13 +84,25 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, []);
   // Calculate online/offline status dynamically based on last_seen_at
-  const now = new Date().getTime();
-  const onlineDevices = devices.filter(d => {
-    if (!d.last_seen_at) return false;
-    const lastSeen = new Date(d.last_seen_at).getTime();
-    return (now - lastSeen) < 60000; // Online if seen within 60 seconds
-  }).length;
+  const [onlineDevices, setOnlineDevices] = useState(0);
   const totalDevices = devices.length;
+
+  // Recalculate online status every 10 seconds for reactivity
+  useEffect(() => {
+    const calculateOnline = () => {
+      const now = new Date().getTime();
+      const count = devices.filter(d => {
+        if (!d.last_seen_at) return false;
+        const lastSeen = new Date(d.last_seen_at).getTime();
+        return (now - lastSeen) < 90000; // Online if seen within 90 seconds
+      }).length;
+      setOnlineDevices(count);
+    };
+
+    calculateOnline();
+    const interval = setInterval(calculateOnline, 10000);
+    return () => clearInterval(interval);
+  }, [devices]);
   const StatCard = ({
     title,
     value,
