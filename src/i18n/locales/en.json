@@ -9,7 +9,7 @@
   },
   "dashboard": {
     "title": "Control Panel",
-    "subtitle": "Manage your ESP32 devices in real-time",
+    "subtitle": "Manage your devices in real-time",
     "totalDevices": "Total Devices",
     "onlineDevices": "Online Devices",
     "temperature": "Temperature",
