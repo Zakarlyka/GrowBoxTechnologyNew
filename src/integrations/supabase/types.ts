@@ -770,6 +770,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      check_and_zero_offline_devices: { Args: never; Returns: undefined }
       cleanup_old_pairing_records: { Args: never; Returns: undefined }
       get_device_settings: { Args: { device_uuid: string }; Returns: Json }
       get_my_role: {
