@@ -1,65 +1,43 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Trash2, Pencil, Check, X, QrCode } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
-import { useDeviceLogs } from '@/hooks/useDeviceLogs';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
-import { useDeviceSchedules } from '@/hooks/useDeviceSchedules';
 import { DeviceControls } from '@/components/DeviceControls';
-import { LogsTable } from '@/components/LogsTable';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart-simple';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { calculatePhotoperiod, isWithinLightSchedule, formatTime } from '@/lib/utils';
 import QRCode from 'react-qr-code';
+
 export default function DeviceDetail() {
-  const {
-    id
-  } = useParams<{
-    id: string;
-  }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const {
-    devices,
-    loading,
-    deleteDevice
-  } = useDevices();
+  const { devices, loading, deleteDevice } = useDevices();
   const device = devices.find(d => d.id === id);
-  const {
-    logs,
-    latestLog
-  } = useDeviceLogs(id);
-  const {
-    settings
-  } = useDeviceControls(device?.device_id || null);
-  const {
-    schedules
-  } = useDeviceSchedules(id || '');
+  const { settings } = useDeviceControls(device?.device_id || null);
+  
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [timeInterval, setTimeInterval] = useState('24h');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(device?.name || '');
+
   const handleDelete = async () => {
     if (id) {
       await deleteDevice(id);
       navigate('/');
     }
   };
+
   const handleSaveName = async () => {
     if (!editedName.trim() || !device) return;
     try {
-      const {
-        error
-      } = await supabase.from('devices').update({
+      const { error } = await supabase.from('devices').update({
         name: editedName.trim()
       }).eq('id', device.id);
       if (error) throw error;
@@ -68,7 +46,7 @@ export default function DeviceDetail() {
         description: 'Назву пристрою оновлено'
       });
       setIsEditingName(false);
-      window.location.reload(); // Simple refresh to update the name
+      window.location.reload();
     } catch (error: any) {
       console.error('Rename error:', error);
       toast({
@@ -78,30 +56,36 @@ export default function DeviceDetail() {
       });
     }
   };
+
   const handleCancelEdit = () => {
     setEditedName(device?.name || '');
     setIsEditingName(false);
   };
+
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center p-6">
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
         <p className="text-muted-foreground">Завантаження...</p>
-      </div>;
+      </div>
+    );
   }
+
   if (!device) {
-    return <div className="flex-1 flex flex-col items-center justify-center p-6">
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
         <p className="text-xl text-muted-foreground mb-4">Пристрій не знайдено</p>
         <Button onClick={() => navigate('/')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Повернутися
         </Button>
-      </div>;
+      </div>
+    );
   }
-  // Fixed: Use last_seen_at timestamp comparison instead of status column
+
   const isOnline = device.last_seen_at 
     ? (new Date().getTime() - new Date(device.last_seen_at).getTime()) < 60000
     : false;
 
-  // Calculate "last seen" time
   const getLastSeenText = () => {
     if (!device.last_seen_at) return 'Невідомо';
     const seconds = Math.floor((new Date().getTime() - new Date(device.last_seen_at).getTime()) / 1000);
@@ -112,7 +96,6 @@ export default function DeviceDetail() {
     return `${hours} год тому`;
   };
 
-  // Get light mode from settings
   const getLightMode = () => {
     if (!settings) return null;
     
@@ -133,34 +116,11 @@ export default function DeviceDetail() {
       endTime: formatTime(endH, endM),
     };
   };
+
   const lightMode = getLightMode();
 
-  // Prepare chart data based on selected interval
-  const getFilteredLogs = () => {
-    const now = new Date();
-    const hoursMap: Record<string, number> = {
-      '1h': 1,
-      '6h': 6,
-      '12h': 12,
-      '24h': 24,
-      '7d': 168
-    };
-    const hours = hoursMap[timeInterval] || 24;
-    const cutoffTime = new Date(now.getTime() - hours * 60 * 60 * 1000);
-    return logs.filter(log => new Date(log.timestamp) >= cutoffTime);
-  };
-  const filteredLogs = getFilteredLogs();
-  const chartData = filteredLogs.slice(0, 100).reverse().map(log => ({
-    time: new Date(log.timestamp).toLocaleTimeString('uk-UA', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }),
-    temperature: log.temperature || 0,
-    humidity: log.humidity || 0,
-    soil_moisture: log.soil_moisture || 0,
-    light_level: log.light_level || 0
-  }));
-  return <div className="flex-1 space-y-6 p-6">
+  return (
+    <div className="flex-1 space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -168,21 +128,25 @@ export default function DeviceDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Панель керування</h1>
-            <p className="text-muted-foreground">
-              Моніторинг та керування пристроєм
-            </p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Панель керування
+            </h1>
+            <p className="text-muted-foreground">Моніторинг та керування пристроєм</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Badge variant={isOnline ? 'default' : 'destructive'} className="flex items-center gap-1">
-            {isOnline ? <>
+            {isOnline ? (
+              <>
                 <Wifi className="h-3 w-3" />
                 Online
-              </> : <>
+              </>
+            ) : (
+              <>
                 <WifiOff className="h-3 w-3" />
                 Offline
-              </>}
+              </>
+            )}
           </Badge>
           <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)}>
             <QrCode className="h-4 w-4 mr-2" />
@@ -199,26 +163,40 @@ export default function DeviceDetail() {
       <Card className="gradient-card border-border/50">
         <CardHeader>
           <div className="flex items-center gap-2">
-            {isEditingName ? <>
-                <Input value={editedName} onChange={e => setEditedName(e.target.value)} className="text-xl font-semibold max-w-md" autoFocus onKeyDown={e => {
-              if (e.key === 'Enter') handleSaveName();
-              if (e.key === 'Escape') handleCancelEdit();
-            }} />
+            {isEditingName ? (
+              <>
+                <Input
+                  value={editedName}
+                  onChange={e => setEditedName(e.target.value)}
+                  className="text-xl font-semibold max-w-md"
+                  autoFocus
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                />
                 <Button size="sm" variant="ghost" onClick={handleSaveName}>
                   <Check className="h-4 w-4 text-success" />
                 </Button>
                 <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
                   <X className="h-4 w-4 text-destructive" />
                 </Button>
-              </> : <>
+              </>
+            ) : (
+              <>
                 <CardTitle className="text-xl">{device.name}</CardTitle>
-                <Button size="sm" variant="ghost" onClick={() => {
-              setEditedName(device.name);
-              setIsEditingName(true);
-            }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditedName(device.name);
+                    setIsEditingName(true);
+                  }}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
-              </>}
+              </>
+            )}
           </div>
           {device.location && <p className="text-sm text-muted-foreground">{device.location}</p>}
         </CardHeader>
@@ -254,10 +232,18 @@ export default function DeviceDetail() {
               </span>
             </div>
 
-            <div className={`flex flex-col gap-2 p-3 rounded-lg border border-border/30 transition-colors ${lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'}`}>
+            <div
+              className={`flex flex-col gap-2 p-3 rounded-lg border border-border/30 transition-colors ${
+                lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
+                  {lightMode?.isDay ? (
+                    <Sun className="h-4 w-4 text-yellow-500" />
+                  ) : (
+                    <Moon className="h-4 w-4 text-blue-500" />
+                  )}
                   <span className="text-sm text-muted-foreground">Світло</span>
                 </div>
                 {lightMode && (
@@ -284,56 +270,10 @@ export default function DeviceDetail() {
         </CardContent>
       </Card>
 
-      {/* Device Controls */}
+      {/* Device Controls - Clean and focused */}
       <DeviceControls deviceId={device.device_id} />
 
-      {/* Chart */}
-      <Card className="gradient-card border-border/50">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>
-              Історія показників (
-              {timeInterval === '1h' ? '1 год' : timeInterval === '6h' ? '6 год' : timeInterval === '12h' ? '12 год' : timeInterval === '24h' ? '24 год' : '7 днів'})
-            </CardTitle>
-            <Tabs value={timeInterval} onValueChange={setTimeInterval}>
-              <TabsList>
-                <TabsTrigger value="1h">1 год</TabsTrigger>
-                <TabsTrigger value="6h">6 год</TabsTrigger>
-                <TabsTrigger value="12h">12 год</TabsTrigger>
-                <TabsTrigger value="24h">24 год</TabsTrigger>
-                <TabsTrigger value="7d">7 днів</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            {chartData.length > 0 ? <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="temperature" stroke="hsl(0 75% 60%)" strokeWidth={2} name="Температура" />
-                    <Line type="monotone" dataKey="humidity" stroke="hsl(210 100% 56%)" strokeWidth={2} name="Вологість" />
-                    <Line type="monotone" dataKey="soil_moisture" stroke="hsl(120 60% 45%)" strokeWidth={2} name="Вологість ґрунту" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer> : <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">Немає даних для відображення</p>
-              </div>}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Logs Table */}
-      <LogsTable deviceId={device.id} />
-
-      {device.last_seen && <p className="text-sm text-muted-foreground text-center">
-          Останнє оновлення: {new Date(device.last_seen).toLocaleString('uk-UA')}
-        </p>}
-
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -351,6 +291,7 @@ export default function DeviceDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* QR Dialog */}
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -361,10 +302,7 @@ export default function DeviceDetail() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex justify-center p-6 bg-white rounded-lg">
-              <QRCode 
-                value={`http://192.168.4.1/?token=${device.device_id}`} 
-                size={200} 
-              />
+              <QRCode value={`http://192.168.4.1/?token=${device.device_id}`} size={200} />
             </div>
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
@@ -380,5 +318,6 @@ export default function DeviceDetail() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 }
