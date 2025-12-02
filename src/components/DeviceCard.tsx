@@ -118,7 +118,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
         <SensorValue
           icon={Sprout}
           label="Вологість ґрунту"
-          value={device.last_soil_moisture && device.last_soil_moisture > 0 ? device.last_soil_moisture.toFixed(0) : null}
+          value={device.last_soil_moisture !== null && device.last_soil_moisture !== undefined ? device.last_soil_moisture.toFixed(0) : null}
           unit="%"
         />
         
