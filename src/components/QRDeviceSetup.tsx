@@ -207,10 +207,22 @@ export function QRDeviceSetup({ open, onOpenChange, onDeviceAdded }: QRDeviceSet
               <QRCode value={qrData.link} size={200} />
             </div>
 
-            {/* Debug Info */}
-            <div className="text-xs text-muted-foreground text-center space-y-1 bg-muted/50 p-3 rounded-lg">
-              <p className="font-mono"><strong>Token:</strong> {qrData.token}</p>
-              <p className="font-mono break-all"><strong>Link:</strong> {qrData.link}</p>
+            {/* Setup Link */}
+            <div className="text-center space-y-2 bg-muted/50 p-3 rounded-lg">
+              <p className="text-xs text-muted-foreground font-mono">
+                <strong>Token:</strong> {qrData.token}
+              </p>
+              <a 
+                href={qrData.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:text-blue-600 underline break-all block"
+              >
+                {qrData.link}
+              </a>
+              <p className="text-xs text-muted-foreground">
+                Підключіться до Wi-Fi "GrowBox-Setup", потім натисніть на посилання для автоналаштування
+              </p>
             </div>
 
             {/* Instructions */}
