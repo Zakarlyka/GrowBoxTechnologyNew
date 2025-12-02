@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff } from 'lucide-react';
@@ -12,7 +13,7 @@ interface DeviceCardProps {
   device: Device;
 }
 
-export function DeviceCard({ device }: DeviceCardProps) {
+export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardProps) {
   const { latestLog } = useDeviceLogs(device.id);
   const { settings } = useDeviceControls(device.device_id);
   const navigate = useNavigate();
@@ -160,4 +161,4 @@ export function DeviceCard({ device }: DeviceCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

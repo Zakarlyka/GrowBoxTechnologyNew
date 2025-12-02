@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { 
   LineChart, 
   Line, 
@@ -65,6 +69,8 @@ export function AdvancedCharts() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<string>('24h');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['temp', 'hum']);
@@ -87,7 +93,7 @@ export function AdvancedCharts() {
     if (devices.length > 0) {
       fetchChartData();
     }
-  }, [devices, selectedDevice, timeRange]);
+  }, [devices, selectedDevice, timeRange, dateFrom, dateTo]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -110,7 +116,7 @@ export function AdvancedCharts() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [devices, selectedDevice, timeRange]);
+  }, [devices, selectedDevice, timeRange, dateFrom, dateTo]);
 
   const fetchDevices = async () => {
     try {
@@ -130,22 +136,35 @@ export function AdvancedCharts() {
   const fetchChartData = async () => {
     setLoading(true);
     try {
-      const hoursMap: Record<string, number> = {
-        '1h': 1,
-        '6h': 6,
-        '24h': 24,
-        '7d': 168,
-        '30d': 720
-      };
+      let startTime: Date;
+      let endTime: Date;
 
-      const hours = hoursMap[timeRange] || 24;
-      const cutoffTime = new Date();
-      cutoffTime.setHours(cutoffTime.getHours() - hours);
+      // Use custom date range if both dates are selected
+      if (dateFrom && dateTo) {
+        startTime = new Date(dateFrom);
+        startTime.setHours(0, 0, 0, 0);
+        endTime = new Date(dateTo);
+        endTime.setHours(23, 59, 59, 999);
+      } else {
+        // Otherwise use time range selector
+        const hoursMap: Record<string, number> = {
+          '1h': 1,
+          '6h': 6,
+          '24h': 24,
+          '7d': 168,
+          '30d': 720
+        };
+        const hours = hoursMap[timeRange] || 24;
+        endTime = new Date();
+        startTime = new Date();
+        startTime.setHours(startTime.getHours() - hours);
+      }
 
       let query = (supabase as any)
         .from('device_logs')
         .select('*')
-        .gte('created_at', cutoffTime.toISOString())
+        .gte('created_at', startTime.toISOString())
+        .lte('created_at', endTime.toISOString())
         .order('created_at', { ascending: true });
 
       if (selectedDevice !== 'all') {
@@ -319,8 +338,12 @@ export function AdvancedCharts() {
         </div>
         
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">Time Range:</label>
-          <Select value={timeRange} onValueChange={setTimeRange}>
+          <label className="text-sm font-medium">Quick Range:</label>
+          <Select value={timeRange} onValueChange={(value) => {
+            setTimeRange(value);
+            setDateFrom(undefined);
+            setDateTo(undefined);
+          }}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -332,6 +355,46 @@ export function AdvancedCharts() {
               <SelectItem value="30d">30 Days</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium">Custom Range:</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                <Calendar className="mr-2 h-4 w-4" />
+                {dateFrom ? format(dateFrom, "dd MMM yyyy") : "From"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                <Calendar className="mr-2 h-4 w-4" />
+                {dateTo ? format(dateTo, "dd MMM yyyy") : "To"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+
+          {(dateFrom || dateTo) && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setDateFrom(undefined);
+                setDateTo(undefined);
+              }}
+            >
+              Clear
+            </Button>
+          )}
         </div>
       </div>
 
