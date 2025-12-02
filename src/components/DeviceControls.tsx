@@ -415,84 +415,100 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {/* Climate Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Цільова Температура (°C)</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={targetTemp}
-                      onChange={(e) => {
-                        setTargetTemp(Number(e.target.value));
-                        setHasChanges(true);
-                      }}
-                      disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      °C
-                    </span>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    Цільова Температура (°C)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={targetTemp}
+                        onChange={(e) => {
+                          setTargetTemp(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                        className={cn("pr-12", isAiActive && "opacity-50")}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        °C
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Гістерезис (±°C)</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={tempHyst}
-                      onChange={(e) => {
-                        setTempHyst(Number(e.target.value));
-                        setHasChanges(true);
-                      }}
-                      disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      °C
-                    </span>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    Гістерезис (±°C)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={tempHyst}
+                        onChange={(e) => {
+                          setTempHyst(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                        className={cn("pr-12", isAiActive && "opacity-50")}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        °C
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Цільова Вологість (%)</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={targetHum}
-                      onChange={(e) => {
-                        setTargetHum(Number(e.target.value));
-                        setHasChanges(true);
-                      }}
-                      min="0"
-                      max="100"
-                      disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      %
-                    </span>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    Цільова Вологість (%)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        value={targetHum}
+                        onChange={(e) => {
+                          setTargetHum(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        min="0"
+                        max="100"
+                        disabled={isAiActive}
+                        className={cn("pr-12", isAiActive && "opacity-50")}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        %
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Гістерезис (±%)</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={humHyst}
-                      onChange={(e) => {
-                        setHumHyst(Number(e.target.value));
-                        setHasChanges(true);
-                      }}
-                      min="0"
-                      max="50"
-                      disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      %
-                    </span>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    Гістерезис (±%)
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        value={humHyst}
+                        onChange={(e) => {
+                          setHumHyst(Number(e.target.value));
+                          setHasChanges(true);
+                        }}
+                        min="0"
+                        max="50"
+                        disabled={isAiActive}
+                        className={cn("pr-12", isAiActive && "opacity-50")}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                        %
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -570,44 +586,52 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
-              <div>
-                <Label className="text-sm text-muted-foreground">Старт Поливу (Мін %)</Label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={soilMin}
-                    onChange={(e) => {
-                      setSoilMin(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    min="0"
-                    max="100"
-                    disabled={isAiActive}
-                    className={cn("pr-12", isAiActive && "opacity-50")}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    %
-                  </span>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Старт Поливу (Мін %)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={soilMin}
+                      onChange={(e) => {
+                        setSoilMin(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      max="100"
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      %
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Стоп Поливу (Макс %)</Label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={soilMax}
-                    onChange={(e) => {
-                      setSoilMax(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    min="0"
-                    max="100"
-                    disabled={isAiActive}
-                    className={cn("pr-12", isAiActive && "opacity-50")}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    %
-                  </span>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Стоп Поливу (Макс %)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={soilMax}
+                      onChange={(e) => {
+                        setSoilMax(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      max="100"
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      %
+                    </span>
+                  </div>
                 </div>
               </div>
               {isAiActive && (
@@ -673,42 +697,50 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
             {/* Ventilation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
-              <div>
-                <Label className="text-sm text-muted-foreground">Час Роботи (сек)</Label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={ventDurationSec}
-                    onChange={(e) => {
-                      setVentDurationSec(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    min="0"
-                    disabled={isAiActive}
-                    className={cn("pr-12", isAiActive && "opacity-50")}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    с
-                  </span>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Час Роботи (сек)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={ventDurationSec}
+                      onChange={(e) => {
+                        setVentDurationSec(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      с
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Час Паузи (сек)</Label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={ventIntervalSec}
-                    onChange={(e) => {
-                      setVentIntervalSec(Number(e.target.value));
-                      setHasChanges(true);
-                    }}
-                    min="0"
-                    disabled={isAiActive}
-                    className={cn("pr-12", isAiActive && "opacity-50")}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                    с
-                  </span>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Час Паузи (сек)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={ventIntervalSec}
+                      onChange={(e) => {
+                        setVentIntervalSec(Number(e.target.value));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      disabled={isAiActive}
+                      className={cn("pr-12", isAiActive && "opacity-50")}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      с
+                    </span>
+                  </div>
                 </div>
               </div>
               {isAiActive && (
