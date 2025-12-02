@@ -223,7 +223,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="space-y-4 pt-2 border-t border-border/30">
                 {/* Group 1: Start Time */}
                 <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-2">Початок дня</p>
+                  <p className="text-sm font-medium mb-2">☀️ Час Ввімкнення</p>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">Години</p>
@@ -274,7 +274,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
                 {/* Group 2: End Time */}
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Кінець дня</p>
+                  <p className="text-sm font-medium mb-2">🌙 Час Вимкнення</p>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">Години</p>
@@ -416,7 +416,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs">Цільова Темп. (°C)</Label>
+                  <Label className="text-xs font-medium">🌡️ Цільова Темп.</Label>
                   <div className="relative">
                     <Input
                       type="number"
@@ -435,7 +435,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs">± Гістерезис</Label>
+                  <Label className="text-xs font-medium">± Допуск (°C)</Label>
                   <div className="relative">
                     <Input
                       type="number"
@@ -456,7 +456,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs">Вологість (%)</Label>
+                  <Label className="text-xs font-medium">☁️ Цільова Вологість</Label>
                   <div className="relative">
                     <Input
                       type="number"
@@ -476,7 +476,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs">± Гістерезис</Label>
+                  <Label className="text-xs font-medium">± Допуск (%)</Label>
                   <div className="relative">
                     <Input
                       type="number"
@@ -571,7 +571,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div>
-                <Label className="text-xs">Старт Поливу (%)</Label>
+                <Label className="text-xs font-medium">💧 Старт: мін. вологість %</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -591,7 +591,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
               </div>
               <div>
-                <Label className="text-xs">Стоп Поливу (%)</Label>
+                <Label className="text-xs font-medium">🛑 Стоп: макс. вологість %</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -674,7 +674,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {/* Ventilation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div>
-                <Label className="text-xs">Робота (с)</Label>
+                <Label className="text-xs font-medium">⏱️ Час Роботи (сек)</Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -693,7 +693,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
               </div>
               <div>
-                <Label className="text-xs">Пауза (с)</Label>
+                <Label className="text-xs font-medium">💤 Час Паузи (сек)</Label>
                 <div className="relative">
                   <Input
                     type="number"
