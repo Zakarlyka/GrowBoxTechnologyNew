@@ -17,7 +17,21 @@ export function DeviceCard({ device }: DeviceCardProps) {
   const { settings } = useDeviceControls(device.device_id);
   const navigate = useNavigate();
 
-  const isOnline = device.status === 'online';
+  // Fixed: Use last_seen_at timestamp comparison instead of status column
+  const isOnline = device.last_seen_at 
+    ? (new Date().getTime() - new Date(device.last_seen_at).getTime()) < 60000
+    : false;
+
+  // Calculate "last seen" time
+  const getLastSeenText = () => {
+    if (!device.last_seen_at) return 'Невідомо';
+    const seconds = Math.floor((new Date().getTime() - new Date(device.last_seen_at).getTime()) / 1000);
+    if (seconds < 60) return `${seconds} сек тому`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} хв тому`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} год тому`;
+  };
 
   // Get light mode from settings
   const getLightMode = () => {
@@ -89,21 +103,21 @@ export function DeviceCard({ device }: DeviceCardProps) {
         <SensorValue
           icon={Thermometer}
           label="Температура"
-          value={latestLog?.temperature?.toFixed(1) || device.last_temp?.toFixed(1)}
+          value={device.last_temp?.toFixed(1)}
           unit="°C"
         />
         
         <SensorValue
           icon={Droplets}
           label="Вологість повітря"
-          value={latestLog?.humidity?.toFixed(0) || device.last_hum?.toFixed(0)}
+          value={device.last_hum?.toFixed(0)}
           unit="%"
         />
         
         <SensorValue
           icon={Sprout}
           label="Вологість ґрунту"
-          value={latestLog?.soil_moisture?.toFixed(0)}
+          value={device.last_soil_moisture ? device.last_soil_moisture.toFixed(0) : null}
           unit="%"
         />
         
@@ -138,22 +152,11 @@ export function DeviceCard({ device }: DeviceCardProps) {
           )}
         </div>
 
-        {(device.last_seen || device.last_seen_at) && (
-          <div className="pt-2 border-t border-border/30">
-            <p className="text-xs text-muted-foreground text-center">
-              Остання активність: {(() => {
-                const date = new Date(device.last_seen_at || device.last_seen!);
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
-                return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
-              })()}
-            </p>
-          </div>
-        )}
+        <div className="pt-2 border-t border-border/30">
+          <p className="text-xs text-muted-foreground text-center">
+            Востаннє онлайн: {getLastSeenText()}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

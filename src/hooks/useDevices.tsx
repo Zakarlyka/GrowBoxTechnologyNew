@@ -12,6 +12,7 @@ export interface Device {
   location?: string | null;
   last_temp?: number | null;
   last_hum?: number | null;
+  last_soil_moisture?: number | null;
   last_seen?: string | null;
   last_seen_at?: string | null;
   user_id: string;
