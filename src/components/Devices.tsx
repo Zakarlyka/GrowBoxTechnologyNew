@@ -22,20 +22,21 @@ export function Devices() {
   const [deviceToDelete, setDeviceToDelete] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState(0);
 
-  // Recalculate online count every 5 seconds based on last_seen_at
+  // 3-Stage Logic: Stage A+B (0-40s) = Online, Stage C (>40s) = Offline
+  // Recalculate every 1 second for real-time reactivity
   useEffect(() => {
     const calculateOnline = () => {
       const now = Date.now();
       const count = devices.filter(d => {
         if (!(d as any).last_seen_at) return false;
         const lastSeen = new Date((d as any).last_seen_at).getTime();
-        return (now - lastSeen) < 90000; // Online if seen within 90 seconds
+        return (now - lastSeen) < 40000; // Online if seen within 40 seconds (Stage A + B)
       }).length;
       setOnlineCount(count);
     };
 
     calculateOnline();
-    const interval = setInterval(calculateOnline, 5000);
+    const interval = setInterval(calculateOnline, 1000);
     return () => clearInterval(interval);
   }, [devices]);
   const handleDeleteClick = (deviceId: string) => {
