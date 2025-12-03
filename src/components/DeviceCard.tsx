@@ -94,15 +94,29 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
     return false;
   };
 
-  const SensorValue = ({ icon: Icon, label, dbValue, unit }: { icon: any; label: string; dbValue: number | null | undefined; unit: string }) => {
+  const SensorValue = ({ icon: Icon, label, dbValue, unit, color }: { 
+    icon: any; 
+    label: string; 
+    dbValue: number | null | undefined; 
+    unit: string;
+    color: 'orange' | 'blue' | 'green';
+  }) => {
     const displayValue = getDisplayValue(dbValue);
     const inactive = isValueInactive(displayValue);
     const displayText = displayValue !== null ? `${displayValue}${unit}` : '--';
     
+    const colorClasses = {
+      orange: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', icon: 'text-orange-500' },
+      blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: 'text-blue-500' },
+      green: { bg: 'bg-green-500/10', border: 'border-green-500/30', icon: 'text-green-500' },
+    };
+    
+    const styles = colorClasses[color];
+    
     return (
-      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
+      <div className={`flex items-center justify-between p-3 rounded-lg ${styles.bg} border ${styles.border}`}>
         <div className="flex items-center space-x-2">
-          <Icon className={`h-4 w-4 ${inactive ? 'text-muted-foreground/50' : 'text-accent'}`} />
+          <Icon className={`h-4 w-4 ${inactive ? 'text-muted-foreground/50' : styles.icon}`} />
           <span className="text-sm text-muted-foreground">{label}</span>
         </div>
         <span className={`text-lg font-semibold ${inactive ? 'text-muted-foreground' : 'text-foreground'}`}>
@@ -148,6 +162,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
           label="Температура"
           dbValue={device.last_temp !== null && device.last_temp !== undefined ? parseFloat(device.last_temp.toFixed(1)) : null}
           unit="°C"
+          color="orange"
         />
         
         <SensorValue
@@ -155,6 +170,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
           label="Вологість повітря"
           dbValue={device.last_hum !== null && device.last_hum !== undefined ? parseFloat(device.last_hum.toFixed(0)) : null}
           unit="%"
+          color="blue"
         />
         
         <SensorValue
@@ -162,6 +178,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
           label="Вологість ґрунту"
           dbValue={device.last_soil_moisture !== null && device.last_soil_moisture !== undefined ? parseFloat(device.last_soil_moisture.toFixed(0)) : null}
           unit="%"
+          color="green"
         />
         
         <div 
