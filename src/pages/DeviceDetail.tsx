@@ -202,9 +202,9 @@ export default function DeviceDetail() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
               <div className="flex items-center space-x-2">
-                <Thermometer className="h-4 w-4 text-accent" />
+                <Thermometer className="h-4 w-4 text-orange-500" />
                 <span className="text-sm text-muted-foreground">Температура</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
@@ -212,9 +212,9 @@ export default function DeviceDetail() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
               <div className="flex items-center space-x-2">
-                <Droplets className="h-4 w-4 text-accent" />
+                <Droplets className="h-4 w-4 text-blue-500" />
                 <span className="text-sm text-muted-foreground">Вологість</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
@@ -222,9 +222,9 @@ export default function DeviceDetail() {
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30">
               <div className="flex items-center space-x-2">
-                <Sprout className="h-4 w-4 text-accent" />
+                <Sprout className="h-4 w-4 text-green-500" />
                 <span className="text-sm text-muted-foreground">Ґрунт</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
