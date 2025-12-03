@@ -150,8 +150,26 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
     }
   };
 
-  // Online status
-  const isOnline = lastSeenAt ? new Date().getTime() - new Date(lastSeenAt).getTime() < 60000 : false;
+  // 3-Stage Time-Based Status (1-second refresh)
+  const [secondsSinceSeen, setSecondsSinceSeen] = useState<number>(Infinity);
+  
+  useEffect(() => {
+    const calculate = () => {
+      if (!lastSeenAt) {
+        setSecondsSinceSeen(Infinity);
+        return;
+      }
+      const diff = (Date.now() - new Date(lastSeenAt).getTime()) / 1000;
+      setSecondsSinceSeen(diff);
+    };
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [lastSeenAt]);
+
+  // Stage A (0-20s): Online, valid data | Stage B (20-40s): Online, expired data | Stage C (>40s): Offline
+  const isOnline = secondsSinceSeen <= 40;
+  const isDataValid = secondsSinceSeen <= 20;
   if (loading) {
     return (
       <div className="gradient-card border border-border/50 rounded-lg p-6">

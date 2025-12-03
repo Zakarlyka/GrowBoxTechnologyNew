@@ -17,11 +17,29 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
   const { latestLog } = useDeviceLogs(device.id);
   const { settings } = useDeviceControls(device.device_id);
   const navigate = useNavigate();
+  const [secondsSinceSeen, setSecondsSinceSeen] = React.useState<number>(Infinity);
 
-  // Fixed: Use last_seen_at timestamp comparison instead of status column
-  const isOnline = device.last_seen_at 
-    ? (new Date().getTime() - new Date(device.last_seen_at).getTime()) < 90000
-    : false;
+  // Recalculate every 1 second for real-time status
+  React.useEffect(() => {
+    const calculate = () => {
+      if (!device.last_seen_at) {
+        setSecondsSinceSeen(Infinity);
+        return;
+      }
+      const diff = (Date.now() - new Date(device.last_seen_at).getTime()) / 1000;
+      setSecondsSinceSeen(diff);
+    };
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [device.last_seen_at]);
+
+  // 3-Stage Logic:
+  // Stage A (0-20s): Online, show real data
+  // Stage B (20-40s): Online, show 0/--
+  // Stage C (>40s): Offline, show 0/--
+  const isOnline = secondsSinceSeen <= 40;
+  const isDataValid = secondsSinceSeen <= 20;
 
   // Calculate "last seen" time
   const getLastSeenText = () => {
@@ -58,17 +76,28 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
 
   const lightMode = getLightMode();
 
-  // Check if value should be shown as inactive (offline or zero)
-  const isValueInactive = (value: number | null | undefined) => {
+  // Get display value based on 3-stage logic
+  const getDisplayValue = (dbValue: number | null | undefined): number | null => {
+    // Stage A: Show real DB data
+    if (isDataValid && dbValue !== null && dbValue !== undefined) {
+      return dbValue;
+    }
+    // Stage B & C: Force 0
+    return null;
+  };
+
+  // Check if value should be shown as inactive (gray)
+  const isValueInactive = (displayValue: number | null) => {
     if (!isOnline) return true;
-    if (value === null || value === undefined) return true;
-    if (value === 0) return true;
+    if (displayValue === null) return true;
+    if (displayValue === 0) return true;
     return false;
   };
 
-  const SensorValue = ({ icon: Icon, label, value, unit }: any) => {
-    const inactive = isValueInactive(value);
-    const displayValue = value !== null && value !== undefined ? `${value}${unit}` : '--';
+  const SensorValue = ({ icon: Icon, label, dbValue, unit }: { icon: any; label: string; dbValue: number | null | undefined; unit: string }) => {
+    const displayValue = getDisplayValue(dbValue);
+    const inactive = isValueInactive(displayValue);
+    const displayText = displayValue !== null ? `${displayValue}${unit}` : '--';
     
     return (
       <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
@@ -77,7 +106,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
           <span className="text-sm text-muted-foreground">{label}</span>
         </div>
         <span className={`text-lg font-semibold ${inactive ? 'text-muted-foreground' : 'text-foreground'}`}>
-          {inactive && value === 0 ? '0' + unit : displayValue}
+          {displayText}
         </span>
       </div>
     );
@@ -117,21 +146,21 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
         <SensorValue
           icon={Thermometer}
           label="Температура"
-          value={device.last_temp?.toFixed(1)}
+          dbValue={device.last_temp !== null && device.last_temp !== undefined ? parseFloat(device.last_temp.toFixed(1)) : null}
           unit="°C"
         />
         
         <SensorValue
           icon={Droplets}
           label="Вологість повітря"
-          value={device.last_hum?.toFixed(0)}
+          dbValue={device.last_hum !== null && device.last_hum !== undefined ? parseFloat(device.last_hum.toFixed(0)) : null}
           unit="%"
         />
         
         <SensorValue
           icon={Sprout}
           label="Вологість ґрунту"
-          value={device.last_soil_moisture !== null && device.last_soil_moisture !== undefined ? device.last_soil_moisture.toFixed(0) : null}
+          dbValue={device.last_soil_moisture !== null && device.last_soil_moisture !== undefined ? parseFloat(device.last_soil_moisture.toFixed(0)) : null}
           unit="%"
         />
         
