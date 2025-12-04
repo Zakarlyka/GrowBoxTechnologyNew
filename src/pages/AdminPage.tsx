@@ -2,8 +2,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield } from 'lucide-react';
-import { StrainManager } from '@/components/admin/StrainManager';
+import { Shield, Library, FileText, Users } from 'lucide-react';
+import { LibraryStrainManager } from '@/components/admin/LibraryStrainManager';
 import { ArticleManager } from '@/components/admin/ArticleManager';
 import { UserManager } from '@/components/admin/UserManager';
 
@@ -46,22 +46,31 @@ export default function AdminPage() {
           </CardHeader>
         </Card>
 
-        <Tabs defaultValue="strains" className="w-full">
+        <Tabs defaultValue="library" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="strains">Керування Сортами</TabsTrigger>
-            <TabsTrigger value="library">Керування Бібліотекою</TabsTrigger>
-            <TabsTrigger value="users">Керування Користувачами</TabsTrigger>
+            <TabsTrigger value="library" className="gap-2">
+              <Library className="h-4 w-4" />
+              Бібліотека Сортів
+            </TabsTrigger>
+            <TabsTrigger value="articles" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Статті
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="h-4 w-4" />
+              Користувачі
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="strains">
-            <StrainManager />
+          <TabsContent value="library" className="mt-6">
+            <LibraryStrainManager />
           </TabsContent>
 
-          <TabsContent value="library">
+          <TabsContent value="articles" className="mt-6">
             <ArticleManager />
           </TabsContent>
 
-          <TabsContent value="users">
+          <TabsContent value="users" className="mt-6">
             <UserManager />
           </TabsContent>
         </Tabs>
