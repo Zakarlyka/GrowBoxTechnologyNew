@@ -1,0 +1,251 @@
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Leaf, Sparkles, Check, Plus, Loader2 } from 'lucide-react';
+import { usePlantData, PlantStage, PLANT_STAGES, getPresetsForStage, calculatePlantAge } from '@/hooks/usePlantData';
+import { usePremiumStatus } from '@/hooks/usePremiumStatus';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+interface PlantHeaderProps {
+  deviceId: string;
+  deviceUuid: string; // The actual device_id (text) for settings
+  currentSettings: any;
+  onSettingsOptimized?: () => void;
+}
+
+export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsOptimized }: PlantHeaderProps) {
+  const { plant, isLoading, updateStage, isUpdatingStage } = usePlantData(deviceId);
+  const { isPremium } = usePremiumStatus();
+  const [isOptimizing, setIsOptimizing] = useState(false);
+
+  if (isLoading) {
+    return (
+      <Card className="gradient-card border-border/50">
+        <CardContent className="py-6">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Empty state - no plant found
+  if (!plant) {
+    return (
+      <Card className="gradient-card border-border/50 border-dashed">
+        <CardContent className="py-8">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <div className="h-16 w-16 rounded-full bg-accent/10 flex items-center justify-center">
+              <Leaf className="h-8 w-8 text-accent" />
+            </div>
+            <div>
+              <p className="text-lg font-medium text-foreground">Немає активної рослини</p>
+              <p className="text-sm text-muted-foreground">Додайте рослину для відстеження та AI-оптимізації</p>
+            </div>
+            <Button variant="outline" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Посадити нову рослину
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const plantAge = calculatePlantAge(plant.start_date);
+  const stagePresets = getPresetsForStage(plant.strain?.presets, plant.current_stage);
+
+  // Check if current settings match the presets for this stage
+  const settingsMatch = checkSettingsMatch(currentSettings, stagePresets);
+
+  const handleOptimize = async () => {
+    if (!stagePresets || !deviceUuid) return;
+
+    setIsOptimizing(true);
+    try {
+      // Build the optimized settings object
+      const optimizedSettings: Record<string, any> = { ...currentSettings };
+
+      if (stagePresets.temp !== undefined) {
+        optimizedSettings.target_temp = stagePresets.temp;
+      }
+      if (stagePresets.hum !== undefined) {
+        optimizedSettings.target_hum = stagePresets.hum;
+      }
+      if (stagePresets.light_h !== undefined) {
+        // Calculate light schedule based on hours
+        // Default: start at 6:00, end based on light_h
+        const lightHours = stagePresets.light_h;
+        optimizedSettings.light_start_h = 6;
+        optimizedSettings.light_start_m = 0;
+        optimizedSettings.light_end_h = (6 + lightHours) % 24;
+        optimizedSettings.light_end_m = 0;
+        optimizedSettings.light_mode = 1; // AUTO mode
+      }
+
+      const { error } = await supabase
+        .from('devices')
+        .update({ settings: optimizedSettings })
+        .eq('device_id', deviceUuid);
+
+      if (error) throw error;
+
+      toast({
+        title: '✨ Оптимізовано!',
+        description: `Налаштування застосовано для стадії "${getStageLabel(plant.current_stage)}"`,
+      });
+
+      onSettingsOptimized?.();
+    } catch (error: any) {
+      toast({
+        title: 'Помилка',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  return (
+    <Card className="gradient-card border-border/50 overflow-hidden">
+      <CardContent className="py-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          {/* Left Section - Identity */}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-accent/30">
+              <AvatarImage src={plant.photo_url || undefined} alt={plant.custom_name || 'Plant'} />
+              <AvatarFallback className="bg-accent/10">
+                <Leaf className="h-8 w-8 text-accent" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold text-foreground">
+                {plant.custom_name || 'Безіменна рослина'}
+              </h3>
+              {plant.strain && (
+                <p className="text-sm text-muted-foreground">{plant.strain.name}</p>
+              )}
+              {plantAge !== null && (
+                <Badge variant="secondary" className="text-xs">
+                  День {plantAge}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Middle Section - Stage Control */}
+          <div className="flex flex-col items-start md:items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Поточна стадія</span>
+            <Select
+              value={plant.current_stage || 'seedling'}
+              onValueChange={(value) => updateStage(value as PlantStage)}
+              disabled={isUpdatingStage}
+            >
+              <SelectTrigger className="w-[180px] bg-background/50">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border">
+                {PLANT_STAGES.map((stage) => (
+                  <SelectItem key={stage.value} value={stage.value}>
+                    {stage.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Right Section - AI Actions */}
+          <div className="flex items-center gap-3">
+            {stagePresets ? (
+              settingsMatch ? (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-green-500">Середовище оптимізовано</span>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleOptimize}
+                  disabled={isOptimizing || !isPremium}
+                  className={`gap-2 ${
+                    isPremium
+                      ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/50 hover:border-yellow-500/80 text-yellow-500 hover:text-yellow-400'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                  variant="outline"
+                >
+                  {isOptimizing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  Оптимізувати для {getStageLabel(plant.current_stage)}
+                  {!isPremium && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      Premium
+                    </Badge>
+                  )}
+                </Button>
+              )
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Немає пресетів для цієї стадії
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Presets Preview (if available) */}
+        {stagePresets && !settingsMatch && (
+          <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="flex items-center gap-6 text-sm">
+              <span className="text-muted-foreground">Рекомендовані налаштування:</span>
+              {stagePresets.temp !== undefined && (
+                <span className="text-orange-500">🌡️ {stagePresets.temp}°C</span>
+              )}
+              {stagePresets.hum !== undefined && (
+                <span className="text-blue-500">💧 {stagePresets.hum}%</span>
+              )}
+              {stagePresets.light_h !== undefined && (
+                <span className="text-yellow-500">☀️ {stagePresets.light_h}год світла</span>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Helper to check if current settings match presets
+function checkSettingsMatch(
+  settings: any,
+  presets: { temp?: number; hum?: number; light_h?: number } | null
+): boolean {
+  if (!settings || !presets) return false;
+
+  const tempMatch = presets.temp === undefined || settings.target_temp === presets.temp;
+  const humMatch = presets.hum === undefined || settings.target_hum === presets.hum;
+  
+  // For light, check if the photoperiod matches
+  let lightMatch = true;
+  if (presets.light_h !== undefined) {
+    const startH = settings.light_start_h ?? 6;
+    const endH = settings.light_end_h ?? 22;
+    const currentLightHours = endH > startH ? endH - startH : 24 - startH + endH;
+    lightMatch = currentLightHours === presets.light_h;
+  }
+
+  return tempMatch && humMatch && lightMatch;
+}
+
+// Helper to get stage label
+function getStageLabel(stage: string | null): string {
+  const found = PLANT_STAGES.find((s) => s.value === stage);
+  return found?.label || stage || 'Невідомо';
+}
