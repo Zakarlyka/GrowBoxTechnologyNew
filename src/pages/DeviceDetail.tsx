@@ -8,6 +8,7 @@ import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Tra
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
+import { PlantHeader } from '@/components/PlantHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -158,6 +159,14 @@ export default function DeviceDetail() {
           </Button>
         </div>
       </div>
+
+      {/* Plant Header - Active Plant Card */}
+      <PlantHeader
+        deviceId={id || ''}
+        deviceUuid={device.device_id}
+        currentSettings={settings}
+        onSettingsOptimized={() => window.location.reload()}
+      />
 
       {/* Device Info Card */}
       <Card className="gradient-card border-border/50">

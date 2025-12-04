@@ -380,6 +380,42 @@ export type Database = {
           },
         ]
       }
+      library_strains: {
+        Row: {
+          breeder: string | null
+          created_at: string | null
+          description: string | null
+          flowering_days: number | null
+          id: number
+          name: string
+          photo_url: string | null
+          presets: Json | null
+          type: string | null
+        }
+        Insert: {
+          breeder?: string | null
+          created_at?: string | null
+          description?: string | null
+          flowering_days?: number | null
+          id?: number
+          name: string
+          photo_url?: string | null
+          presets?: Json | null
+          type?: string | null
+        }
+        Update: {
+          breeder?: string | null
+          created_at?: string | null
+          description?: string | null
+          flowering_days?: number | null
+          id?: number
+          name?: string
+          photo_url?: string | null
+          presets?: Json | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string | null
@@ -513,6 +549,63 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      plants: {
+        Row: {
+          created_at: string | null
+          current_stage: string | null
+          custom_name: string | null
+          device_id: string | null
+          id: string
+          is_main: boolean | null
+          notes: string | null
+          photo_url: string | null
+          start_date: string | null
+          strain_id: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_stage?: string | null
+          custom_name?: string | null
+          device_id?: string | null
+          id?: string
+          is_main?: boolean | null
+          notes?: string | null
+          photo_url?: string | null
+          start_date?: string | null
+          strain_id?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_stage?: string | null
+          custom_name?: string | null
+          device_id?: string | null
+          id?: string
+          is_main?: boolean | null
+          notes?: string | null
+          photo_url?: string | null
+          start_date?: string | null
+          strain_id?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plants_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "plants_strain_id_fkey"
+            columns: ["strain_id"]
+            isOneToOne: false
+            referencedRelation: "library_strains"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
