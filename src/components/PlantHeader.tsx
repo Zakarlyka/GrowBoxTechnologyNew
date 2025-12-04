@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Leaf, Sparkles, Check, Plus, Loader2 } from 'lucide-react';
+import { Leaf, Sparkles, Check, Plus, Loader2, Pencil } from 'lucide-react';
 import { usePlantData, PlantStage, PLANT_STAGES, getPresetsForStage, calculatePlantAge } from '@/hooks/usePlantData';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AddPlantDialog } from './AddPlantDialog';
+import { EditPlantDialog } from './EditPlantDialog';
 
 interface PlantHeaderProps {
   deviceId: string;
@@ -23,6 +24,7 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
   const { isPremium } = usePremiumStatus();
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [addPlantOpen, setAddPlantOpen] = useState(false);
+  const [editPlantOpen, setEditPlantOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -135,9 +137,19 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
               </AvatarFallback>
             </Avatar>
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold text-foreground">
-                {plant.custom_name || 'Безіменна рослина'}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {plant.custom_name || 'Безіменна рослина'}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => setEditPlantOpen(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               {plant.strain && (
                 <p className="text-sm text-muted-foreground">{plant.strain.name}</p>
               )}
@@ -228,6 +240,21 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
           </div>
         )}
       </CardContent>
+
+      {/* Edit Plant Dialog */}
+      {plant && (
+        <EditPlantDialog
+          open={editPlantOpen}
+          onOpenChange={setEditPlantOpen}
+          plant={{
+            id: plant.id,
+            custom_name: plant.custom_name,
+            start_date: plant.start_date,
+          }}
+          onPlantUpdated={refetch}
+          onPlantDeleted={refetch}
+        />
+      )}
     </Card>
   );
 }
