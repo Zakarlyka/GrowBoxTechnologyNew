@@ -50,14 +50,20 @@ interface LibraryStrain {
   breeder: string | null;
 }
 
+interface PreSelectedStrain {
+  id: number;
+  name: string;
+}
+
 interface AddPlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   deviceId: string;
   onPlantAdded: () => void;
+  preSelectedStrain?: PreSelectedStrain;
 }
 
-export function AddPlantDialog({ open, onOpenChange, deviceId, onPlantAdded }: AddPlantDialogProps) {
+export function AddPlantDialog({ open, onOpenChange, deviceId, onPlantAdded, preSelectedStrain }: AddPlantDialogProps) {
   const { user } = useAuth();
   const [strains, setStrains] = useState<LibraryStrain[]>([]);
   const [isLoadingStrains, setIsLoadingStrains] = useState(false);
@@ -66,13 +72,21 @@ export function AddPlantDialog({ open, onOpenChange, deviceId, onPlantAdded }: A
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      strainId: undefined,
+      name: preSelectedStrain?.name || '',
+      strainId: preSelectedStrain ? String(preSelectedStrain.id) : undefined,
       stage: 'seedling',
       startDate: new Date(),
       isMain: true,
     },
   });
+
+  // Update form when preSelectedStrain changes
+  useEffect(() => {
+    if (preSelectedStrain) {
+      form.setValue('name', preSelectedStrain.name);
+      form.setValue('strainId', String(preSelectedStrain.id));
+    }
+  }, [preSelectedStrain, form]);
 
   // Fetch strains when dialog opens
   useEffect(() => {
