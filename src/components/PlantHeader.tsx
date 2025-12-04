@@ -9,6 +9,7 @@ import { usePlantData, PlantStage, PLANT_STAGES, getPresetsForStage, calculatePl
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { AddPlantDialog } from './AddPlantDialog';
 
 interface PlantHeaderProps {
   deviceId: string;
@@ -18,9 +19,10 @@ interface PlantHeaderProps {
 }
 
 export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsOptimized }: PlantHeaderProps) {
-  const { plant, isLoading, updateStage, isUpdatingStage } = usePlantData(deviceId);
+  const { plant, isLoading, updateStage, isUpdatingStage, refetch } = usePlantData(deviceId);
   const { isPremium } = usePremiumStatus();
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [addPlantOpen, setAddPlantOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -37,23 +39,31 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
   // Empty state - no plant found
   if (!plant) {
     return (
-      <Card className="gradient-card border-border/50 border-dashed">
-        <CardContent className="py-8">
-          <div className="flex flex-col items-center justify-center text-center space-y-4">
-            <div className="h-16 w-16 rounded-full bg-accent/10 flex items-center justify-center">
-              <Leaf className="h-8 w-8 text-accent" />
+      <>
+        <Card className="gradient-card border-border/50 border-dashed">
+          <CardContent className="py-8">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <div className="h-16 w-16 rounded-full bg-accent/10 flex items-center justify-center">
+                <Leaf className="h-8 w-8 text-accent" />
+              </div>
+              <div>
+                <p className="text-lg font-medium text-foreground">Немає активної рослини</p>
+                <p className="text-sm text-muted-foreground">Додайте рослину для відстеження та AI-оптимізації</p>
+              </div>
+              <Button variant="outline" className="gap-2" onClick={() => setAddPlantOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Посадити нову рослину
+              </Button>
             </div>
-            <div>
-              <p className="text-lg font-medium text-foreground">Немає активної рослини</p>
-              <p className="text-sm text-muted-foreground">Додайте рослину для відстеження та AI-оптимізації</p>
-            </div>
-            <Button variant="outline" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Посадити нову рослину
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        <AddPlantDialog
+          open={addPlantOpen}
+          onOpenChange={setAddPlantOpen}
+          deviceId={deviceUuid}
+          onPlantAdded={refetch}
+        />
+      </>
     );
   }
 
