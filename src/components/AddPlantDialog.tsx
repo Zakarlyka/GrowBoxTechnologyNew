@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { CalendarIcon, Leaf, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,7 @@ interface AddPlantDialogProps {
 
 export function AddPlantDialog({ open, onOpenChange, deviceId, onPlantAdded, preSelectedStrain }: AddPlantDialogProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [strains, setStrains] = useState<LibraryStrain[]>([]);
   const [isLoadingStrains, setIsLoadingStrains] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -147,10 +149,14 @@ export function AddPlantDialog({ open, onOpenChange, deviceId, onPlantAdded, pre
       if (error) throw error;
 
       toast({
-        title: '🌱 Рослину додано!',
-        description: `"${data.name}" успішно додано до цього пристрою`,
+        title: '🌱 Успішно посаджено!',
+        description: `"${data.name}" готова до вирощування`,
       });
 
+      // Invalidate all plant-related queries to force refresh
+      await queryClient.invalidateQueries({ queryKey: ['main-plant'] });
+      await queryClient.invalidateQueries({ queryKey: ['plants'] });
+      
       form.reset();
       onOpenChange(false);
       onPlantAdded();
