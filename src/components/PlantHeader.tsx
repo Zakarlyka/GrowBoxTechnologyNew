@@ -125,121 +125,149 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
   };
 
   return (
-    <Card className="gradient-card border-border/50 overflow-hidden">
-      <CardContent className="py-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* Left Section - Identity */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16 border-2 border-accent/30">
-              <AvatarImage src={plant.photo_url || undefined} alt={plant.custom_name || 'Plant'} />
-              <AvatarFallback className="bg-accent/10">
-                <Leaf className="h-8 w-8 text-accent" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-foreground">
-                  {plant.custom_name || 'Безіменна рослина'}
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  onClick={() => setEditPlantOpen(true)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              {plant.strain && (
-                <p className="text-sm text-muted-foreground">{plant.strain.name}</p>
-              )}
-              {plantAge !== null && (
-                <Badge variant="secondary" className="text-xs">
-                  День {plantAge}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Middle Section - Stage Control */}
-          <div className="flex flex-col items-start md:items-center gap-2">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Поточна стадія</span>
-            <Select
-              value={plant.current_stage || 'seedling'}
-              onValueChange={(value) => updateStage(value as PlantStage)}
-              disabled={isUpdatingStage}
-            >
-              <SelectTrigger className="w-[180px] bg-background/50">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background border-border">
-                {PLANT_STAGES.map((stage) => (
-                  <SelectItem key={stage.value} value={stage.value}>
-                    {stage.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Right Section - AI Actions */}
-          <div className="flex items-center gap-3">
-            {stagePresets ? (
-              settingsMatch ? (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium text-green-500">Середовище оптимізовано</span>
+    <>
+      <Card className="gradient-card border-border/50 overflow-hidden">
+        <CardContent className="py-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            {/* Left Section - Identity */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16 border-2 border-accent/30">
+                <AvatarImage src={plant.photo_url || undefined} alt={plant.custom_name || 'Plant'} />
+                <AvatarFallback className="bg-accent/10">
+                  <Leaf className="h-8 w-8 text-accent" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {plant.custom_name || 'Безіменна рослина'}
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => setEditPlantOpen(true)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-              ) : (
-                <Button
-                  onClick={handleOptimize}
-                  disabled={isOptimizing || !isPremium}
-                  className={`gap-2 ${
-                    isPremium
-                      ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/50 hover:border-yellow-500/80 text-yellow-500 hover:text-yellow-400'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                  variant="outline"
-                >
-                  {isOptimizing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Оптимізувати для {getStageLabel(plant.current_stage)}
-                  {!isPremium && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      Premium
+                {plant.strain && (
+                  <p className="text-sm text-muted-foreground">{plant.strain.name}</p>
+                )}
+                <div className="flex items-center gap-2">
+                  {plantAge !== null && (
+                    <Badge variant="secondary" className="text-xs">
+                      День {plantAge}
                     </Badge>
                   )}
-                </Button>
-              )
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                Немає пресетів для цієї стадії
+                  {plant.is_main && (
+                    <Badge variant="outline" className="text-xs text-accent border-accent/50">
+                      Основна
+                    </Badge>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Presets Preview (if available) */}
-        {stagePresets && !settingsMatch && (
-          <div className="mt-4 pt-4 border-t border-border/30">
-            <div className="flex items-center gap-6 text-sm">
-              <span className="text-muted-foreground">Рекомендовані налаштування:</span>
-              {stagePresets.temp !== undefined && (
-                <span className="text-orange-500">🌡️ {stagePresets.temp}°C</span>
+            {/* Middle Section - Stage Control */}
+            <div className="flex flex-col items-start md:items-center gap-2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Поточна стадія</span>
+              <Select
+                value={plant.current_stage || 'seedling'}
+                onValueChange={(value) => updateStage(value as PlantStage)}
+                disabled={isUpdatingStage}
+              >
+                <SelectTrigger className="w-[180px] bg-background/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  {PLANT_STAGES.map((stage) => (
+                    <SelectItem key={stage.value} value={stage.value}>
+                      {stage.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Right Section - AI Actions + Add More */}
+            <div className="flex items-center gap-3">
+              {stagePresets ? (
+                settingsMatch ? (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                    <Check className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium text-green-500">Середовище оптимізовано</span>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleOptimize}
+                    disabled={isOptimizing || !isPremium}
+                    className={`gap-2 ${
+                      isPremium
+                        ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/50 hover:border-yellow-500/80 text-yellow-500 hover:text-yellow-400'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                    variant="outline"
+                  >
+                    {isOptimizing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    Оптимізувати для {getStageLabel(plant.current_stage)}
+                    {!isPremium && (
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        Premium
+                      </Badge>
+                    )}
+                  </Button>
+                )
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Немає пресетів для цієї стадії
+                </div>
               )}
-              {stagePresets.hum !== undefined && (
-                <span className="text-blue-500">💧 {stagePresets.hum}%</span>
-              )}
-              {stagePresets.light_h !== undefined && (
-                <span className="text-yellow-500">☀️ {stagePresets.light_h}год світла</span>
-              )}
+              
+              {/* Add More Plants Button */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 border-dashed border-accent/50 text-accent hover:bg-accent/10"
+                onClick={() => setAddPlantOpen(true)}
+                title="Додати ще рослину"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        )}
-      </CardContent>
+
+          {/* Presets Preview (if available) */}
+          {stagePresets && !settingsMatch && (
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <div className="flex items-center gap-6 text-sm">
+                <span className="text-muted-foreground">Рекомендовані налаштування:</span>
+                {stagePresets.temp !== undefined && (
+                  <span className="text-orange-500">🌡️ {stagePresets.temp}°C</span>
+                )}
+                {stagePresets.hum !== undefined && (
+                  <span className="text-blue-500">💧 {stagePresets.hum}%</span>
+                )}
+                {stagePresets.light_h !== undefined && (
+                  <span className="text-yellow-500">☀️ {stagePresets.light_h}год світла</span>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Plant Dialog */}
+      <AddPlantDialog
+        open={addPlantOpen}
+        onOpenChange={setAddPlantOpen}
+        deviceId={deviceUuid}
+        onPlantAdded={refetch}
+      />
 
       {/* Edit Plant Dialog */}
       {plant && (
@@ -255,7 +283,7 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
           onPlantDeleted={refetch}
         />
       )}
-    </Card>
+    </>
   );
 }
 
