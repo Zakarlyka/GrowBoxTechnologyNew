@@ -136,25 +136,50 @@ export function usePlantData(deviceId: string | null) {
   };
 }
 
-// Helper to get presets for a specific stage
+// Robust helper to get presets for a specific stage with alias mapping
 export function getPresetsForStage(
   presets: PlantData['strain']['presets'] | null | undefined,
   stage: string | null
 ): { temp?: number; hum?: number; light_h?: number } | null {
   if (!presets || !stage) return null;
 
-  const stageMap: Record<string, keyof NonNullable<PlantData['strain']['presets']>> = {
-    seedling: 'seedling',
-    vegetation: 'veg',
-    flowering: 'bloom',
-    flushing: 'flush',
-    drying: 'drying',
+  const key = stage.toLowerCase().trim();
+  
+  // Try exact match first
+  if ((presets as any)[key]) return (presets as any)[key];
+  
+  // Stage key aliases - maps UI stage values to possible JSON keys
+  const aliasMap: Record<string, string[]> = {
+    'seedling': ['seedling', 'seedlings', 'seed'],
+    'vegetation': ['veg', 'vegetative', 'vegetation', 'grow'],
+    'flowering': ['bloom', 'flowering', 'flower'],
+    'flushing': ['flush', 'flushing', 'rinse'],
+    'drying': ['drying', 'dry', 'cure'],
   };
-
-  const presetKey = stageMap[stage];
-  if (!presetKey) return null;
-
-  return presets[presetKey] || null;
+  
+  // Get possible aliases for this stage
+  const aliases = aliasMap[key] || [];
+  
+  // Try each alias
+  for (const alias of aliases) {
+    if ((presets as any)[alias]) {
+      return (presets as any)[alias];
+    }
+  }
+  
+  // Reverse lookup - try to find the key in presets that matches any alias
+  const allAliases = Object.entries(aliasMap);
+  for (const [, possibleKeys] of allAliases) {
+    if (possibleKeys.includes(key)) {
+      for (const pk of possibleKeys) {
+        if ((presets as any)[pk]) {
+          return (presets as any)[pk];
+        }
+      }
+    }
+  }
+  
+  return null;
 }
 
 // Calculate days since start date

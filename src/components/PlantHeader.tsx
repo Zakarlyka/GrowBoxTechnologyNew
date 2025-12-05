@@ -223,8 +223,8 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
                   </Button>
                 )
               ) : (
-                <div className="text-sm text-muted-foreground">
-                  Немає пресетів для цієї стадії
+                <div className="text-sm text-amber-500/80 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/30">
+                  ⚠️ Немає пресету для стадії "{getStageLabel(plant.current_stage)}". Перевірте дані в Бібліотеці.
                 </div>
               )}
               
