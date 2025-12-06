@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff } from 'lucide-react';
@@ -14,6 +15,7 @@ interface DeviceCardProps {
 }
 
 export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardProps) {
+  const { t } = useTranslation();
   const { latestLog } = useDeviceLogs(device.id);
   const { settings } = useDeviceControls(device.device_id);
   const navigate = useNavigate();
@@ -43,13 +45,13 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
 
   // Calculate "last seen" time
   const getLastSeenText = () => {
-    if (!device.last_seen_at) return 'Невідомо';
+    if (!device.last_seen_at) return t('common.unknown');
     const seconds = Math.floor((new Date().getTime() - new Date(device.last_seen_at).getTime()) / 1000);
-    if (seconds < 60) return `${seconds} сек тому`;
+    if (seconds < 60) return `${seconds} ${t('common.secsAgo')}`;
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} хв тому`;
+    if (minutes < 60) return `${minutes} ${t('common.minsAgo')}`;
     const hours = Math.floor(minutes / 60);
-    return `${hours} год тому`;
+    return `${hours} ${t('common.hoursAgo')}`;
   };
 
   // Get light mode from settings
@@ -114,12 +116,12 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
     const styles = colorClasses[color];
     
     return (
-      <div className={`flex items-center justify-between p-3 rounded-lg ${styles.bg} border ${styles.border}`}>
+      <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${styles.bg} border ${styles.border}`}>
         <div className="flex items-center space-x-2">
           <Icon className={`h-4 w-4 ${inactive ? 'text-muted-foreground/50' : styles.icon}`} />
-          <span className="text-sm text-muted-foreground">{label}</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">{label}</span>
         </div>
-        <span className={`text-lg font-semibold ${inactive ? 'text-muted-foreground' : 'text-foreground'}`}>
+        <span className={`text-base sm:text-lg font-semibold ${inactive ? 'text-muted-foreground' : 'text-foreground'}`}>
           {displayText}
         </span>
       </div>
@@ -131,35 +133,35 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
       className="gradient-card border-border/50 hover:border-primary/50 transition-all cursor-pointer"
       onClick={() => navigate(`/device/${device.id}`)}
     >
-      <CardHeader>
+      <CardHeader className="pb-2 sm:pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">{device.name}</CardTitle>
+          <CardTitle className="text-lg sm:text-xl truncate pr-2">{device.name}</CardTitle>
           <Badge 
             variant={isOnline ? 'default' : 'destructive'}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 shrink-0"
           >
             {isOnline ? (
               <>
                 <Wifi className="h-3 w-3" />
-                Online
+                <span className="hidden sm:inline">{t('status.online')}</span>
               </>
             ) : (
               <>
                 <WifiOff className="h-3 w-3" />
-                Offline
+                <span className="hidden sm:inline">{t('status.offline')}</span>
               </>
             )}
           </Badge>
         </div>
         {device.location && (
-          <p className="text-sm text-muted-foreground">{device.location}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">{device.location}</p>
         )}
       </CardHeader>
       
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 sm:space-y-3">
         <SensorValue
           icon={Thermometer}
-          label="Температура"
+          label={t('sensors.temperature')}
           dbValue={device.last_temp !== null && device.last_temp !== undefined ? parseFloat(device.last_temp.toFixed(1)) : null}
           unit="°C"
           color="orange"
@@ -167,7 +169,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
         
         <SensorValue
           icon={Droplets}
-          label="Вологість повітря"
+          label={t('sensors.airHumidity')}
           dbValue={device.last_hum !== null && device.last_hum !== undefined ? parseFloat(device.last_hum.toFixed(0)) : null}
           unit="%"
           color="blue"
@@ -175,14 +177,14 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
         
         <SensorValue
           icon={Sprout}
-          label="Вологість ґрунту"
+          label={t('sensors.soilMoisture')}
           dbValue={device.last_soil_moisture !== null && device.last_soil_moisture !== undefined ? parseFloat(device.last_soil_moisture.toFixed(0)) : null}
           unit="%"
           color="green"
         />
         
         <div 
-          className={`flex flex-col gap-2 p-3 rounded-lg border border-border/30 transition-colors ${
+          className={`flex flex-col gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border border-border/30 transition-colors ${
             lightMode?.isDay 
               ? 'bg-yellow-500/10 border-yellow-500/30' 
               : 'bg-blue-500/10 border-blue-500/30'
@@ -195,26 +197,26 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
               ) : (
                 <Moon className="h-4 w-4 text-blue-500" />
               )}
-              <span className="text-sm text-muted-foreground">Світловий Цикл</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">{t('sensors.lightCycle')}</span>
             </div>
             {lightMode && (
-              <span className="text-lg font-semibold text-foreground flex items-center gap-1">
-                {lightMode.isDay ? '☀️ День' : '🌙 Ніч'}
+              <span className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-1">
+                {lightMode.isDay ? `☀️ ${t('sensors.day')}` : `🌙 ${t('sensors.night')}`}
               </span>
             )}
           </div>
           {lightMode ? (
-            <div className="text-sm text-muted-foreground">
-              День {lightMode.dayHours}год / Ніч {lightMode.nightHours}год
+            <div className="text-xs sm:text-sm text-muted-foreground">
+              {t('sensors.day')} {lightMode.dayHours}h / {t('sensors.night')} {lightMode.nightHours}h
             </div>
           ) : (
-            <span className="text-sm text-muted-foreground">Режим не встановлено</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">--</span>
           )}
         </div>
 
         <div className="pt-2 border-t border-border/30">
           <p className="text-xs text-muted-foreground text-center">
-            Востаннє онлайн: {getLastSeenText()}
+            {t('devices.lastSeen')}: {getLastSeenText()}
           </p>
         </div>
       </CardContent>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,13 @@ import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
 interface DeviceControlsProps {
   deviceId: string;
 }
+
 export function DeviceControls({ deviceId }: DeviceControlsProps) {
+  const { t } = useTranslation();
   const { settings, sensorData, lastSeenAt, loading, isSaving, saveSettings } = useDeviceControls(deviceId);
   const { isPremium } = usePremiumStatus();
 
@@ -53,6 +57,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   // Modified state tracking
   const [hasChanges, setHasChanges] = useState(false);
+
   useEffect(() => {
     if (settings) {
       // Global AI
@@ -85,6 +90,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setHasChanges(false);
     }
   }, [settings]);
+
   const handleSave = async () => {
     const patch = {
       // Global AI
@@ -140,12 +146,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
           await saveSettings({ pump_pulse: 0 });
           setIsWatering(false);
         } catch (error: any) {
-          toast.error(`Помилка відновлення режиму: ${error.message}`);
+          toast.error(`${t('common.error')}: ${error.message}`);
           setIsWatering(false);
         }
       }, 10000);
     } catch (error: any) {
-      toast.error(`Помилка поливу: ${error.message}`);
+      toast.error(`${t('common.error')}: ${error.message}`);
       setIsWatering(false);
     }
   };
@@ -170,27 +176,30 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   // Stage A (0-20s): Online, valid data | Stage B (20-40s): Online, expired data | Stage C (>40s): Offline
   const isOnline = secondsSinceSeen <= 40;
   const isDataValid = secondsSinceSeen <= 20;
+
   if (loading) {
     return (
       <div className="gradient-card border border-border/50 rounded-lg p-6">
-        <p className="text-center text-muted-foreground">Завантаження...</p>
+        <p className="text-center text-muted-foreground">{t('common.loading')}</p>
       </div>
     );
   }
+
   const isAiActive = aiMode === 1;
+
   return (
-    <div className="relative space-y-4">
+    <div className="relative space-y-4 pb-20 lg:pb-4">
       {/* Header with Status */}
       <div className="flex items-center justify-between"></div>
 
-      {/* 4-Card Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* 4-Card Grid - Responsive */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
         {/* Card A: Lighting 💡 */}
         <Card className="gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
               <Lightbulb className="w-5 h-5" />
-              Освітлення
+              {t('controls.lighting')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -198,19 +207,19 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="flex gap-2">
               <Button
                 variant={lightMode === 0 ? "destructive" : "outline"}
-                className={cn("flex-1 transition-all", lightMode === 0 && "bg-destructive text-destructive-foreground")}
+                className={cn("flex-1 transition-all min-h-[44px]", lightMode === 0 && "bg-destructive text-destructive-foreground")}
                 onClick={() => {
                   setLightMode(0);
                   setHasChanges(true);
                 }}
                 disabled={isAiActive}
               >
-                OFF
+                {t('controls.off')}
               </Button>
               <Button
                 variant={lightMode === 1 && !isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   lightMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
@@ -219,12 +228,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 }}
                 disabled={isAiActive}
               >
-                ON
+                {t('controls.on')}
               </Button>
               <Button
                 variant={isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
                   !isPremium && "opacity-50 cursor-not-allowed",
                 )}
@@ -232,7 +241,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={!isPremium}
               >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                AI
+                {t('controls.ai')}
               </Button>
             </div>
 
@@ -241,19 +250,19 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="space-y-4 pt-2 border-t border-border/30">
                 {/* Group 1: Start Time */}
                 <div className="mb-4">
-                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">☀️ Час Ввімкнення</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">☀️ {t('controls.startTime')}</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">Години</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
                       <Select
-                      value={String(lightStartH).padStart(2, '0')}
-                      onValueChange={(value) => {
-                        setLightStartH(parseInt(value, 10));
-                        setHasChanges(true);
-                      }}
-                      disabled={isAiActive}
-                    >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                        value={String(lightStartH).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightStartH(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                      >
+                        <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -266,16 +275,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       </Select>
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">Хвилини</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
                       <Select
-                      value={String(lightStartM).padStart(2, '0')}
-                      onValueChange={(value) => {
-                        setLightStartM(parseInt(value, 10));
-                        setHasChanges(true);
-                      }}
+                        value={String(lightStartM).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightStartM(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
                         disabled={isAiActive}
                       >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                        <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -292,19 +301,19 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
                 {/* Group 2: End Time */}
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">🌙 Час Вимкнення</Label>
+                  <Label className="text-xs font-medium text-muted-foreground mb-2 block">🌙 {t('controls.endTime')}</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">Години</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
                       <Select
-                      value={String(lightEndH).padStart(2, '0')}
-                      onValueChange={(value) => {
-                        setLightEndH(parseInt(value, 10));
-                        setHasChanges(true);
-                      }}
+                        value={String(lightEndH).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightEndH(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
                         disabled={isAiActive}
                       >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                        <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -317,16 +326,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       </Select>
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">Хвилини</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
                       <Select
-                      value={String(lightEndM).padStart(2, '0')}
-                      onValueChange={(value) => {
-                        setLightEndM(parseInt(value, 10));
-                        setHasChanges(true);
-                      }}
+                        value={String(lightEndM).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightEndM(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
                         disabled={isAiActive}
                       >
-                        <SelectTrigger className={cn("h-9", isAiActive && "opacity-50")}>
+                        <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -344,7 +353,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 {isAiActive && (
                   <div className="flex items-center gap-1 text-xs text-yellow-600">
                     <Sparkles className="w-3 h-3" />
-                    <span>AI керує розкладом</span>
+                    <span>{t('controls.aiManagesSchedule')}</span>
                   </div>
                 )}
               </div>
@@ -354,10 +363,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
         {/* Card B: Climate Control 🌡️ */}
         <Card className="gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
               <Thermometer className="w-5 h-5" />
-              Клімат
+              {t('controls.climate')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -366,7 +375,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <Button
                 variant={climateMode === 0 ? "destructive" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   climateMode === 0 && "bg-destructive text-destructive-foreground",
                 )}
                 onClick={() => {
@@ -375,12 +384,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 }}
                 disabled={isAiActive}
               >
-                OFF
+                {t('controls.off')}
               </Button>
               <Button
                 variant={climateMode === 1 && !isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   climateMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
@@ -389,12 +398,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 }}
                 disabled={isAiActive}
               >
-                ON
+                {t('controls.on')}
               </Button>
               <Button
                 variant={isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
                   !isPremium && "opacity-50 cursor-not-allowed",
                 )}
@@ -402,7 +411,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={!isPremium}
               >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                AI
+                {t('controls.ai')}
               </Button>
             </div>
 
@@ -410,23 +419,23 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="flex gap-2 pt-2 border-t border-border/30">
               <Button
                 variant={seasonalMode === 0 ? "default" : "outline"}
-                className="flex-1"
+                className="flex-1 min-h-[44px]"
                 onClick={() => {
                   setSeasonalMode(0);
                   setHasChanges(true);
                 }}
               >
-                ❄️ Зима
+                ❄️ {t('controls.winter')}
               </Button>
               <Button
                 variant={seasonalMode === 1 ? "default" : "outline"}
-                className="flex-1"
+                className="flex-1 min-h-[44px]"
                 onClick={() => {
                   setSeasonalMode(1);
                   setHasChanges(true);
                 }}
               >
-                ☀️ Літо
+                ☀️ {t('controls.summer')}
               </Button>
             </div>
 
@@ -435,7 +444,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    🌡️ Цільова Темп. (°C)
+                    🌡️ {t('controls.targetTemp')} (°C)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -448,7 +457,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                           setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn("pr-12", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         °C
@@ -458,7 +467,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    ± Гістерезис (°C)
+                    ± {t('controls.hysteresis')} (°C)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -471,7 +480,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                           setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn("pr-12", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         °C
@@ -483,7 +492,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    💧 Цільова Вологість (%)
+                    💧 {t('controls.targetHumidity')} (%)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -497,7 +506,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="0"
                         max="100"
                         disabled={isAiActive}
-                        className={cn("pr-12", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
@@ -507,7 +516,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    ± Гістерезис (%)
+                    ± {t('controls.hysteresis')} (%)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -521,7 +530,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="0"
                         max="50"
                         disabled={isAiActive}
-                        className={cn("pr-12", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
@@ -533,7 +542,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               {isAiActive && (
                 <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />
-                  <span>AI керує кліматом</span>
+                  <span>{t('controls.aiManagesClimate')}</span>
                 </div>
               )}
             </div>
@@ -542,10 +551,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
         {/* Card C: Irrigation 💧 */}
         <Card className="gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
               <Droplets className="w-5 h-5" />
-              Полив
+              {t('controls.irrigation')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -553,19 +562,19 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="flex gap-2">
               <Button
                 variant={pumpMode === 2 ? "destructive" : "outline"}
-                className={cn("flex-1 transition-all", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
+                className={cn("flex-1 transition-all min-h-[44px]", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
                 onClick={() => {
                   setPumpMode(2);
                   setHasChanges(true);
                 }}
                 disabled={isAiActive || isWatering}
               >
-                OFF
+                {t('controls.off')}
               </Button>
               <Button
                 variant={pumpMode === 0 && !isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   pumpMode === 0 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
@@ -574,12 +583,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 }}
                 disabled={isAiActive || isWatering}
               >
-                ON
+                {t('controls.on')}
               </Button>
               <Button
                 variant={isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
                   !isPremium && "opacity-50 cursor-not-allowed",
                 )}
@@ -587,26 +596,26 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={!isPremium || isWatering}
               >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                AI
+                {t('controls.ai')}
               </Button>
             </div>
 
             {/* Large Force Water Button */}
             <Button
               size="lg"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 min-h-[48px]"
               onClick={handleWaterNow}
               disabled={isWatering}
             >
               <Droplets className={cn("w-6 h-6 mr-2", isWatering && "animate-pulse")} />
-              {isWatering ? "Полив... (10 сек)" : "Полити Зараз"}
+              {isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
             </Button>
 
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  📉 Старт: мін. вологість %
+                  📉 {t('controls.soilMoistureMin')} %
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -620,7 +629,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       min="0"
                       max="100"
                       disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
+                      className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                       %
@@ -630,7 +639,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  📈 Стоп: макс. вологість %
+                  📈 {t('controls.soilMoistureMax')} %
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -644,7 +653,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       min="0"
                       max="100"
                       disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
+                      className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                       %
@@ -655,7 +664,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               {isAiActive && (
                 <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />
-                  <span>AI керує поливом</span>
+                  <span>{t('controls.aiManagesIrrigation')}</span>
                 </div>
               )}
             </div>
@@ -664,10 +673,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
         {/* Card D: Ventilation 💨 */}
         <Card className="gradient-card border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
               <Wind className="w-5 h-5" />
-              Вентиляція
+              {t('controls.ventilation')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -675,19 +684,19 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="flex gap-2">
               <Button
                 variant={ventMode === 0 ? "destructive" : "outline"}
-                className={cn("flex-1 transition-all", ventMode === 0 && "bg-destructive text-destructive-foreground")}
+                className={cn("flex-1 transition-all min-h-[44px]", ventMode === 0 && "bg-destructive text-destructive-foreground")}
                 onClick={() => {
                   setVentMode(0);
                   setHasChanges(true);
                 }}
                 disabled={isAiActive}
               >
-                OFF
+                {t('controls.off')}
               </Button>
               <Button
                 variant={ventMode === 1 && !isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   ventMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
@@ -696,12 +705,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 }}
                 disabled={isAiActive}
               >
-                ON
+                {t('controls.on')}
               </Button>
               <Button
                 variant={isAiActive ? "default" : "outline"}
                 className={cn(
-                  "flex-1 transition-all",
+                  "flex-1 transition-all min-h-[44px]",
                   isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
                   !isPremium && "opacity-50 cursor-not-allowed",
                 )}
@@ -709,7 +718,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={!isPremium}
               >
                 {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                AI
+                {t('controls.ai')}
               </Button>
             </div>
 
@@ -717,7 +726,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  ⏱️ Час Роботи (сек)
+                  ⏱️ {t('controls.workDuration')} ({t('controls.seconds')})
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -730,17 +739,17 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       }}
                       min="0"
                       disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
+                      className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      с
+                      {t('controls.seconds')}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  ⏸️ Час Паузи (сек)
+                  ⏸️ {t('controls.pauseDuration')} ({t('controls.seconds')})
                 </Label>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -753,10 +762,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       }}
                       min="0"
                       disabled={isAiActive}
-                      className={cn("pr-12", isAiActive && "opacity-50")}
+                      className={cn("pr-12 h-10", isAiActive && "opacity-50")}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                      с
+                      {t('controls.seconds')}
                     </span>
                   </div>
                 </div>
@@ -764,7 +773,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               {isAiActive && (
                 <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />
-                  <span>AI керує вентиляцією</span>
+                  <span>{t('controls.aiManagesVentilation')}</span>
                 </div>
               )}
             </div>
@@ -772,11 +781,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
       </div>
 
-      {/* Save Button */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button size="lg" className="shadow-lg" onClick={handleSave} disabled={!hasChanges || isSaving}>
+      {/* Save Button - Fixed on mobile, normal on desktop */}
+      <div className="fixed bottom-20 lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 z-50">
+        <Button 
+          size="lg" 
+          className="w-full lg:w-auto shadow-lg min-h-[48px]" 
+          onClick={handleSave} 
+          disabled={!hasChanges || isSaving}
+        >
           <Save className="w-5 h-5 mr-2" />
-          {isSaving ? "Збереження..." : "Зберегти Налаштування"}
+          {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
         </Button>
       </div>
     </div>

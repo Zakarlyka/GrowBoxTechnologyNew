@@ -11,6 +11,7 @@ import { useSensorData } from '@/hooks/useSensorData';
 import { AddDeviceDialog } from './AddDeviceDialog';
 import { DeviceCard } from './DeviceCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 interface SensorData {
   time: string;
   temperature: number;
@@ -18,6 +19,7 @@ interface SensorData {
   soilMoisture: number;
   lightLevel: number;
 }
+
 interface DeviceStatus {
   id: string;
   name: string;
@@ -28,26 +30,20 @@ interface DeviceStatus {
   lightLevel: number;
   lastSeen: string;
 }
+
 export function Dashboard() {
-  const {
-    t
-  } = useTranslation();
-  const {
-    devices,
-    loading,
-    deleteDevice,
-    fetchDevices
-  } = useDevices();
-  const {
-    sensorData
-  } = useSensorData();
+  const { t } = useTranslation();
+  const { devices, loading, deleteDevice, fetchDevices } = useDevices();
+  const { sensorData } = useSensorData();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<string | null>(null);
+
   const handleDeleteClick = (deviceId: string) => {
     setDeviceToDelete(deviceId);
     setDeleteDialogOpen(true);
   };
+
   const handleDeleteConfirm = async () => {
     if (deviceToDelete) {
       await deleteDevice(deviceToDelete);
@@ -83,6 +79,7 @@ export function Dashboard() {
     const interval = setInterval(generateData, 5000);
     return () => clearInterval(interval);
   }, []);
+
   // Calculate online/offline status dynamically based on last_seen_at
   // 3-Stage Logic: Stage A+B (0-40s) = Online, Stage C (>40s) = Offline
   const [onlineDevices, setOnlineDevices] = useState(0);
@@ -104,108 +101,116 @@ export function Dashboard() {
     const interval = setInterval(calculateOnline, 1000);
     return () => clearInterval(interval);
   }, [devices]);
-  const StatCard = ({
-    title,
-    value,
-    unit,
-    icon: Icon,
-    trend
-  }: any) => {
-    return <Card className="gradient-card border-border/50">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+
+  const StatCard = ({ title, value, unit, icon: Icon, trend }: any) => {
+    return (
+      <Card className="gradient-card border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
             {title}
           </CardTitle>
           <Icon className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
+        <CardContent className="pt-0">
+          <div className="text-xl sm:text-2xl font-bold">
             {value}{unit}
           </div>
-          {trend && <p className="text-xs text-muted-foreground flex items-center mt-1">
+          {trend && (
+            <p className="text-xs text-muted-foreground flex items-center mt-1">
               <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
               <span>+2.5% from last hour</span>
-            </p>}
+            </p>
+          )}
         </CardContent>
-      </Card>;
+      </Card>
+    );
   };
-  return <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between">
+
+  return (
+    <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6 pb-20 lg:pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             {t('dashboard.title')}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {t('dashboard.subtitle')}
           </p>
         </div>
-        <Button className="gradient-primary" onClick={() => setAddDialogOpen(true)}>
+        <Button className="gradient-primary w-full sm:w-auto min-h-[44px]" onClick={() => setAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           {t('devices.addDevice')}
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Cards - Responsive Grid */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard 
-          title="Всього пристроїв" 
+          title={t('dashboard.totalDevices')} 
           value={totalDevices} 
           unit="" 
           icon={Cpu} 
         />
         <StatCard 
-          title="Онлайн" 
+          title={t('dashboard.onlineDevices')} 
           value={onlineDevices} 
           unit="" 
           icon={Wifi} 
         />
         <StatCard 
-          title="Офлайн" 
+          title={t('dashboard.offlineDevices')} 
           value={totalDevices - onlineDevices} 
           unit="" 
           icon={WifiOff} 
         />
         <StatCard 
-          title="Активність" 
+          title={t('dashboard.activity')} 
           value={onlineDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0} 
           unit="%" 
           icon={Activity} 
         />
       </div>
 
-      {loading ? <div className="text-center py-12">
-          <p className="text-muted-foreground">Завантаження пристроїв...</p>
-        </div> : devices.length === 0 ? <Card className="gradient-card border-border/50">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Cpu className="h-16 w-16 text-muted-foreground mb-4" />
-            <p className="text-xl font-semibold mb-2">Немає пристроїв</p>
-            <p className="text-muted-foreground mb-4">Додайте свій перший пристрій для моніторингу</p>
-            <Button onClick={() => setAddDialogOpen(true)} className="gradient-primary">
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">{t('dashboard.loadingDevices')}</p>
+        </div>
+      ) : devices.length === 0 ? (
+        <Card className="gradient-card border-border/50">
+          <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12">
+            <Cpu className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mb-4" />
+            <p className="text-lg sm:text-xl font-semibold mb-2">{t('dashboard.noDevices')}</p>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4 text-center px-4">{t('dashboard.noDevicesDescription')}</p>
+            <Button onClick={() => setAddDialogOpen(true)} className="gradient-primary min-h-[44px]">
               <Plus className="mr-2 h-4 w-4" />
-              Додати пристрій
+              {t('devices.addDevice')}
             </Button>
           </CardContent>
-        </Card> : <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {devices.map(device => <DeviceCard key={device.id} device={device} />)}
-        </div>}
+        </div>
+      )}
 
       <AddDeviceDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onDeviceAdded={fetchDevices} />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Видалити пристрій?</AlertDialogTitle>
+            <AlertDialogTitle>{t('devices.deleteConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Цю дію неможливо скасувати. Пристрій буде видалено назавжди.
+              {t('devices.deleteConfirmDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground">
-              Видалити
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>;
+    </div>
+  );
 }
