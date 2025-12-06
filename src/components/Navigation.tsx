@@ -22,13 +22,13 @@ export function Navigation() {
   const menuItems = [
     {
       path: '/devices',
-      label: 'Мої пристрої',
+      label: t('navigation.myDevices'),
       icon: Cpu,
       roles: ['user', 'developer', 'admin']
     },
     {
       path: '/dashboard',
-      label: 'Панель керування',
+      label: t('navigation.dashboard'),
       icon: Wifi,
       roles: ['user', 'developer', 'admin']
     },
@@ -40,19 +40,19 @@ export function Navigation() {
     },
     {
       path: '/library',
-      label: 'Бібліотека',
+      label: t('navigation.library'),
       icon: BookOpen,
       roles: ['user', 'developer', 'admin']
     },
     {
       path: '/developer',
-      label: 'Розробник',
+      label: t('navigation.developer'),
       icon: Code,
       roles: ['developer', 'admin']
     },
     {
       path: '/admin',
-      label: 'Адмін-панель',
+      label: t('navigation.admin'),
       icon: Shield,
       roles: ['admin']
     },
