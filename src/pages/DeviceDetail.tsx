@@ -120,7 +120,8 @@ export default function DeviceDetail() {
   };
 
   const lightMode = getLightMode();
-  const vpdAnalysis = getVPDAnalysis(device.last_temp, device.last_hum);
+  const targetTemp = (settings as any)?.target_temp ?? null;
+  const vpdAnalysis = getVPDAnalysis(device.last_temp, device.last_hum, targetTemp);
 
   return (
     <div className="flex-1 space-y-6 p-6">
