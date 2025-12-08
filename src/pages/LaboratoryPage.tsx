@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
+import { ActiveGrowsSection } from '@/components/laboratory/ActiveGrowsSection';
+import { AllPlantsDrawer } from '@/components/laboratory/AllPlantsDrawer';
 
 interface ToolConfig {
   id: string;
@@ -63,18 +65,39 @@ const LaboratoryPage = () => {
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-3 rounded-xl bg-primary/10 border border-primary/30">
-          <FlaskConical className="h-8 w-8 text-primary" />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-primary/10 border border-primary/30">
+            <FlaskConical className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{t('laboratory.title')}</h1>
+            <p className="text-muted-foreground">{t('laboratory.subtitle')}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('laboratory.title')}</h1>
-          <p className="text-muted-foreground">{t('laboratory.subtitle')}</p>
-        </div>
+        <AllPlantsDrawer />
       </div>
+
+      {/* Active Grows Section */}
+      <Card className="border-2 border-green-500/20 bg-green-500/5">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Sprout className="h-5 w-5 text-green-500" />
+            <CardTitle className="text-lg">🧪 Експериментальні зразки</CardTitle>
+          </div>
+          <CardDescription>Ваші активні рослини</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActiveGrowsSection />
+        </CardContent>
+      </Card>
 
       {/* Tool Cards */}
       <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-primary" />
+          Інструменти
+        </h2>
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isExpanded = expandedTool === tool.id;
