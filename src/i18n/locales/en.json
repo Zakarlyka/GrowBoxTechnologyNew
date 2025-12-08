@@ -71,9 +71,10 @@
     "off": "OFF",
     "auto": "AUTO",
     "ai": "AI",
+    "manual": "MANUAL",
     "schedule": "Schedule",
-    "winter": "Winter",
-    "summer": "Summer",
+    "winter": "WINTER",
+    "summer": "SUMMER",
     "targetTemp": "Target Temperature",
     "targetHumidity": "Target Humidity",
     "hysteresis": "Hysteresis",
@@ -122,6 +123,10 @@
     "saving": "Saving...",
     "success": "Success",
     "error": "Error"
+  },
+  "units": {
+    "sec": "sec",
+    "percent": "%"
   },
   "auth": {
     "signIn": "Sign In",

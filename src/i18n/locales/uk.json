@@ -71,9 +71,10 @@
     "off": "OFF",
     "auto": "AUTO",
     "ai": "AI",
+    "manual": "MANUAL",
     "schedule": "За розкладом",
-    "winter": "Зима",
-    "summer": "Літо",
+    "winter": "WINTER",
+    "summer": "SUMMER",
     "targetTemp": "Цільова температура",
     "targetHumidity": "Цільова вологість",
     "hysteresis": "Гістерезис",
@@ -114,14 +115,18 @@
     "unknown": "Невідомо"
   },
   "status": {
-    "online": "Онлайн",
-    "offline": "Офлайн",
+    "online": "Online",
+    "offline": "Offline",
     "connected": "Підключено",
     "disconnected": "Відключено",
     "loading": "Завантаження...",
     "saving": "Збереження...",
     "success": "Успіх",
     "error": "Помилка"
+  },
+  "units": {
+    "sec": "sec",
+    "percent": "%"
   },
   "auth": {
     "signIn": "Увійти",

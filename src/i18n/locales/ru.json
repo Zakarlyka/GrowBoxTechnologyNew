@@ -67,13 +67,14 @@
     "waterPump": "Водяной насос",
     "lightSystem": "Система освещения",
     "heater": "Обогреватель",
-    "on": "ВКЛ",
-    "off": "ВЫКЛ",
-    "auto": "АВТО",
+    "on": "ON",
+    "off": "OFF",
+    "auto": "AUTO",
     "ai": "AI",
+    "manual": "MANUAL",
     "schedule": "По расписанию",
-    "winter": "Зима",
-    "summer": "Лето",
+    "winter": "WINTER",
+    "summer": "SUMMER",
     "targetTemp": "Целевая температура",
     "targetHumidity": "Целевая влажность",
     "hysteresis": "Гистерезис",
@@ -114,14 +115,18 @@
     "unknown": "Неизвестно"
   },
   "status": {
-    "online": "Онлайн",
-    "offline": "Офлайн",
+    "online": "Online",
+    "offline": "Offline",
     "connected": "Подключено",
     "disconnected": "Отключено",
     "loading": "Загрузка...",
     "saving": "Сохранение...",
     "success": "Успешно",
     "error": "Ошибка"
+  },
+  "units": {
+    "sec": "sec",
+    "percent": "%"
   },
   "auth": {
     "signIn": "Войти",
