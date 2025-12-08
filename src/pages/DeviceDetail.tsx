@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Trash2, Pencil, Check, X, QrCode } from 'lucide-react';
+import { ArrowLeft, Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, Trash2, Pencil, Check, X, QrCode, Wind } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { calculatePhotoperiod, isWithinLightSchedule, formatTime } from '@/lib/utils';
+import { getVPDAnalysis } from '@/lib/vpd';
 import QRCode from 'react-qr-code';
 
 export default function DeviceDetail() {
@@ -119,6 +120,7 @@ export default function DeviceDetail() {
   };
 
   const lightMode = getLightMode();
+  const vpdAnalysis = getVPDAnalysis(device.last_temp, device.last_hum);
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -270,6 +272,24 @@ export default function DeviceDetail() {
               )}
             </div>
           </div>
+
+          {/* VPD Analysis Section */}
+          {vpdAnalysis && (
+            <div className={`mt-4 p-4 rounded-lg border ${vpdAnalysis.borderColor} ${vpdAnalysis.bgColor}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Wind className={`h-5 w-5 ${vpdAnalysis.color}`} />
+                  <span className="font-medium text-foreground">VPD (Дефіцит Тиску Пари)</span>
+                </div>
+                <Badge className={`${vpdAnalysis.bgColor} ${vpdAnalysis.color} border ${vpdAnalysis.borderColor}`}>
+                  {vpdAnalysis.vpd.toFixed(2)} kPa
+                </Badge>
+              </div>
+              <p className={`text-sm ${vpdAnalysis.color}`}>
+                💡 AI Tip: {vpdAnalysis.advice}
+              </p>
+            </div>
+          )}
 
           <div className="pt-2 border-t border-border/30">
             <p className="text-xs text-muted-foreground text-center">
