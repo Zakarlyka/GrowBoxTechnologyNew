@@ -8,7 +8,7 @@ import { Devices } from '@/components/Devices';
 import { RemoteControlPage } from '@/pages/RemoteControlPage';
 import { AdvancedCharts } from '@/components/AdvancedCharts';
 import { Settings } from '@/pages/Settings';
-import DeveloperCabinet from '@/components/DeveloperCabinet';
+import LaboratoryPage from '@/pages/LaboratoryPage';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('devices');
@@ -26,9 +26,8 @@ const Index = () => {
         return <AdvancedCharts />;
       case 'settings':
         return <Settings />;
-      case 'developer':
-        return hasRole('developer') || isAdmin ? 
-          <DeveloperCabinet /> : <Settings />;
+      case 'laboratory':
+        return <LaboratoryPage />;
       default:
         return <Devices />;
     }
