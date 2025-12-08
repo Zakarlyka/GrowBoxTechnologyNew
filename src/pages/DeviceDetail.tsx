@@ -274,22 +274,27 @@ export default function DeviceDetail() {
           </div>
 
           {/* VPD Analysis Section */}
-          {vpdAnalysis && (
-            <div className={`mt-4 p-4 rounded-lg border ${vpdAnalysis.borderColor} ${vpdAnalysis.bgColor}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Wind className={`h-5 w-5 ${vpdAnalysis.color}`} />
-                  <span className="font-medium text-foreground">VPD (Дефіцит Тиску Пари)</span>
-                </div>
-                <Badge className={`${vpdAnalysis.bgColor} ${vpdAnalysis.color} border ${vpdAnalysis.borderColor}`}>
-                  {vpdAnalysis.vpd.toFixed(2)} kPa
-                </Badge>
+          <div className={`mt-4 p-4 rounded-lg border ${vpdAnalysis.borderColor} ${vpdAnalysis.bgColor}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Wind className={`h-5 w-5 ${vpdAnalysis.color}`} />
+                <span className="font-medium text-foreground">VPD (Дефіцит Тиску Пари)</span>
               </div>
+              <Badge className={`${vpdAnalysis.bgColor} ${vpdAnalysis.color} border ${vpdAnalysis.borderColor}`}>
+                {vpdAnalysis.isOffline ? '-- kPa' : `${vpdAnalysis.vpd?.toFixed(2)} kPa`}
+              </Badge>
+            </div>
+            {!vpdAnalysis.isOffline && vpdAnalysis.advice && (
               <p className={`text-sm ${vpdAnalysis.color}`}>
                 💡 AI Tip: {vpdAnalysis.advice}
               </p>
-            </div>
-          )}
+            )}
+            {vpdAnalysis.isOffline && (
+              <p className="text-sm text-muted-foreground">
+                Немає даних з сенсорів
+              </p>
+            )}
+          </div>
 
           <div className="pt-2 border-t border-border/30">
             <p className="text-xs text-muted-foreground text-center">

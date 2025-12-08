@@ -4,13 +4,14 @@
 const LEAF_TEMP_OFFSET = -2; // Leaf is typically 2°C cooler than air
 
 export interface VPDResult {
-  vpd: number;
-  status: 'good' | 'too_humid' | 'too_dry';
+  vpd: number | null;
+  status: 'good' | 'too_humid' | 'too_dry' | 'offline';
   color: string;
   bgColor: string;
   borderColor: string;
   advice: string;
   targetHumidity?: number;
+  isOffline: boolean;
 }
 
 // Calculate Saturated Vapor Pressure (kPa) using Tetens formula
@@ -40,8 +41,21 @@ export const calculateTargetHumidity = (airTemp: number, targetVpd: number): num
 };
 
 // Get complete VPD analysis with status, colors, and advice
-export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDResult | null => {
-  if (airTemp === null || rh === null) return null;
+export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDResult => {
+  // Check for offline/invalid data: null values or both are 0
+  const isOffline = airTemp === null || rh === null || (airTemp === 0 && rh === 0);
+  
+  if (isOffline) {
+    return {
+      vpd: null,
+      status: 'offline',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted/50',
+      borderColor: 'border-muted',
+      advice: '',
+      isOffline: true
+    };
+  }
   
   const vpd = calculateVPD(airTemp, rh);
   
@@ -53,7 +67,8 @@ export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDRe
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/20',
       borderColor: 'border-blue-500',
-      advice: '⚠️ Ризик плісняви! Підвищіть температуру або вентиляцію.'
+      advice: '⚠️ Ризик плісняви! Підвищіть температуру або вентиляцію.',
+      isOffline: false
     };
   } else if (vpd > 1.2) {
     const targetHumidity = calculateTargetHumidity(airTemp, 1.0);
@@ -64,7 +79,8 @@ export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDRe
       bgColor: 'bg-red-500/20',
       borderColor: 'border-red-500',
       advice: `🌵 Занадто сухо! Підвищіть вологість до ~${Math.round(targetHumidity)}%`,
-      targetHumidity: Math.round(targetHumidity)
+      targetHumidity: Math.round(targetHumidity),
+      isOffline: false
     };
   } else {
     return {
@@ -73,7 +89,8 @@ export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDRe
       color: 'text-green-500',
       bgColor: 'bg-green-500/20',
       borderColor: 'border-green-500',
-      advice: '🌿 Ідеальні умови для росту. Так тримати!'
+      advice: '🌿 Ідеальні умови для росту. Так тримати!',
+      isOffline: false
     };
   }
 };
