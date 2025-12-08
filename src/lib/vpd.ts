@@ -40,8 +40,12 @@ export const calculateTargetHumidity = (airTemp: number, targetVpd: number): num
   return Math.min(100, Math.max(0, targetRh));
 };
 
-// Get complete VPD analysis with status, colors, and advice
-export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDResult => {
+// Get complete VPD analysis with status, colors, and context-aware advice
+export const getVPDAnalysis = (
+  airTemp: number | null, 
+  rh: number | null,
+  targetTemp?: number | null
+): VPDResult => {
   // Check for offline/invalid data: null values or both are 0
   const isOffline = airTemp === null || rh === null || (airTemp === 0 && rh === 0);
   
@@ -58,28 +62,32 @@ export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDRe
   }
   
   const vpd = calculateVPD(airTemp, rh);
+  const isHot = targetTemp != null && airTemp > targetTemp;
   
-  // Determine status and colors
+  // Determine status and colors with context-aware advice
   if (vpd < 0.8) {
+    // Too humid - advice depends on temperature context
+    const advice = isHot
+      ? '⚠️ Волого! Збільште вентиляцію.'
+      : '⚠️ Холодно і волого. Перевірте обігрів.';
+    
     return {
       vpd,
       status: 'too_humid',
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/20',
       borderColor: 'border-blue-500',
-      advice: '⚠️ Ризик плісняви! Підвищіть температуру або вентиляцію.',
+      advice,
       isOffline: false
     };
   } else if (vpd > 1.2) {
-    const targetHumidity = calculateTargetHumidity(airTemp, 1.0);
     return {
       vpd,
       status: 'too_dry',
       color: 'text-red-500',
       bgColor: 'bg-red-500/20',
       borderColor: 'border-red-500',
-      advice: `🌵 Занадто сухо! Підвищіть вологість до ~${Math.round(targetHumidity)}%`,
-      targetHumidity: Math.round(targetHumidity),
+      advice: '⚠️ Сухе повітря! Зменште вентиляцію або зволожуйте.',
       isOffline: false
     };
   } else {
@@ -89,7 +97,7 @@ export const getVPDAnalysis = (airTemp: number | null, rh: number | null): VPDRe
       color: 'text-green-500',
       bgColor: 'bg-green-500/20',
       borderColor: 'border-green-500',
-      advice: '🌿 Ідеальні умови для росту. Так тримати!',
+      advice: '🌿 Ідеальні умови для росту!',
       isOffline: false
     };
   }
