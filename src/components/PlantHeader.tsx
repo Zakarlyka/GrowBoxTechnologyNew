@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Leaf, Sparkles, Check, Plus, Loader2, Pencil } from 'lucide-react';
+import { Leaf, Sparkles, Check, Plus, Loader2, Pencil, Sprout } from 'lucide-react';
 import { usePlantData, PlantStage, PLANT_STAGES, getPresetsForStage, calculatePlantAge } from '@/hooks/usePlantData';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AddPlantDialog } from './AddPlantDialog';
 import { EditPlantDialog } from './EditPlantDialog';
+import { GreenhouseDrawer } from './GreenhouseDrawer';
 
 interface PlantHeaderProps {
   deviceId: string;
@@ -227,6 +228,22 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
                   ⚠️ Немає пресету для стадії "{getStageLabel(plant.current_stage)}". Перевірте дані в Бібліотеці.
                 </div>
               )}
+              
+              {/* Greenhouse Management Button */}
+              <GreenhouseDrawer
+                deviceId={deviceId}
+                deviceUuid={deviceUuid}
+                onPlantsChanged={refetch}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-accent/50 text-accent hover:bg-accent/10"
+                >
+                  <Sprout className="h-4 w-4" />
+                  Мої рослини
+                </Button>
+              </GreenhouseDrawer>
               
               {/* Add More Plants Button */}
               <Button
