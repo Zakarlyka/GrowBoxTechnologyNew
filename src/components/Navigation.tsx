@@ -9,7 +9,7 @@ import {
   BarChart3, 
   Wifi, 
   Settings as SettingsIcon, 
-  Code,
+  FlaskConical,
   Shield,
   BookOpen
 } from 'lucide-react';
@@ -24,43 +24,43 @@ export function Navigation() {
       path: '/devices',
       label: t('navigation.myDevices'),
       icon: Cpu,
-      roles: ['user', 'developer', 'admin']
+      roles: ['user', 'developer', 'admin', 'superadmin']
     },
     {
       path: '/dashboard',
       label: t('navigation.dashboard'),
       icon: Wifi,
-      roles: ['user', 'developer', 'admin']
+      roles: ['user', 'developer', 'admin', 'superadmin']
+    },
+    {
+      path: '/laboratory',
+      label: t('navigation.laboratory'),
+      icon: FlaskConical,
+      roles: ['user', 'developer', 'admin', 'superadmin']
     },
     {
       path: '/analytics',
       label: t('navigation.analytics'),
       icon: BarChart3,
-      roles: ['user', 'developer', 'admin']
+      roles: ['user', 'developer', 'admin', 'superadmin']
     },
     {
       path: '/library',
       label: t('navigation.library'),
       icon: BookOpen,
-      roles: ['user', 'developer', 'admin']
-    },
-    {
-      path: '/developer',
-      label: t('navigation.developer'),
-      icon: Code,
-      roles: ['developer', 'admin']
+      roles: ['user', 'developer', 'admin', 'superadmin']
     },
     {
       path: '/admin',
       label: t('navigation.admin'),
       icon: Shield,
-      roles: ['admin']
+      roles: ['admin', 'superadmin']
     },
     {
       path: '/settings',
       label: t('navigation.settings'),
       icon: SettingsIcon,
-      roles: ['user', 'developer', 'admin']
+      roles: ['user', 'developer', 'admin', 'superadmin']
     }
   ];
 

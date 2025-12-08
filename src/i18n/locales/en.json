@@ -7,9 +7,22 @@
     "analytics": "Analytics",
     "settings": "Settings",
     "library": "Library",
-    "developer": "Developer",
+    "laboratory": "Laboratory",
     "admin": "Admin Panel",
     "logout": "Logout"
+  },
+  "laboratory": {
+    "title": "Laboratory",
+    "subtitle": "Calculators and tools for growers",
+    "comingSoon": "Coming Soon",
+    "nutrientCalculator": "🍼 Nutrient Calculator",
+    "nutrientCalculatorDesc": "Calculate precise nutrient doses for your plant feeding system.",
+    "vpdChart": "🌡️ VPD Chart",
+    "vpdChartDesc": "Optimize your climate for maximum plant growth.",
+    "electricityCost": "⚡ Electricity Cost",
+    "electricityCostDesc": "Calculate electricity costs for your equipment.",
+    "waterMixing": "💧 Water Mixing",
+    "waterMixingDesc": "Temperature calculator for mixing hot and cold water."
   },
   "dashboard": {
     "title": "Dashboard",

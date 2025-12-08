@@ -9,7 +9,7 @@ import { Layout } from "./components/Layout";
 import DevicesPage from "./pages/DevicesPage";
 import DashboardPage from "./pages/DashboardPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
-import DeveloperPage from "./pages/DeveloperPage";
+import LaboratoryPage from "./pages/LaboratoryPage";
 import DeviceDetail from "./pages/DeviceDetail";
 import { RemoteControlPage } from "./pages/RemoteControlPage";
 import Auth from "./pages/Auth";
@@ -92,11 +92,11 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path="/developer"
+        path="/laboratory"
         element={
           <ProtectedRoute>
             <Layout>
-              <DeveloperPage />
+              <LaboratoryPage />
             </Layout>
           </ProtectedRoute>
         }
