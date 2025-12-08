@@ -1,9 +1,15 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FlaskConical, Beaker, Thermometer, Zap, Droplets } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { FlaskConical, Beaker, Thermometer, Zap, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
+import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
+import { ElectricityCostCalculator } from '@/components/laboratory/ElectricityCostCalculator';
+import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 
-interface ToolCard {
+interface ToolConfig {
   id: string;
   icon: React.ElementType;
   titleKey: string;
@@ -11,14 +17,14 @@ interface ToolCard {
   color: string;
   bgColor: string;
   borderColor: string;
-  href: string;
-  comingSoon?: boolean;
+  component: React.ComponentType;
 }
 
 const LaboratoryPage = () => {
   const { t } = useTranslation();
+  const [expandedTool, setExpandedTool] = useState<string | null>(null);
 
-  const tools: ToolCard[] = [
+  const tools: ToolConfig[] = [
     {
       id: 'nutrient-calculator',
       icon: Beaker,
@@ -27,8 +33,7 @@ const LaboratoryPage = () => {
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500/30',
-      href: '/laboratory/nutrients',
-      comingSoon: true
+      component: NutrientCalculator,
     },
     {
       id: 'vpd-chart',
@@ -38,8 +43,7 @@ const LaboratoryPage = () => {
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10',
       borderColor: 'border-orange-500/30',
-      href: '/laboratory/vpd',
-      comingSoon: true
+      component: VPDCalculator,
     },
     {
       id: 'electricity-cost',
@@ -49,8 +53,7 @@ const LaboratoryPage = () => {
       color: 'text-yellow-500',
       bgColor: 'bg-yellow-500/10',
       borderColor: 'border-yellow-500/30',
-      href: '/laboratory/electricity',
-      comingSoon: true
+      component: ElectricityCostCalculator,
     },
     {
       id: 'water-mixing',
@@ -60,13 +63,16 @@ const LaboratoryPage = () => {
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
       borderColor: 'border-blue-500/30',
-      href: '/laboratory/water',
-      comingSoon: true
-    }
+      component: WaterMixingCalculator,
+    },
   ];
 
+  const toggleTool = (toolId: string) => {
+    setExpandedTool(expandedTool === toolId ? null : toolId);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-3 rounded-xl bg-primary/10 border border-primary/30">
@@ -78,36 +84,55 @@ const LaboratoryPage = () => {
         </div>
       </div>
 
-      {/* Tool Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Tool Cards */}
+      <div className="space-y-4">
         {tools.map((tool) => {
           const Icon = tool.icon;
-          
+          const isExpanded = expandedTool === tool.id;
+          const ToolComponent = tool.component;
+
           return (
-            <Card 
+            <Card
               key={tool.id}
-              className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer border ${tool.borderColor} ${tool.bgColor}`}
-            >
-              {tool.comingSoon && (
-                <div className="absolute top-3 right-3 px-2 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
-                  {t('laboratory.comingSoon')}
-                </div>
+              className={cn(
+                'overflow-hidden transition-all duration-300',
+                isExpanded ? `border-2 ${tool.borderColor}` : 'border border-border/50'
               )}
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg ${tool.bgColor} border ${tool.borderColor}`}>
-                    <Icon className={`h-6 w-6 ${tool.color}`} />
+            >
+              <CardHeader
+                className={cn(
+                  'cursor-pointer transition-colors',
+                  isExpanded ? tool.bgColor : 'hover:bg-muted/50'
+                )}
+                onClick={() => toggleTool(tool.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={cn('p-2.5 rounded-lg border', tool.bgColor, tool.borderColor)}>
+                      <Icon className={cn('h-6 w-6', tool.color)} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg text-foreground">{t(tool.titleKey)}</CardTitle>
+                      <CardDescription className="text-sm">{t(tool.descriptionKey)}</CardDescription>
+                    </div>
                   </div>
-                  <CardTitle className="text-lg text-foreground">
-                    {t(tool.titleKey)}
-                  </CardTitle>
+                  <Button variant="ghost" size="icon" className="shrink-0">
+                    {isExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <CardDescription className="text-sm text-muted-foreground">
-                  {t(tool.descriptionKey)}
-                </CardDescription>
-              </CardContent>
+
+              {isExpanded && (
+                <CardContent className="pt-0 pb-6">
+                  <div className="pt-4 border-t border-border/50">
+                    <ToolComponent />
+                  </div>
+                </CardContent>
+              )}
             </Card>
           );
         })}
