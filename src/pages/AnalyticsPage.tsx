@@ -1,13 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -32,7 +35,10 @@ import {
   Sprout,
   BarChart3,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Zap,
+  Coins,
+  Calculator
 } from 'lucide-react';
 
 interface Device {
@@ -58,6 +64,216 @@ interface ChartDataPoint {
   hum?: number;
   soil_moisture?: number;
 }
+
+// Electricity Cost Calculator Section - context-aware based on device settings
+interface ElectricityCostSectionProps {
+  selectedDeviceId: string;
+  devices: Device[];
+}
+
+const ElectricityCostSection = ({ selectedDeviceId, devices }: ElectricityCostSectionProps) => {
+  const [wattage, setWattage] = useState<number>(400);
+  const [hoursPerDay, setHoursPerDay] = useState<number>(18);
+  const [costPerKwh, setCostPerKwh] = useState<number>(2.64);
+  const [deviceLightHours, setDeviceLightHours] = useState<number | null>(null);
+
+  // Fetch device settings when device changes
+  useEffect(() => {
+    const fetchDeviceSettings = async () => {
+      if (!selectedDeviceId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('devices')
+          .select('settings')
+          .eq('id', selectedDeviceId)
+          .single();
+
+        if (error) throw error;
+        
+        const settings = data?.settings as any;
+        if (settings) {
+          const startH = settings.light_start_h ?? 6;
+          const endH = settings.light_end_h ?? 24;
+          let hours = endH - startH;
+          if (hours < 0) hours += 24;
+          setDeviceLightHours(hours);
+          setHoursPerDay(hours);
+        }
+      } catch (error) {
+        console.error('Error fetching device settings:', error);
+      }
+    };
+
+    fetchDeviceSettings();
+  }, [selectedDeviceId]);
+
+  const calculations = useMemo(() => {
+    const kw = wattage / 1000;
+    const kwhPerDay = kw * hoursPerDay;
+    const kwhPerMonth = kwhPerDay * 30;
+    const costPerDay = kwhPerDay * costPerKwh;
+    const costPerMonth = kwhPerMonth * costPerKwh;
+    const costPerYear = costPerMonth * 12;
+
+    return { kw, kwhPerDay, kwhPerMonth, costPerDay, costPerMonth, costPerYear };
+  }, [wattage, hoursPerDay, costPerKwh]);
+
+  const selectedDevice = devices.find(d => d.id === selectedDeviceId);
+
+  return (
+    <Card className="gradient-card border-yellow-500/30">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+              <Zap className="h-6 w-6 text-yellow-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg text-foreground">
+                Вартість електроенергії
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Калькулятор витрат для {selectedDevice?.name || 'пристрою'}
+                {deviceLightHours !== null && (
+                  <Badge variant="outline" className="ml-2 text-yellow-500 border-yellow-500/30">
+                    Розклад: {deviceLightHours}год/день
+                  </Badge>
+                )}
+              </CardDescription>
+            </div>
+          </div>
+          <Calculator className="h-5 w-5 text-muted-foreground" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Wattage */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                Потужність лампи
+              </Label>
+              <span className="text-lg font-bold text-foreground">{wattage} W</span>
+            </div>
+            <Slider
+              value={[wattage]}
+              onValueChange={(v) => setWattage(v[0])}
+              min={50}
+              max={2000}
+              step={50}
+              className="w-full"
+            />
+            <Input
+              type="number"
+              value={wattage}
+              onChange={(e) => setWattage(Math.max(1, parseInt(e.target.value) || 0))}
+              className="bg-background text-foreground border-input"
+            />
+          </div>
+
+          {/* Hours per Day */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-blue-500" />
+                Годин на день
+              </Label>
+              <span className="text-lg font-bold text-foreground">{hoursPerDay} год</span>
+            </div>
+            <Slider
+              value={[hoursPerDay]}
+              onValueChange={(v) => setHoursPerDay(v[0])}
+              min={1}
+              max={24}
+              step={1}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1 год</span>
+              <span>12 год</span>
+              <span>18 год</span>
+              <span>24 год</span>
+            </div>
+          </div>
+
+          {/* Cost per kWh */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2 text-sm">
+              <Coins className="h-4 w-4 text-green-500" />
+              Тариф за кВт·год
+            </Label>
+            <Input
+              type="number"
+              step="0.01"
+              min={0}
+              value={costPerKwh}
+              onChange={(e) => setCostPerKwh(Math.max(0, parseFloat(e.target.value) || 0))}
+              className="bg-background text-foreground border-input text-lg"
+            />
+            <p className="text-xs text-muted-foreground">
+              Введіть тариф у вашій валюті (грн/kWh)
+            </p>
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-blue-500/30 bg-blue-500/10">
+            <CardContent className="pt-4 text-center">
+              <p className="text-sm text-muted-foreground">На день</p>
+              <p className="text-2xl font-bold text-blue-500">{calculations.kwhPerDay.toFixed(1)}</p>
+              <p className="text-xs text-muted-foreground">kWh</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-500/30 bg-green-500/10">
+            <CardContent className="pt-4 text-center">
+              <p className="text-sm text-muted-foreground">На місяць</p>
+              <p className="text-2xl font-bold text-green-500">{calculations.kwhPerMonth.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">kWh</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-yellow-500/30 bg-yellow-500/10">
+            <CardContent className="pt-4 text-center">
+              <p className="text-sm text-muted-foreground">Вартість/день</p>
+              <p className="text-2xl font-bold text-yellow-500">{calculations.costPerDay.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">грн</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/30 bg-primary/10">
+            <CardContent className="pt-4 text-center">
+              <p className="text-sm text-muted-foreground">Вартість/місяць</p>
+              <p className="text-3xl font-bold text-primary">{calculations.costPerMonth.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">грн</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Annual Summary */}
+        <div className="flex items-center justify-between p-4 rounded-lg border border-primary/30 bg-primary/5">
+          <div className="flex items-center gap-3">
+            <Calculator className="h-6 w-6 text-primary" />
+            <div>
+              <p className="font-medium text-foreground">Річна вартість</p>
+              <p className="text-sm text-muted-foreground">
+                {calculations.kw.toFixed(2)} kW × {hoursPerDay} год × 365 днів
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-3xl font-bold text-primary">{calculations.costPerYear.toFixed(0)}</p>
+            <p className="text-sm text-muted-foreground">грн/рік</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const AnalyticsPage = () => {
   const { user } = useAuth();
@@ -657,6 +873,12 @@ const AnalyticsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Financial Insights - Electricity Cost Calculator */}
+      <ElectricityCostSection 
+        selectedDeviceId={selectedDeviceId} 
+        devices={devices} 
+      />
     </div>
   );
 };

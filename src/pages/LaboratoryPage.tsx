@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Zap, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
-import { ElectricityCostCalculator } from '@/components/laboratory/ElectricityCostCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 
 interface ToolConfig {
@@ -44,16 +43,6 @@ const LaboratoryPage = () => {
       bgColor: 'bg-orange-500/10',
       borderColor: 'border-orange-500/30',
       component: VPDCalculator,
-    },
-    {
-      id: 'electricity-cost',
-      icon: Zap,
-      titleKey: 'laboratory.electricityCost',
-      descriptionKey: 'laboratory.electricityCostDesc',
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-500/30',
-      component: ElectricityCostCalculator,
     },
     {
       id: 'water-mixing',
