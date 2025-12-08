@@ -24,7 +24,7 @@ export interface PlantData {
   } | null;
 }
 
-export type PlantStage = 'seedling' | 'vegetation' | 'flowering' | 'flushing' | 'drying';
+export type PlantStage = 'seedling' | 'vegetation' | 'flowering' | 'flushing' | 'drying' | 'harvested';
 
 export const PLANT_STAGES: { value: PlantStage; label: string }[] = [
   { value: 'seedling', label: 'Проростання' },
@@ -32,6 +32,7 @@ export const PLANT_STAGES: { value: PlantStage; label: string }[] = [
   { value: 'flowering', label: 'Цвітіння' },
   { value: 'flushing', label: 'Промивка' },
   { value: 'drying', label: 'Сушка' },
+  { value: 'harvested', label: '🌾 Урожай зібрано' },
 ];
 
 export function usePlantData(deviceId: string | null) {
