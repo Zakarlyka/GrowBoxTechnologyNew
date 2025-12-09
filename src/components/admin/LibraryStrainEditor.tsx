@@ -21,7 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, Beaker } from 'lucide-react';
+import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, Beaker, Gauge, FlaskConical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Phase configuration types
@@ -30,7 +30,12 @@ interface PhaseSettings {
   temp_night: number;
   hum: number;
   light_h: number;
+  light_intensity?: number;
+  vpd_min?: number;
+  vpd_max?: number;
   ec?: number;
+  ph_min?: number;
+  ph_max?: number;
 }
 
 interface NutrientWeek {
@@ -60,10 +65,10 @@ interface LibraryStrainEditorProps {
 }
 
 const DEFAULT_PHASE_SETTINGS: Record<string, PhaseSettings> = {
-  seedling: { temp_day: 25, temp_night: 22, hum: 70, light_h: 18 },
-  veg: { temp_day: 26, temp_night: 22, hum: 60, light_h: 18 },
-  bloom: { temp_day: 24, temp_night: 20, hum: 50, light_h: 12 },
-  flush: { temp_day: 22, temp_night: 18, hum: 45, light_h: 12 },
+  seedling: { temp_day: 25, temp_night: 22, hum: 70, light_h: 18, light_intensity: 40, vpd_min: 0.4, vpd_max: 0.8, ec: 0.4, ph_min: 5.8, ph_max: 6.2 },
+  veg: { temp_day: 26, temp_night: 22, hum: 60, light_h: 18, light_intensity: 75, vpd_min: 0.8, vpd_max: 1.2, ec: 1.2, ph_min: 5.8, ph_max: 6.5 },
+  bloom: { temp_day: 24, temp_night: 20, hum: 50, light_h: 12, light_intensity: 100, vpd_min: 1.0, vpd_max: 1.5, ec: 1.8, ph_min: 6.0, ph_max: 6.5 },
+  flush: { temp_day: 22, temp_night: 18, hum: 45, light_h: 12, light_intensity: 80, vpd_min: 0.8, vpd_max: 1.2, ec: 0, ph_min: 6.0, ph_max: 6.5 },
 };
 
 const PHASE_CONFIG = [
@@ -119,7 +124,12 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
               temp_night: preset.temp_night ?? (preset.temp ? preset.temp - 3 : DEFAULT_PHASE_SETTINGS[phase.key].temp_night),
               hum: preset.hum ?? DEFAULT_PHASE_SETTINGS[phase.key].hum,
               light_h: preset.light_h ?? DEFAULT_PHASE_SETTINGS[phase.key].light_h,
-              ec: preset.ec,
+              light_intensity: preset.light_intensity ?? DEFAULT_PHASE_SETTINGS[phase.key].light_intensity,
+              vpd_min: preset.vpd_min ?? DEFAULT_PHASE_SETTINGS[phase.key].vpd_min,
+              vpd_max: preset.vpd_max ?? DEFAULT_PHASE_SETTINGS[phase.key].vpd_max,
+              ec: preset.ec ?? DEFAULT_PHASE_SETTINGS[phase.key].ec,
+              ph_min: preset.ph_min ?? DEFAULT_PHASE_SETTINGS[phase.key].ph_min,
+              ph_max: preset.ph_max ?? DEFAULT_PHASE_SETTINGS[phase.key].ph_max,
             };
           } else {
             parsedPhases[phase.key] = { ...DEFAULT_PHASE_SETTINGS[phase.key] };
@@ -199,7 +209,12 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
           temp_night: settings.temp_night,
           hum: settings.hum,
           light_h: settings.light_h,
-          ...(settings.ec !== undefined && settings.ec > 0 && { ec: settings.ec }),
+          ...(settings.light_intensity !== undefined && { light_intensity: settings.light_intensity }),
+          ...(settings.vpd_min !== undefined && { vpd_min: settings.vpd_min }),
+          ...(settings.vpd_max !== undefined && { vpd_max: settings.vpd_max }),
+          ...(settings.ec !== undefined && { ec: settings.ec }),
+          ...(settings.ph_min !== undefined && { ph_min: settings.ph_min }),
+          ...(settings.ph_max !== undefined && { ph_max: settings.ph_max }),
         };
       }
 
@@ -362,44 +377,37 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
                   </TabsList>
 
                   {PHASE_CONFIG.map((phase) => (
-                    <TabsContent key={phase.key} value={phase.key} className="mt-0">
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Temperature */}
-                        <div className="space-y-3 p-4 rounded-lg bg-orange-500/5 border border-orange-500/20">
-                          <div className="flex items-center gap-2 text-orange-500">
-                            <Thermometer className="h-4 w-4" />
-                            <Label className="font-medium">Температура</Label>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">День (°C)</Label>
-                              <Input
-                                type="number"
-                                value={phaseSettings[phase.key]?.temp_day || ''}
-                                onChange={(e) => updatePhaseSetting(phase.key, 'temp_day', parseFloat(e.target.value) || 0)}
-                                className="h-9"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Ніч (°C)</Label>
-                              <Input
-                                type="number"
-                                value={phaseSettings[phase.key]?.temp_night || ''}
-                                onChange={(e) => updatePhaseSetting(phase.key, 'temp_night', parseFloat(e.target.value) || 0)}
-                                className="h-9"
-                              />
-                            </div>
-                          </div>
+                    <TabsContent key={phase.key} value={phase.key} className="mt-0 space-y-4">
+                      {/* Row 1: Climate */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-orange-500">
+                          <Thermometer className="h-4 w-4" />
+                          🌡️ Climate
                         </div>
-
-                        {/* Humidity */}
-                        <div className="space-y-3 p-4 rounded-lg bg-blue-500/5 border border-blue-500/20">
-                          <div className="flex items-center gap-2 text-blue-500">
-                            <Droplets className="h-4 w-4" />
-                            <Label className="font-medium">Вологість</Label>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          {/* Temperature Day */}
+                          <div className="space-y-1 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                            <Label className="text-xs text-muted-foreground">Target Temp Day (°C)</Label>
+                            <Input
+                              type="number"
+                              value={phaseSettings[phase.key]?.temp_day || ''}
+                              onChange={(e) => updatePhaseSetting(phase.key, 'temp_day', parseFloat(e.target.value) || 0)}
+                              className="h-9"
+                            />
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Цільова (%)</Label>
+                          {/* Temperature Night */}
+                          <div className="space-y-1 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
+                            <Label className="text-xs text-muted-foreground">Target Temp Night (°C)</Label>
+                            <Input
+                              type="number"
+                              value={phaseSettings[phase.key]?.temp_night || ''}
+                              onChange={(e) => updatePhaseSetting(phase.key, 'temp_night', parseFloat(e.target.value) || 0)}
+                              className="h-9"
+                            />
+                          </div>
+                          {/* Humidity */}
+                          <div className="space-y-1 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                            <Label className="text-xs text-muted-foreground">Target Humidity (%)</Label>
                             <Input
                               type="number"
                               value={phaseSettings[phase.key]?.hum || ''}
@@ -407,16 +415,43 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
                               className="h-9"
                             />
                           </div>
-                        </div>
-
-                        {/* Light */}
-                        <div className="space-y-3 p-4 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
-                          <div className="flex items-center gap-2 text-yellow-500">
-                            <Sun className="h-4 w-4" />
-                            <Label className="font-medium">Освітлення</Label>
+                          {/* VPD Range */}
+                          <div className="space-y-1 p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20">
+                            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Gauge className="h-3 w-3" /> VPD Range (kPa)
+                            </Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="Min"
+                                value={phaseSettings[phase.key]?.vpd_min || ''}
+                                onChange={(e) => updatePhaseSetting(phase.key, 'vpd_min', parseFloat(e.target.value) || 0)}
+                                className="h-9 text-sm"
+                              />
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="Max"
+                                value={phaseSettings[phase.key]?.vpd_max || ''}
+                                onChange={(e) => updatePhaseSetting(phase.key, 'vpd_max', parseFloat(e.target.value) || 0)}
+                                className="h-9 text-sm"
+                              />
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Години ON</Label>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Lighting */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-yellow-500">
+                          <Sun className="h-4 w-4" />
+                          💡 Lighting
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Light Hours */}
+                          <div className="space-y-1 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                            <Label className="text-xs text-muted-foreground">Light Hours (ON duration)</Label>
                             <Input
                               type="number"
                               min="0"
@@ -426,24 +461,62 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
                               className="h-9"
                             />
                           </div>
-                        </div>
-
-                        {/* EC */}
-                        <div className="space-y-3 p-4 rounded-lg bg-purple-500/5 border border-purple-500/20">
-                          <div className="flex items-center gap-2 text-purple-500">
-                            <Beaker className="h-4 w-4" />
-                            <Label className="font-medium">Живлення (EC)</Label>
+                          {/* Light Intensity */}
+                          <div className="space-y-1 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                            <Label className="text-xs text-muted-foreground">Light Intensity (%)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={phaseSettings[phase.key]?.light_intensity || ''}
+                              onChange={(e) => updatePhaseSetting(phase.key, 'light_intensity', parseInt(e.target.value) || 0)}
+                              placeholder="100"
+                              className="h-9"
+                            />
                           </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Цільовий EC (mS/cm)</Label>
+                        </div>
+                      </div>
+
+                      {/* Row 3: Nutrition */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-purple-500">
+                          <FlaskConical className="h-4 w-4" />
+                          🧪 Nutrition Guidelines
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Target EC */}
+                          <div className="space-y-1 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                            <Label className="text-xs text-muted-foreground">Target EC (mS/cm)</Label>
                             <Input
                               type="number"
                               step="0.1"
-                              value={phaseSettings[phase.key]?.ec || ''}
+                              value={phaseSettings[phase.key]?.ec ?? ''}
                               onChange={(e) => updatePhaseSetting(phase.key, 'ec', parseFloat(e.target.value) || 0)}
                               placeholder="1.2"
                               className="h-9"
                             />
+                          </div>
+                          {/* pH Range */}
+                          <div className="space-y-1 p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                            <Label className="text-xs text-muted-foreground">Target pH Range</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="Min"
+                                value={phaseSettings[phase.key]?.ph_min || ''}
+                                onChange={(e) => updatePhaseSetting(phase.key, 'ph_min', parseFloat(e.target.value) || 0)}
+                                className="h-9 text-sm"
+                              />
+                              <Input
+                                type="number"
+                                step="0.1"
+                                placeholder="Max"
+                                value={phaseSettings[phase.key]?.ph_max || ''}
+                                onChange={(e) => updatePhaseSetting(phase.key, 'ph_max', parseFloat(e.target.value) || 0)}
+                                className="h-9 text-sm"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
