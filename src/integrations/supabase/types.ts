@@ -499,6 +499,33 @@ export type Database = {
           },
         ]
       }
+      nutrient_schedules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+          schedule_data: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name: string
+          schedule_data?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: number
+          name?: string
+          schedule_data?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pending_devices: {
         Row: {
           created_at: string | null
