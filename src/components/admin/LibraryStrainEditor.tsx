@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,7 @@ const PHASE_CONFIG = [
 ];
 
 export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: LibraryStrainEditorProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activePhaseTab, setActivePhaseTab] = useState('seedling');
 
@@ -247,10 +249,13 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
           description: 'Сорт оновлено',
         });
       } else {
-        // Insert new
+        // Insert new - user_id is required
+        if (!user?.id) {
+          throw new Error('Ви не авторизовані');
+        }
         const { error } = await supabase
           .from('library_strains')
-          .insert(data);
+          .insert({ ...data, user_id: user.id });
 
         if (error) throw error;
 
