@@ -394,6 +394,7 @@ export type Database = {
           photo_url: string | null
           presets: Json | null
           type: string | null
+          user_id: string
         }
         Insert: {
           breeder?: string | null
@@ -405,6 +406,7 @@ export type Database = {
           photo_url?: string | null
           presets?: Json | null
           type?: string | null
+          user_id: string
         }
         Update: {
           breeder?: string | null
@@ -416,6 +418,7 @@ export type Database = {
           photo_url?: string | null
           presets?: Json | null
           type?: string | null
+          user_id?: string
         }
         Relationships: []
       }
