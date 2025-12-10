@@ -30,6 +30,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +45,7 @@ const formSchema = z.object({
   startDate: z.date().default(() => new Date()),
   isMain: z.boolean().default(true),
   deviceId: z.string().min(1, 'Оберіть пристрій'),
+  photoUrl: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -87,6 +89,7 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
       startDate: new Date(),
       isMain: true,
       deviceId: initialDeviceId || '',
+      photoUrl: '',
     },
   });
 
@@ -239,6 +242,7 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
         current_stage: data.stage,
         start_date: format(data.startDate, 'yyyy-MM-dd'),
         is_main: data.isMain,
+        photo_url: data.photoUrl || null,
       });
 
       if (error) throw error;
@@ -443,6 +447,15 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="space-y-2">
+              <Label>Фото рослини (опціонально)</Label>
+              <ImageUpload
+                value={form.watch('photoUrl')}
+                onChange={(url) => form.setValue('photoUrl', url || '')}
+              />
             </div>
 
             {/* Main Plant Toggle */}

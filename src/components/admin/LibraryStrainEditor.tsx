@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, Beaker, Gauge, FlaskConical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -342,15 +343,15 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
                       placeholder="60"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="photo_url">URL фото</Label>
-                    <Input
-                      id="photo_url"
-                      value={photoUrl}
-                      onChange={(e) => setPhotoUrl(e.target.value)}
-                      placeholder="https://..."
-                    />
-                  </div>
+                </div>
+
+                {/* Photo Upload */}
+                <div className="space-y-2">
+                  <Label>Фото сорту</Label>
+                  <ImageUpload
+                    value={photoUrl}
+                    onChange={(url) => setPhotoUrl(url || '')}
+                  />
                 </div>
 
                 <div className="space-y-2">
