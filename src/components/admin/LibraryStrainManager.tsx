@@ -28,6 +28,7 @@ interface LibraryStrain {
   photo_url: string | null;
   presets: any;
   created_at: string | null;
+  is_public: boolean | null;
 }
 
 export function LibraryStrainManager() {
@@ -249,6 +250,7 @@ export function LibraryStrainManager() {
         onOpenChange={setIsEditorOpen}
         strain={editingStrain}
         onSuccess={handleEditorSuccess}
+        isAdmin={true}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
