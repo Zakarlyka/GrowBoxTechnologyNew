@@ -112,8 +112,9 @@ export function ImageUpload({
     // Try to delete from storage if it's a Supabase URL
     if (value.includes(bucketName)) {
       try {
-        // Extract file path from URL
-        const urlParts = value.split(`${bucketName}/`);
+        // Extract file path from URL (strip query params first)
+        const urlWithoutParams = value.split('?')[0];
+        const urlParts = urlWithoutParams.split(`${bucketName}/`);
         if (urlParts[1]) {
           await supabase.storage.from(bucketName).remove([urlParts[1]]);
         }
