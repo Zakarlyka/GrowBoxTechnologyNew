@@ -131,7 +131,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
   return (
     <Card 
       className="gradient-card border-border/50 hover:border-primary/50 transition-all cursor-pointer"
-      onClick={() => navigate(`/device/${device.id}`)}
+      onClick={() => navigate(`/dashboard?device=${device.id}`)}
     >
       <CardHeader className="pb-2 sm:pb-4">
         <div className="flex items-center justify-between">

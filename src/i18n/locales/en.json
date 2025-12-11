@@ -70,7 +70,10 @@
     "deleteDevice": "Delete Device",
     "deleteConfirmTitle": "Delete Device?",
     "deleteConfirmDescription": "This action cannot be undone. The device will be permanently deleted.",
-    "showQr": "Show QR / Reconnect"
+    "showQr": "Show QR / Reconnect",
+    "manage": "Manage",
+    "selectDevice": "Select device",
+    "selectDeviceDescription": "Select a device from the list to view and control"
   },
   "controls": {
     "lighting": "Lighting",
