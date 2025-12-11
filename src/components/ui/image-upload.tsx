@@ -77,12 +77,14 @@ export function ImageUpload({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
+      // Get public URL with cache busting timestamp
       const { data: urlData } = supabase.storage
         .from(bucketName)
         .getPublicUrl(filePath);
 
-      onChange(urlData.publicUrl);
+      // Add cache busting param to force browser to load new image
+      const publicUrlWithCacheBust = `${urlData.publicUrl}?t=${Date.now()}`;
+      onChange(publicUrlWithCacheBust);
 
       toast({
         title: '✅ Завантажено',
