@@ -13,9 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { 
-  Thermometer, Droplets, Sprout, Sun, Moon, Wifi, WifiOff, 
+  Wifi, WifiOff, 
   Pencil, Check, X, QrCode, Trash2, Wind, Cpu, ChevronDown 
 } from 'lucide-react';
+import { SensorCardsGrid } from './SensorCardsGrid';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
@@ -297,60 +298,13 @@ export function Dashboard() {
           {selectedDevice.location && <p className="text-sm text-muted-foreground">{selectedDevice.location}</p>}
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Sensors Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
-              <div className="flex items-center space-x-2">
-                <Thermometer className="h-4 w-4 text-orange-500" />
-                <span className="text-sm text-muted-foreground">Температура</span>
-              </div>
-              <span className="text-lg font-semibold text-foreground">
-                {selectedDevice.last_temp ? `${selectedDevice.last_temp.toFixed(1)}°C` : '-- °C'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-              <div className="flex items-center space-x-2">
-                <Droplets className="h-4 w-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">Вологість</span>
-              </div>
-              <span className="text-lg font-semibold text-foreground">
-                {selectedDevice.last_hum ? `${selectedDevice.last_hum.toFixed(0)}%` : '-- %'}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <div className="flex items-center space-x-2">
-                <Sprout className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">Ґрунт</span>
-              </div>
-              <span className="text-lg font-semibold text-foreground">
-                {selectedDevice.last_soil_moisture !== null && selectedDevice.last_soil_moisture !== undefined 
-                  ? `${selectedDevice.last_soil_moisture.toFixed(0)}%` : '-- %'}
-              </span>
-            </div>
-
-            <div className={`flex flex-col gap-1 p-3 rounded-lg border transition-colors ${
-              lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
-                  <span className="text-sm text-muted-foreground">Світло</span>
-                </div>
-                {lightMode && (
-                  <span className="text-lg font-semibold text-foreground">
-                    {lightMode.isDay ? '☀️ День' : '🌙 Ніч'}
-                  </span>
-                )}
-              </div>
-              {lightMode && (
-                <div className="text-xs text-muted-foreground">
-                  День {lightMode.dayHours}год / Ніч {lightMode.nightHours}год
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Draggable Sensors Grid */}
+          <SensorCardsGrid
+            temperature={selectedDevice.last_temp}
+            humidity={selectedDevice.last_hum}
+            soilMoisture={selectedDevice.last_soil_moisture}
+            lightMode={lightMode}
+          />
 
           {/* VPD Analysis */}
           {vpdAnalysis && (
