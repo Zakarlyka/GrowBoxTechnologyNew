@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Leaf, Clock, FlaskConical } from 'lucide-react';
+import { Search, Plus, Leaf, Clock, FlaskConical, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { useDevices } from '@/hooks/useDevices';
+import { KnowledgeBase } from '@/components/library/KnowledgeBase';
 
 interface LibraryStrain {
   id: number;
@@ -28,6 +30,7 @@ export default function LibraryPage() {
   const [selectedStrain, setSelectedStrain] = useState<LibraryStrain | null>(null);
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('strains');
 
   useEffect(() => {
     fetchStrains();
@@ -105,30 +108,46 @@ export default function LibraryPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <FlaskConical className="h-8 w-8 text-primary" />
-              Бібліотека Сортів
+              Бібліотека
             </h1>
             <p className="text-muted-foreground mt-1">
-              Оберіть сорт для нового грову
+              Сорти та база знань
             </p>
           </div>
-          <Button variant="outline" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Додати власний сорт
-          </Button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Пошук за назвою або бридером..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-background/50"
-          />
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="strains" className="gap-2">
+              <Leaf className="h-4 w-4" />
+              Сорти
+            </TabsTrigger>
+            <TabsTrigger value="knowledge" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              База знань
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Strains Grid */}
+          <TabsContent value="strains" className="space-y-6">
+            {/* Search Bar */}
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Пошук за назвою або бридером..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-background/50"
+                />
+              </div>
+              <Button variant="outline" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Додати сорт
+              </Button>
+            </div>
+
+            {/* Strains Grid */}
         {filteredStrains.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
@@ -204,6 +223,13 @@ export default function LibraryPage() {
             ))}
           </div>
         )}
+
+          </TabsContent>
+
+          <TabsContent value="knowledge">
+            <KnowledgeBase />
+          </TabsContent>
+        </Tabs>
 
         {/* Add Plant Dialog with pre-selected strain */}
         {selectedDeviceId && (

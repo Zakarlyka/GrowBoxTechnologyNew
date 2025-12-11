@@ -26,7 +26,7 @@ import {
 import { ArticleForm } from './ArticleForm';
 
 interface Article {
-  id: string;
+  id: number;
   title: string;
   category: string | null;
   content: string | null;
@@ -38,7 +38,7 @@ export function ArticleManager() {
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; articleId: string | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; articleId: number | null }>({
     open: false,
     articleId: null,
   });
@@ -79,7 +79,7 @@ export function ArticleManager() {
     setIsFormOpen(true);
   };
 
-  const handleDeleteClick = (articleId: string) => {
+  const handleDeleteClick = (articleId: number) => {
     setDeleteDialog({ open: true, articleId });
   };
 

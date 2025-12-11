@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Article {
-  id: string;
+  id: number;
   title: string;
   category: string | null;
   content: string | null;

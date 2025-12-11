@@ -11,14 +11,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+
+const CATEGORIES = [
+  { value: 'germination', label: '🌱 Пророщування' },
+  { value: 'vegetation', label: '🌿 Вегетація' },
+  { value: 'flowering', label: '🌸 Цвітіння' },
+  { value: 'troubleshooting', label: '🚑 Вирішення проблем' },
+  { value: 'nutrients', label: '🧪 Живлення' },
+];
 
 interface ArticleFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   article: {
-    id: string;
+    id: number;
     title: string;
     category: string | null;
     content: string | null;
@@ -31,6 +46,8 @@ export function ArticleForm({ open, onOpenChange, article, onSuccess }: ArticleF
   const [category, setCategory] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,7 +60,46 @@ export function ArticleForm({ open, onOpenChange, article, onSuccess }: ArticleF
       setCategory('');
       setContent('');
     }
+    setAiTopic('');
   }, [article, open]);
+
+  const generateWithAI = async () => {
+    if (!aiTopic.trim()) {
+      toast({
+        title: 'Введіть тему',
+        description: 'Вкажіть тему для генерації статті',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAiLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-article', {
+        body: { topic: aiTopic.trim(), category }
+      });
+
+      if (error) throw error;
+
+      if (data?.title) setTitle(data.title);
+      if (data?.content) setContent(data.content);
+
+      toast({
+        title: '✨ Стаття згенерована',
+        description: 'Перегляньте та відредагуйте перед збереженням',
+      });
+    } catch (error: any) {
+      console.error('AI generation error:', error);
+      toast({
+        title: 'Помилка генерації',
+        description: error.message || 'Не вдалося згенерувати статтю',
+        variant: 'destructive',
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,12 +189,50 @@ export function ArticleForm({ open, onOpenChange, article, onSuccess }: ArticleF
 
           <div className="space-y-2">
             <Label htmlFor="category">Категорія</Label>
-            <Input
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Напр. Освітлення, Добрива, Полив"
-            />
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Оберіть категорію" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* AI Generation Section */}
+          <div className="space-y-2 p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+            <Label className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <Sparkles className="h-4 w-4" />
+              Написати з AI
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                placeholder="Тема статті (напр. Дефіцит азоту)"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                onClick={generateWithAI}
+                disabled={aiLoading || !aiTopic.trim()}
+                className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
+              >
+                {aiLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Генерувати
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              AI згенерує структуровану статтю: вступ, симптоми, рішення
+            </p>
           </div>
 
           <div className="space-y-2">

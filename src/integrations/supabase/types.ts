@@ -16,26 +16,32 @@ export type Database = {
     Tables: {
       articles: {
         Row: {
-          category: string | null
-          content: string | null
+          category: string
+          content: string
           created_at: string | null
-          id: string
+          id: number
+          image_url: string | null
+          is_published: boolean | null
           title: string
           user_id: string | null
         }
         Insert: {
-          category?: string | null
-          content?: string | null
+          category: string
+          content: string
           created_at?: string | null
-          id?: string
+          id?: number
+          image_url?: string | null
+          is_published?: boolean | null
           title: string
           user_id?: string | null
         }
         Update: {
-          category?: string | null
-          content?: string | null
+          category?: string
+          content?: string
           created_at?: string | null
-          id?: string
+          id?: number
+          image_url?: string | null
+          is_published?: boolean | null
           title?: string
           user_id?: string | null
         }
