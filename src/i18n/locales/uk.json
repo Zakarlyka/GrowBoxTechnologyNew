@@ -70,7 +70,10 @@
     "deleteDevice": "Видалити пристрій",
     "deleteConfirmTitle": "Видалити пристрій?",
     "deleteConfirmDescription": "Цю дію неможливо скасувати. Пристрій буде видалено назавжди.",
-    "showQr": "Показати QR / Перепідключити"
+    "showQr": "Показати QR / Перепідключити",
+    "manage": "Керувати",
+    "selectDevice": "Оберіть пристрій",
+    "selectDeviceDescription": "Оберіть пристрій зі списку для перегляду та керування"
   },
   "controls": {
     "lighting": "Освітлення",
