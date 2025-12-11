@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { useDevices } from '@/hooks/useDevices';
 import { KnowledgeBase } from '@/components/library/KnowledgeBase';
+import { StrainDetailsDialog } from '@/components/library/StrainDetailsDialog';
 
 interface LibraryStrain {
   id: number;
@@ -19,6 +20,7 @@ interface LibraryStrain {
   flowering_days: number | null;
   photo_url: string | null;
   description: string | null;
+  presets: Record<string, any> | null;
 }
 
 export default function LibraryPage() {
@@ -31,6 +33,8 @@ export default function LibraryPage() {
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('strains');
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedStrainForDetails, setSelectedStrainForDetails] = useState<LibraryStrain | null>(null);
 
   useEffect(() => {
     fetchStrains();
@@ -68,6 +72,11 @@ export default function LibraryPage() {
       // No devices - navigate to add device page
       navigate('/devices/add');
     }
+  };
+
+  const handleOpenDetails = (strain: LibraryStrain) => {
+    setSelectedStrainForDetails(strain);
+    setDetailsDialogOpen(true);
   };
 
   const handlePlantAdded = () => {
@@ -161,8 +170,11 @@ export default function LibraryPage() {
                 key={strain.id}
                 className="overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 bg-card group"
               >
-                {/* Cover Image */}
-                <div className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
+                {/* Cover Image - Clickable */}
+                <div 
+                  className="aspect-[16/10] bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden cursor-pointer"
+                  onClick={() => handleOpenDetails(strain)}
+                >
                   {strain.photo_url ? (
                     <img
                       src={strain.photo_url}
@@ -177,8 +189,11 @@ export default function LibraryPage() {
                 </div>
 
                 <CardContent className="p-4 space-y-3">
-                  {/* Title */}
-                  <h3 className="font-semibold text-lg text-foreground line-clamp-1">
+                  {/* Title - Clickable */}
+                  <h3 
+                    className="font-semibold text-lg text-foreground line-clamp-1 cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => handleOpenDetails(strain)}
+                  >
                     {strain.name}
                   </h3>
 
@@ -230,6 +245,14 @@ export default function LibraryPage() {
             <KnowledgeBase />
           </TabsContent>
         </Tabs>
+
+        {/* Strain Details Dialog */}
+        <StrainDetailsDialog
+          open={detailsDialogOpen}
+          onOpenChange={setDetailsDialogOpen}
+          strain={selectedStrainForDetails}
+          onGrowThis={handleGrowThis}
+        />
 
         {/* Add Plant Dialog with pre-selected strain */}
         {selectedDeviceId && (
