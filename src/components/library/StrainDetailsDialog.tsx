@@ -85,6 +85,13 @@ export function StrainDetailsDialog({
   const presets = strain.presets || {};
   const phases = Object.keys(presets);
 
+  // Helper to add cache busting to image URLs
+  const getImageUrl = (url: string | null) => {
+    if (!url) return null;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_cb=${Date.now()}`;
+  };
+
   const handleGrow = () => {
     onGrowThis(strain);
     onOpenChange(false);
@@ -103,7 +110,7 @@ export function StrainDetailsDialog({
           <div className="w-full sm:w-48 h-48 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex-shrink-0">
             {strain.photo_url ? (
               <img
-                src={strain.photo_url}
+                src={getImageUrl(strain.photo_url) || ''}
                 alt={strain.name}
                 className="w-full h-full object-cover"
               />

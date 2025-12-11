@@ -190,6 +190,14 @@ export default function LibraryPage() {
     }
   };
 
+  // Helper to add cache busting to image URLs
+  const getImageUrl = (url: string | null) => {
+    if (!url) return null;
+    // If URL already has query params, append; otherwise add
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_cb=${Date.now()}`;
+  };
+
   const renderStrainCard = (strain: LibraryStrain, showActions: boolean = false) => (
     <Card
       key={strain.id}
@@ -202,7 +210,7 @@ export default function LibraryPage() {
       >
         {strain.photo_url ? (
           <img
-            src={strain.photo_url}
+            src={getImageUrl(strain.photo_url) || ''}
             alt={strain.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
