@@ -396,6 +396,7 @@ export type Database = {
           description: string | null
           flowering_days: number | null
           id: number
+          is_public: boolean | null
           name: string
           photo_url: string | null
           presets: Json | null
@@ -408,6 +409,7 @@ export type Database = {
           description?: string | null
           flowering_days?: number | null
           id?: number
+          is_public?: boolean | null
           name: string
           photo_url?: string | null
           presets?: Json | null
@@ -420,6 +422,7 @@ export type Database = {
           description?: string | null
           flowering_days?: number | null
           id?: number
+          is_public?: boolean | null
           name?: string
           photo_url?: string | null
           presets?: Json | null

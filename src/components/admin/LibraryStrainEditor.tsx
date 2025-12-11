@@ -25,6 +25,7 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, Beaker, Gauge, FlaskConical } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Phase configuration types
 interface PhaseSettings {
@@ -57,6 +58,7 @@ interface LibraryStrain {
   flowering_days: number | null;
   photo_url: string | null;
   presets: any;
+  is_public: boolean | null;
 }
 
 interface LibraryStrainEditorProps {
@@ -64,6 +66,7 @@ interface LibraryStrainEditorProps {
   onOpenChange: (open: boolean) => void;
   strain?: LibraryStrain | null;
   onSuccess: () => void;
+  isAdmin?: boolean;
 }
 
 const DEFAULT_PHASE_SETTINGS: Record<string, PhaseSettings> = {
@@ -80,7 +83,7 @@ const PHASE_CONFIG = [
   { key: 'flush', label: 'Промивка', icon: '💧' },
 ];
 
-export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: LibraryStrainEditorProps) {
+export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isAdmin = false }: LibraryStrainEditorProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activePhaseTab, setActivePhaseTab] = useState('seedling');
@@ -92,6 +95,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
   const [description, setDescription] = useState('');
   const [floweringDays, setFloweringDays] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
 
   // Phase settings state
   const [phaseSettings, setPhaseSettings] = useState<Record<string, PhaseSettings>>(
@@ -145,6 +149,8 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
       if (strain.presets?.nutrient_schedule) {
         setNutrientWeeks(strain.presets.nutrient_schedule);
       }
+      // Set is_public from strain data
+      setIsPublic(strain.is_public || false);
     } else {
       // Reset form for new strain
       setName('');
@@ -153,6 +159,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
       setDescription('');
       setFloweringDays('');
       setPhotoUrl('');
+      setIsPublic(isAdmin); // Default to true for admins, false for regular users
       setPhaseSettings(JSON.parse(JSON.stringify(DEFAULT_PHASE_SETTINGS)));
       setNutrientWeeks([
         { week: 1, grow: 1, bloom: 0 },
@@ -234,6 +241,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
         flowering_days: floweringDays ? parseInt(floweringDays) : null,
         photo_url: photoUrl.trim() || null,
         presets,
+        ...(isAdmin && { is_public: isPublic }),
       };
 
       if (strain?.id) {
@@ -256,7 +264,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
         }
         const { error } = await supabase
           .from('library_strains')
-          .insert({ ...data, user_id: user.id });
+          .insert({ ...data, user_id: user.id, is_public: isPublic });
 
         if (error) throw error;
 
@@ -364,6 +372,20 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
                     rows={2}
                   />
                 </div>
+
+                {/* Public visibility checkbox - only for admins */}
+                {isAdmin && (
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                      id="is_public"
+                      checked={isPublic}
+                      onCheckedChange={(checked) => setIsPublic(checked === true)}
+                    />
+                    <Label htmlFor="is_public" className="text-sm cursor-pointer">
+                      🌍 Зробити публічним (видимий для всіх користувачів)
+                    </Label>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
