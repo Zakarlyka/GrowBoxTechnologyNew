@@ -8,7 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface Article {
-  id: string;
+  id: number;
   title: string;
   category: string | null;
   content: string | null;
@@ -27,7 +27,7 @@ export default function ArticleDetailPage() {
         const { data, error } = await supabase
           .from('articles')
           .select('*')
-          .eq('id', id)
+          .eq('id', Number(id))
           .maybeSingle();
 
         if (error) throw error;
