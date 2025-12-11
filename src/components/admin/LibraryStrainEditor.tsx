@@ -232,9 +232,16 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess }: L
         type: type || null,
         description: description.trim() || null,
         flowering_days: floweringDays ? parseInt(floweringDays) : null,
-        photo_url: photoUrl.trim() || null,
+        photo_url: photoUrl || null,
         presets,
       };
+
+      console.log("🔍 Saving Strain Data:", { 
+        strainId: strain?.id, 
+        name: data.name, 
+        photo_url: data.photo_url,
+        photoUrlState: photoUrl 
+      });
 
       if (strain?.id) {
         // Update existing
