@@ -233,13 +233,17 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         presets.nutrient_schedule = nutrientWeeks;
       }
 
+      // Ensure we use the current photoUrl state (which may have been updated by ImageUpload)
+      const finalPhotoUrl = photoUrl.trim() || null;
+      console.log('[LibraryStrainEditor] Saving with photo_url:', finalPhotoUrl);
+
       const data = {
         name: name.trim(),
         breeder: breeder.trim() || null,
         type: type || null,
         description: description.trim() || null,
         flowering_days: floweringDays ? parseInt(floweringDays) : null,
-        photo_url: photoUrl.trim() || null,
+        photo_url: finalPhotoUrl,
         presets,
         ...(isAdmin && { is_public: isPublic }),
       };
@@ -358,8 +362,16 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                   <Label>Фото сорту</Label>
                   <ImageUpload
                     value={photoUrl}
-                    onChange={(url) => setPhotoUrl(url || '')}
+                    onChange={(url) => {
+                      console.log('[LibraryStrainEditor] Image uploaded, new URL:', url);
+                      setPhotoUrl(url || '');
+                    }}
                   />
+                  {photoUrl && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      URL: {photoUrl.substring(0, 50)}...
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
