@@ -85,11 +85,20 @@ export function StrainDetailsDialog({
   const presets = strain.presets || {};
   const phases = Object.keys(presets);
 
-  // Helper to add cache busting to image URLs
+  // Helper to add cache busting to Supabase Storage URLs only
   const getImageUrl = (url: string | null) => {
     if (!url) return null;
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}_cb=${Date.now()}`;
+    // Only add cache busting for Supabase Storage URLs
+    if (url.includes('supabase')) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${Date.now()}`;
+    }
+    return url;
+  };
+
+  // Handle image load error - fallback to placeholder
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = '/placeholder.svg';
   };
 
   const handleGrow = () => {
@@ -113,6 +122,7 @@ export function StrainDetailsDialog({
                 src={getImageUrl(strain.photo_url) || ''}
                 alt={strain.name}
                 className="w-full h-full object-cover"
+                onError={handleImageError}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
