@@ -110,8 +110,20 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     { week: 4, grow: 2, bloom: 0.5 },
   ]);
 
-  // Load strain data when editing
+  // Track if we've initialized for this dialog session
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load strain data when dialog opens (not on every render)
   useEffect(() => {
+    if (!open) {
+      // Reset initialized flag when dialog closes
+      setIsInitialized(false);
+      return;
+    }
+    
+    // Only initialize once per dialog open
+    if (isInitialized) return;
+    
     if (strain) {
       setName(strain.name || '');
       setBreeder(strain.breeder || '');
@@ -168,7 +180,9 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         { week: 4, grow: 2, bloom: 0.5 },
       ]);
     }
-  }, [strain, open]);
+    
+    setIsInitialized(true);
+  }, [strain, open, isInitialized, isAdmin]);
 
   const updatePhaseSetting = (phase: string, field: keyof PhaseSettings, value: number) => {
     setPhaseSettings(prev => ({
