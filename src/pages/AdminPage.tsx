@@ -1,6 +1,7 @@
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Library, FileText, Users } from 'lucide-react';
 import { LibraryStrainManager } from '@/components/admin/LibraryStrainManager';
@@ -9,6 +10,14 @@ import { UserManager } from '@/components/admin/UserManager';
 
 export default function AdminPage() {
   const { role, loading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Read tab from URL, default to 'library'
+  const currentTab = searchParams.get('tab') || 'library';
+  
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   if (loading) {
     return (
@@ -46,7 +55,7 @@ export default function AdminPage() {
           </CardHeader>
         </Card>
 
-        <Tabs defaultValue="library" className="w-full">
+        <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="library" className="gap-2">
               <Library className="h-4 w-4" />

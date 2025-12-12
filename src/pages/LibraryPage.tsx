@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Plus, Leaf, Clock, FlaskConical, BookOpen, Globe, User, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ interface LibraryStrain {
 
 export default function LibraryPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { devices } = useDevices();
   const { user, role } = useAuth();
   const [globalStrains, setGlobalStrains] = useState<LibraryStrain[]>([]);
@@ -49,7 +50,13 @@ export default function LibraryPage() {
   const [selectedStrain, setSelectedStrain] = useState<LibraryStrain | null>(null);
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('global');
+  
+  // Read tab from URL, default to 'global'
+  const activeTab = searchParams.get('tab') || 'global';
+  
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedStrainForDetails, setSelectedStrainForDetails] = useState<LibraryStrain | null>(null);
   
@@ -352,7 +359,7 @@ export default function LibraryPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="global" className="gap-2">
               <Globe className="h-4 w-4" />
