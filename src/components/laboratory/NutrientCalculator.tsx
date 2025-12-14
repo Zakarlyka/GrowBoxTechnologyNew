@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -10,12 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Beaker, Droplets, Check, FlaskConical, Sparkles } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Beaker, Check, FlaskConical, Droplets, Sparkles, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface NutrientItem {
-  product: string;
-  category: 'base' | 'additive';
+  name: string;
   dose: number; // ml/L
 }
 
@@ -26,6 +24,7 @@ interface WeekSchedule {
 }
 
 interface ScheduleData {
+  phases?: string[];
   weeks: WeekSchedule[];
 }
 
@@ -34,6 +33,16 @@ interface NutrientSchedule {
   name: string;
   description: string | null;
   schedule_data: ScheduleData;
+}
+
+// Base nutrient names (case-insensitive matching)
+const BASE_NUTRIENT_PATTERNS = [
+  'grow', 'micro', 'bloom', 'flora', 'base', 'canna', 'terra'
+];
+
+function isBaseNutrient(name: string): boolean {
+  const lowerName = name.toLowerCase();
+  return BASE_NUTRIENT_PATTERNS.some(pattern => lowerName.includes(pattern));
 }
 
 export function NutrientCalculator() {
@@ -78,233 +87,252 @@ export function NutrientCalculator() {
   }, [selectedScheduleId]);
 
   // Group nutrients by category
-  const baseNutrients = currentWeekData?.nutrients.filter(n => n.category === 'base') || [];
-  const additives = currentWeekData?.nutrients.filter(n => n.category === 'additive') || [];
+  const baseNutrients = currentWeekData?.nutrients.filter(n => isBaseNutrient(n.name)) || [];
+  const additives = currentWeekData?.nutrients.filter(n => !isBaseNutrient(n.name)) || [];
 
   // Calculate totals
   const calculateTotal = (dose: number) => (dose * tankVolume).toFixed(1);
-  const totalBase = baseNutrients.reduce((sum, n) => sum + n.dose * tankVolume, 0);
-  const totalAdditives = additives.reduce((sum, n) => sum + n.dose * tankVolume, 0);
-  const grandTotal = totalBase + totalAdditives;
+  const grandTotal = currentWeekData?.nutrients.reduce((sum, n) => sum + n.dose * tankVolume, 0) || 0;
 
   if (schedulesLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-10 w-full bg-zinc-800" />
+        <Skeleton className="h-32 w-full bg-zinc-800" />
+        <Skeleton className="h-48 w-full bg-zinc-800" />
       </div>
     );
   }
 
   if (!schedules?.length) {
     return (
-      <Card className="border-border/50 bg-card/50">
-        <CardContent className="py-12 text-center">
-          <FlaskConical className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">
-            {t('laboratory.noSchedules', 'No nutrient schedules available.')}
-          </p>
-          <p className="text-sm text-muted-foreground/70 mt-2">
-            {t('laboratory.addSchedulesHint', 'Add schedules via Admin Panel.')}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-8 text-center">
+        <FlaskConical className="h-12 w-12 mx-auto text-zinc-600 mb-4" />
+        <p className="text-zinc-400">
+          {t('laboratory.noSchedules', 'No nutrient schedules available.')}
+        </p>
+        <p className="text-sm text-zinc-500 mt-2">
+          {t('laboratory.addSchedulesHint', 'Add schedules via Admin Panel.')}
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top Section - Inputs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Schedule Selector */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">
-            {t('laboratory.nutrientSchedule', 'Nutrient Schedule')}
-          </Label>
+    <div className="space-y-5">
+      {/* BudLabs-style Dark Card */}
+      <div className="rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 p-5 shadow-xl">
+        
+        {/* Header with Schedule Selector */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-emerald-500/20">
+              <Beaker className="h-5 w-5 text-emerald-400" />
+            </div>
+            <span className="font-bold text-white text-lg">Mix Calculator</span>
+          </div>
           <Select value={selectedScheduleId} onValueChange={setSelectedScheduleId}>
-            <SelectTrigger className="bg-background text-foreground border-input">
-              <SelectValue placeholder="Select schedule..." />
+            <SelectTrigger className="w-[160px] bg-zinc-800/80 border-zinc-700 text-white text-sm">
+              <SelectValue placeholder="Schedule..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
               {schedules.map(schedule => (
-                <SelectItem key={schedule.id} value={schedule.id.toString()}>
+                <SelectItem 
+                  key={schedule.id} 
+                  value={schedule.id.toString()}
+                  className="text-white hover:bg-zinc-800"
+                >
                   {schedule.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {currentSchedule?.description && (
-            <p className="text-xs text-muted-foreground">{currentSchedule.description}</p>
-          )}
         </div>
 
-        {/* Tank Volume */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">
-            {t('laboratory.tankVolume', 'Tank Volume')}
+        {/* Water Volume Input - Prominent */}
+        <div className="mb-5">
+          <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2 block">
+            💧 Water Volume
           </Label>
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min={1}
-              max={1000}
-              value={tankVolume}
-              onChange={(e) => setTankVolume(Math.max(1, parseFloat(e.target.value) || 1))}
-              className="flex-1 bg-background text-foreground border-input [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="text-sm font-medium text-muted-foreground px-3 py-2 bg-muted rounded-md">
-              L
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Week Selector */}
-      {weeks.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">
-            {t('laboratory.growthPhase', 'Growth Phase / Week')}
-          </Label>
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2 pb-2">
-              {weeks.map((week) => (
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                min={1}
+                max={1000}
+                value={tankVolume}
+                onChange={(e) => setTankVolume(Math.max(1, parseFloat(e.target.value) || 1))}
+                className="bg-zinc-800/80 border-zinc-700 text-white text-2xl font-bold h-14 pl-4 pr-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-medium">
+                Liters
+              </span>
+            </div>
+            {/* Quick volume buttons */}
+            <div className="flex gap-1">
+              {[5, 10, 20].map(vol => (
                 <Button
-                  key={week.week}
-                  variant={selectedWeek === week.week ? "default" : "outline"}
+                  key={vol}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedWeek(week.week)}
-                  className={`min-w-[80px] ${
-                    selectedWeek === week.week 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-accent'
-                  }`}
+                  onClick={() => setTankVolume(vol)}
+                  className={cn(
+                    "h-10 w-10 rounded-lg text-xs font-bold",
+                    tankVolume === vol 
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50" 
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                  )}
                 >
-                  <span className="text-xs font-medium">
-                    {week.phase === 'Flush' ? '🚿 Flush' : `W${week.week}`}
-                  </span>
+                  {vol}L
                 </Button>
               ))}
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-          {currentWeekData && (
-            <p className="text-sm text-primary font-medium">
-              📅 {currentWeekData.phase}
-            </p>
-          )}
+          </div>
         </div>
-      )}
 
-      {/* The Receipt - Nutrient List */}
-      {currentWeekData && (
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-primary" />
-              {t('laboratory.mixRecipe', 'Mix Recipe')}
-              <span className="ml-auto text-sm font-normal text-muted-foreground">
-                {tankVolume}L Tank
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Base Nutrients */}
-            {baseNutrients.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-green-500">
-                  <Droplets className="h-4 w-4" />
-                  {t('laboratory.baseNutrients', 'Base Nutrients')}
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border/50">
-                      <TableHead className="text-muted-foreground">Product</TableHead>
-                      <TableHead className="text-right text-muted-foreground">Dose</TableHead>
-                      <TableHead className="text-right text-muted-foreground">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {baseNutrients.map((nutrient, idx) => (
-                      <TableRow key={idx} className="border-border/30">
-                        <TableCell className="font-medium text-foreground">
-                          {nutrient.product}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {nutrient.dose} ml/L
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-green-500">
-                          {calculateTotal(nutrient.dose)} ml
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        {/* Week Selector - Horizontal Pills */}
+        {weeks.length > 0 && (
+          <div className="mb-5">
+            <Label className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2 block">
+              📅 Growth Week
+            </Label>
+            <ScrollArea className="w-full">
+              <div className="flex gap-2 pb-2">
+                {weeks.map((week) => {
+                  const isFlush = week.phase?.toLowerCase().includes('flush');
+                  const isSelected = selectedWeek === week.week;
+                  return (
+                    <Button
+                      key={week.week}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedWeek(week.week)}
+                      className={cn(
+                        "min-w-[56px] h-12 rounded-xl flex flex-col gap-0.5 px-3 transition-all",
+                        isSelected 
+                          ? isFlush
+                            ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
+                            : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50" 
+                          : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50"
+                      )}
+                    >
+                      <span className="text-[10px] opacity-70">
+                        {isFlush ? '🚿' : 'Week'}
+                      </span>
+                      <span className="text-sm font-bold">
+                        {isFlush ? 'Flush' : week.week}
+                      </span>
+                    </Button>
+                  );
+                })}
               </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+            {currentWeekData && (
+              <p className="text-sm text-emerald-400 font-medium mt-2">
+                {currentWeekData.phase}
+              </p>
             )}
+          </div>
+        )}
+      </div>
 
-            {/* Additives */}
-            {additives.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-purple-500">
-                  <Sparkles className="h-4 w-4" />
-                  {t('laboratory.additives', 'Additives & Stimulators')}
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border/50">
-                      <TableHead className="text-muted-foreground">Product</TableHead>
-                      <TableHead className="text-right text-muted-foreground">Dose</TableHead>
-                      <TableHead className="text-right text-muted-foreground">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {additives.map((nutrient, idx) => (
-                      <TableRow key={idx} className="border-border/30">
-                        <TableCell className="font-medium text-foreground">
-                          {nutrient.product}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {nutrient.dose} ml/L
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-purple-500">
-                          {calculateTotal(nutrient.dose)} ml
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-
-            {/* Grand Total */}
-            <div className="pt-4 border-t border-border/50">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-muted-foreground">
-                  {t('common.total', 'Total')}
+      {/* The Receipt Card */}
+      {currentWeekData && currentWeekData.nutrients.length > 0 && (
+        <div className="rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 overflow-hidden shadow-xl">
+          
+          {/* Base Nutrients Section */}
+          {baseNutrients.length > 0 && (
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Droplets className="h-4 w-4 text-pink-400" />
+                <span className="text-sm font-bold text-white uppercase tracking-wider">
+                  Base Nutrients
                 </span>
-                <div className="text-right">
-                  <span className="text-3xl font-bold text-primary">
-                    {grandTotal.toFixed(1)}
-                  </span>
-                  <span className="text-muted-foreground ml-1">ml</span>
-                </div>
+                <div className="flex-1 h-[2px] bg-gradient-to-r from-pink-500 to-transparent ml-2" />
+              </div>
+              <div className="space-y-2">
+                {baseNutrients.map((nutrient, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-800/60 transition-colors"
+                  >
+                    <span className="text-zinc-200 font-medium">{nutrient.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-zinc-500">{nutrient.dose} ml/L</span>
+                      <span className="text-pink-400 font-bold text-lg min-w-[70px] text-right">
+                        {calculateTotal(nutrient.dose)} ml
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Additives Section */}
+          {additives.length > 0 && (
+            <div className="p-4 pt-0">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-violet-400" />
+                <span className="text-sm font-bold text-white uppercase tracking-wider">
+                  Additives
+                </span>
+                <div className="flex-1 h-[2px] bg-gradient-to-r from-violet-500 to-transparent ml-2" />
+              </div>
+              <div className="space-y-2">
+                {additives.map((nutrient, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-800/60 transition-colors"
+                  >
+                    <span className="text-zinc-200 font-medium">{nutrient.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-zinc-500">{nutrient.dose} ml/L</span>
+                      <span className="text-violet-400 font-bold text-lg min-w-[70px] text-right">
+                        {calculateTotal(nutrient.dose)} ml
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Footer - Total & Action */}
+          <div className="bg-zinc-800/50 p-4 border-t border-zinc-700/50">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-amber-400" />
+                <span className="text-zinc-400 font-medium">Total Mix</span>
+              </div>
+              <div className="text-right">
+                <span className="text-3xl font-black text-white">
+                  {grandTotal.toFixed(1)}
+                </span>
+                <span className="text-zinc-400 ml-1">ml</span>
               </div>
             </div>
 
-            {/* Feed Button */}
+            {/* Big Action Button */}
             <Dialog open={feedModalOpen} onOpenChange={setFeedModalOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full mt-4" size="lg">
-                  <Check className="h-5 w-5 mr-2" />
-                  {t('laboratory.fedMyPlants', '✅ I Fed My Plants')}
+                <Button 
+                  className="w-full h-14 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-lg shadow-lg shadow-emerald-500/25 transition-all"
+                  size="lg"
+                >
+                  <Check className="h-6 w-6 mr-2" />
+                  Mix & Feed
                 </Button>
               </DialogTrigger>
-              <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+              <DialogContent 
+                className="bg-zinc-900 border-zinc-700"
+                onInteractOutside={(e) => e.preventDefault()}
+              >
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Droplets className="h-5 w-5 text-primary" />
-                    {t('laboratory.logFeeding', 'Log Feeding')}
+                  <DialogTitle className="flex items-center gap-2 text-white">
+                    <Droplets className="h-5 w-5 text-emerald-400" />
+                    Log Feeding
                   </DialogTitle>
                 </DialogHeader>
                 <FeedingLogModal 
@@ -314,19 +342,18 @@ export function NutrientCalculator() {
                 />
               </DialogContent>
             </Dialog>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* No data for selected week */}
-      {!currentWeekData && selectedScheduleId && (
-        <Card className="border-border/50 bg-card/50">
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground">
-              {t('laboratory.noWeekData', 'No nutrient data for this week.')}
-            </p>
-          </CardContent>
-        </Card>
+      {(!currentWeekData || currentWeekData.nutrients.length === 0) && selectedScheduleId && (
+        <div className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-8 text-center">
+          <FlaskConical className="h-12 w-12 mx-auto text-zinc-600 mb-4" />
+          <p className="text-zinc-400">
+            {t('laboratory.noWeekData', 'No nutrient data for this week.')}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -375,53 +402,61 @@ function FeedingLogModal({ schedule, week, onClose }: FeedingLogModalProps) {
   return (
     <div className="space-y-4 py-4">
       <div className="space-y-2">
-        <Label className="text-sm text-muted-foreground">
+        <Label className="text-sm text-zinc-400">
           {t('laboratory.selectPlant', 'Select Plant')}
         </Label>
         {isLoading ? (
-          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full bg-zinc-800" />
         ) : plants?.length ? (
           <Select value={selectedPlant} onValueChange={setSelectedPlant}>
-            <SelectTrigger className="bg-background text-foreground border-input">
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
               <SelectValue placeholder="Choose a plant..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
               {plants.map(plant => (
-                <SelectItem key={plant.id} value={plant.id}>
+                <SelectItem 
+                  key={plant.id} 
+                  value={plant.id}
+                  className="text-white hover:bg-zinc-800"
+                >
                   {plant.custom_name || (plant.library_strains as any)?.name || 'Unnamed Plant'}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         ) : (
-          <p className="text-sm text-muted-foreground py-2">
+          <p className="text-sm text-zinc-500 py-2">
             {t('laboratory.noPlantsToFeed', 'No active plants to feed.')}
           </p>
         )}
       </div>
 
-      <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-        <p className="text-sm">
-          <span className="text-muted-foreground">Schedule:</span>{' '}
-          <span className="font-medium text-foreground">{schedule}</span>
-        </p>
-        <p className="text-sm">
-          <span className="text-muted-foreground">Week:</span>{' '}
-          <span className="font-medium text-foreground">{week}</span>
-        </p>
+      <div className="bg-zinc-800/50 rounded-xl p-4 space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="text-zinc-500">Schedule</span>
+          <span className="font-medium text-white">{schedule}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-zinc-500">Week</span>
+          <span className="font-medium text-white">{week}</span>
+        </div>
       </div>
 
       <div className="flex gap-2 pt-2">
-        <Button variant="outline" onClick={onClose} className="flex-1">
-          {t('common.cancel', 'Cancel')}
+        <Button 
+          variant="outline" 
+          onClick={onClose} 
+          className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+        >
+          Cancel
         </Button>
         <Button 
           onClick={handleLogFeeding} 
           disabled={!selectedPlant}
-          className="flex-1"
+          className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
         >
           <Check className="h-4 w-4 mr-2" />
-          {t('laboratory.logIt', 'Log It')}
+          Log It
         </Button>
       </div>
     </div>
