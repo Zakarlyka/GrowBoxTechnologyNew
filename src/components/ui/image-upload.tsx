@@ -84,6 +84,8 @@ export function ImageUpload({
 
       // Add cache busting param to force browser to load new image
       const publicUrlWithCacheBust = `${urlData.publicUrl}?t=${Date.now()}`;
+      
+      console.log('[ImageUpload] Upload complete. Public URL:', publicUrlWithCacheBust);
       onChange(publicUrlWithCacheBust);
 
       toast({
