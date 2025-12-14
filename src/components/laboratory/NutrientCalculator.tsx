@@ -325,10 +325,7 @@ export function NutrientCalculator() {
                   Mix & Feed
                 </Button>
               </DialogTrigger>
-              <DialogContent 
-                className="bg-zinc-900 border-zinc-700"
-                onInteractOutside={(e) => e.preventDefault()}
-              >
+              <DialogContent className="bg-zinc-900 border-zinc-700">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-white">
                     <Droplets className="h-5 w-5 text-emerald-400" />
