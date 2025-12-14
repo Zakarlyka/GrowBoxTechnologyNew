@@ -222,6 +222,11 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
       return;
     }
 
+    // Debug: Log the exact photo URL being saved
+    const finalPhotoUrl = data.photoUrl?.trim() || null;
+    console.log('[AddPlantDialog] Submitting with photo_url:', finalPhotoUrl);
+    console.log('[AddPlantDialog] Full form data:', data);
+
     setIsSaving(true);
     try {
       // If this will be the main plant, first unset any existing main plant for this device
@@ -233,8 +238,8 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
           .eq('is_main', true);
       }
 
-      // Insert the new plant
-      const { error } = await supabase.from('plants').insert({
+      // Insert the new plant with explicit photo_url
+      const insertPayload = {
         device_id: data.deviceId,
         user_id: user.id,
         custom_name: data.name,
@@ -242,8 +247,11 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
         current_stage: data.stage,
         start_date: format(data.startDate, 'yyyy-MM-dd'),
         is_main: data.isMain,
-        photo_url: data.photoUrl || null,
-      });
+        photo_url: finalPhotoUrl,
+      };
+      console.log('[AddPlantDialog] Insert payload:', insertPayload);
+      
+      const { error } = await supabase.from('plants').insert(insertPayload);
 
       if (error) throw error;
 
@@ -454,8 +462,16 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
               <Label>Фото рослини (опціонально)</Label>
               <ImageUpload
                 value={form.watch('photoUrl')}
-                onChange={(url) => form.setValue('photoUrl', url || '')}
+                onChange={(url) => {
+                  console.log('[AddPlantDialog] Image uploaded, new URL:', url);
+                  form.setValue('photoUrl', url || '', { shouldDirty: true, shouldTouch: true });
+                }}
               />
+              {form.watch('photoUrl') && (
+                <p className="text-xs text-muted-foreground truncate">
+                  ✅ URL: {form.watch('photoUrl')?.substring(0, 50)}...
+                </p>
+              )}
             </div>
 
             {/* Main Plant Toggle */}
