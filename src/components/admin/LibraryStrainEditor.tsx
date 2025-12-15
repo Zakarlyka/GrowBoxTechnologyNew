@@ -23,14 +23,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, Dna, FlaskConical, Activity, Zap, AlertTriangle, Clock } from 'lucide-react';
+import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, FlaskConical, Zap, Activity } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import type { 
-  StrainPresets, LabData, GeneticMix, EnvironmentPhase, 
-  TimelinePhase, NutrientWeek, LibraryStrainFull 
+  LibraryStrainFull, GrowingParams, ClimateScheduleEntry, 
+  GrowingLighting, GrowingNutrition, GrowingGeneralInfo 
 } from '@/types';
 
 interface LibraryStrainEditorProps {
@@ -41,67 +39,52 @@ interface LibraryStrainEditorProps {
   isAdmin?: boolean;
 }
 
-const DEFAULT_GENETICS: GeneticMix = { sativa: 50, indica: 50, ruderalis: 0 };
-
-const DEFAULT_ENVIRONMENT: Record<string, EnvironmentPhase> = {
-  seedling: { temp_day: 25, temp_night: 22, rh: 70, vpd: 0.6, ppfd: 200, ec: 0.4, light_h: 18 },
-  veg: { temp_day: 26, temp_night: 22, rh: 60, vpd: 1.0, ppfd: 600, ec: 1.2, light_h: 18 },
-  bloom: { temp_day: 24, temp_night: 20, rh: 50, vpd: 1.2, ppfd: 800, ec: 1.8, light_h: 12 },
-  flush: { temp_day: 22, temp_night: 18, rh: 45, vpd: 1.0, ppfd: 600, ec: 0, light_h: 12 },
-};
-
-const PHASE_CONFIG = [
-  { key: 'seedling', label: 'Проростання', icon: '🌱' },
-  { key: 'veg', label: 'Вегетація', icon: '🌿' },
-  { key: 'bloom', label: 'Цвітіння', icon: '🌸' },
-  { key: 'flush', label: 'Промивка', icon: '💧' },
+const DEFAULT_CLIMATE_SCHEDULE: ClimateScheduleEntry[] = [
+  { stage: 'Seedling', weeks: '1-2', temp_day: 25, temp_night: 22, humidity: 70, vpd: '0.6-0.8' },
+  { stage: 'Vegetation', weeks: '3-4', temp_day: 26, temp_night: 22, humidity: 60, vpd: '0.8-1.1' },
+  { stage: 'Flowering', weeks: '5-9', temp_day: 24, temp_night: 20, humidity: 45, vpd: '1.2-1.5' },
 ];
 
-const RISK_OPTIONS = ['Mold', 'Pests', 'Odor', 'Stretch', 'Nutrient Sensitive', 'Heat Sensitive', 'Cold Sensitive'];
+const DEFAULT_LIGHTING: GrowingLighting = {
+  seedling_ppfd: '150-300',
+  veg_ppfd: '300-600',
+  bloom_ppfd: '600-900',
+};
+
+const DEFAULT_NUTRITION: GrowingNutrition = {
+  veg_ec: '1.0-1.4',
+  bloom_ec: '1.5-1.8',
+};
+
+const DEFAULT_GENERAL_INFO: GrowingGeneralInfo = {
+  height_indoor: '',
+  smell_level: 'Medium',
+};
 
 export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isAdmin = false }: LibraryStrainEditorProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
-  const [activePhaseTab, setActivePhaseTab] = useState('seedling');
 
   // Basic info state
   const [name, setName] = useState('');
   const [breeder, setBreeder] = useState('');
   const [type, setType] = useState('hybrid');
+  const [genotype, setGenotype] = useState('');
+  const [thcPercent, setThcPercent] = useState('');
   const [description, setDescription] = useState('');
   const [floweringDays, setFloweringDays] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [isPublic, setIsPublic] = useState(false);
-  const [thcContent, setThcContent] = useState('');
   const [genetics, setGenetics] = useState('');
   const [difficulty, setDifficulty] = useState('medium');
   const [yieldIndoor, setYieldIndoor] = useState('');
 
-  // Lab Data state
-  const [geneticsMix, setGeneticsMix] = useState<GeneticMix>(DEFAULT_GENETICS);
-  const [heightIndoor, setHeightIndoor] = useState('');
-  const [heightOutdoor, setHeightOutdoor] = useState('');
-  const [cbd, setCbd] = useState('');
-  const [lifecycleTotal, setLifecycleTotal] = useState('');
-  const [risks, setRisks] = useState<string[]>([]);
-  const [training, setTraining] = useState('');
-
-  // Timeline state
-  const [timeline, setTimeline] = useState<TimelinePhase[]>([]);
-
-  // Environment state
-  const [environmentSchedule, setEnvironmentSchedule] = useState<Record<string, EnvironmentPhase>>(
-    JSON.parse(JSON.stringify(DEFAULT_ENVIRONMENT))
-  );
-
-  // Nutrient schedule state
-  const [nutrientWeeks, setNutrientWeeks] = useState<NutrientWeek[]>([
-    { week: 1, grow: 1, bloom: 0 },
-    { week: 2, grow: 2, bloom: 0 },
-    { week: 3, grow: 2.5, bloom: 0.5 },
-    { week: 4, grow: 2, bloom: 1 },
-  ]);
+  // Growing params state
+  const [climateSchedule, setClimateSchedule] = useState<ClimateScheduleEntry[]>(DEFAULT_CLIMATE_SCHEDULE);
+  const [lighting, setLighting] = useState<GrowingLighting>(DEFAULT_LIGHTING);
+  const [nutrition, setNutrition] = useState<GrowingNutrition>(DEFAULT_NUTRITION);
+  const [generalInfo, setGeneralInfo] = useState<GrowingGeneralInfo>(DEFAULT_GENERAL_INFO);
 
   // Track initialization
   const [isInitialized, setIsInitialized] = useState(false);
@@ -120,63 +103,30 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       setName(strain.name || '');
       setBreeder(strain.breeder || '');
       setType(strain.type || 'hybrid');
+      setGenotype(strain.genotype || '');
+      setThcPercent(strain.thc_percent?.toString() || '');
       setDescription(strain.description || '');
       setFloweringDays(strain.flowering_days?.toString() || '');
       setPhotoUrl(strain.photo_url || '');
-      setThcContent(strain.thc_content || '');
       setGenetics(strain.genetics || '');
       setDifficulty(strain.difficulty || 'medium');
       setYieldIndoor(strain.yield_indoor || '');
       setIsPublic(strain.is_public || false);
 
-      // Parse presets
-      const presets = strain.presets as StrainPresets | null;
-      if (presets) {
-        // Lab data
-        if (presets.lab_data) {
-          const ld = presets.lab_data;
-          setGeneticsMix(ld.genetics_mix || DEFAULT_GENETICS);
-          setHeightIndoor(ld.height?.indoor || '');
-          setHeightOutdoor(ld.height?.outdoor || '');
-          setCbd(ld.cbd || '');
-          setLifecycleTotal(ld.lifecycle_total || '');
-          setRisks(ld.risks || []);
-          setTraining(ld.training || '');
+      // Parse growing_params
+      const gp = strain.growing_params as GrowingParams | null;
+      if (gp) {
+        if (gp.climate_schedule?.length > 0) {
+          setClimateSchedule(gp.climate_schedule);
         }
-
-        // Timeline
-        if (presets.timeline) {
-          setTimeline(presets.timeline);
+        if (gp.lighting) {
+          setLighting(gp.lighting);
         }
-
-        // Environment schedule
-        if (presets.environment_schedule) {
-          setEnvironmentSchedule(presets.environment_schedule as Record<string, EnvironmentPhase>);
-        } else {
-          // Try legacy format
-          const legacyEnv: Record<string, EnvironmentPhase> = {};
-          for (const phase of PHASE_CONFIG) {
-            const preset = (presets as any)[phase.key];
-            if (preset) {
-              legacyEnv[phase.key] = {
-                temp_day: preset.temp_day ?? preset.temp ?? DEFAULT_ENVIRONMENT[phase.key].temp_day,
-                temp_night: preset.temp_night ?? (preset.temp ? preset.temp - 3 : DEFAULT_ENVIRONMENT[phase.key].temp_night),
-                rh: preset.hum ?? preset.rh ?? DEFAULT_ENVIRONMENT[phase.key].rh,
-                vpd: preset.vpd ?? DEFAULT_ENVIRONMENT[phase.key].vpd,
-                ppfd: preset.ppfd ?? DEFAULT_ENVIRONMENT[phase.key].ppfd,
-                ec: preset.ec ?? DEFAULT_ENVIRONMENT[phase.key].ec,
-                light_h: preset.light_h ?? DEFAULT_ENVIRONMENT[phase.key].light_h,
-              };
-            } else {
-              legacyEnv[phase.key] = { ...DEFAULT_ENVIRONMENT[phase.key] };
-            }
-          }
-          setEnvironmentSchedule(legacyEnv);
+        if (gp.nutrition) {
+          setNutrition(gp.nutrition);
         }
-
-        // Nutrient schedule
-        if (presets.nutrient_schedule) {
-          setNutrientWeeks(presets.nutrient_schedule);
+        if (gp.general_info) {
+          setGeneralInfo(gp.general_info);
         }
       }
     } else {
@@ -184,106 +134,44 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       setName('');
       setBreeder('');
       setType('hybrid');
+      setGenotype('');
+      setThcPercent('');
       setDescription('');
       setFloweringDays('');
       setPhotoUrl('');
-      setThcContent('');
       setGenetics('');
       setDifficulty('medium');
       setYieldIndoor('');
       setIsPublic(isAdmin);
-      setGeneticsMix(DEFAULT_GENETICS);
-      setHeightIndoor('');
-      setHeightOutdoor('');
-      setCbd('');
-      setLifecycleTotal('');
-      setRisks([]);
-      setTraining('');
-      setTimeline([]);
-      setEnvironmentSchedule(JSON.parse(JSON.stringify(DEFAULT_ENVIRONMENT)));
-      setNutrientWeeks([
-        { week: 1, grow: 1, bloom: 0 },
-        { week: 2, grow: 2, bloom: 0 },
-        { week: 3, grow: 2.5, bloom: 0.5 },
-        { week: 4, grow: 2, bloom: 1 },
-      ]);
+      setClimateSchedule(JSON.parse(JSON.stringify(DEFAULT_CLIMATE_SCHEDULE)));
+      setLighting({ ...DEFAULT_LIGHTING });
+      setNutrition({ ...DEFAULT_NUTRITION });
+      setGeneralInfo({ ...DEFAULT_GENERAL_INFO });
     }
     
     setIsInitialized(true);
   }, [strain, open, isInitialized, isAdmin]);
 
-  // Genetics slider handler - keep total at 100%
-  const updateGenetics = (key: keyof GeneticMix, value: number) => {
-    const total = geneticsMix.sativa + geneticsMix.indica + geneticsMix.ruderalis;
-    const diff = value - geneticsMix[key];
-    
-    // Adjust other values proportionally
-    const newMix = { ...geneticsMix, [key]: value };
-    const others = Object.keys(newMix).filter(k => k !== key) as (keyof GeneticMix)[];
-    
-    if (diff > 0) {
-      // Reduce others
-      let remaining = diff;
-      for (const other of others) {
-        const reduction = Math.min(newMix[other], remaining / others.length);
-        newMix[other] = Math.max(0, newMix[other] - reduction);
-        remaining -= reduction;
-      }
-    }
-    
-    // Normalize to 100
-    const newTotal = newMix.sativa + newMix.indica + newMix.ruderalis;
-    if (newTotal !== 100 && newTotal > 0) {
-      const scale = 100 / newTotal;
-      newMix.sativa = Math.round(newMix.sativa * scale);
-      newMix.indica = Math.round(newMix.indica * scale);
-      newMix.ruderalis = Math.round(newMix.ruderalis * scale);
-    }
-    
-    setGeneticsMix(newMix);
+  // Climate schedule management
+  const updateClimateEntry = (index: number, field: keyof ClimateScheduleEntry, value: string | number) => {
+    setClimateSchedule(prev => prev.map((entry, i) => 
+      i === index ? { ...entry, [field]: value } : entry
+    ));
   };
 
-  // Environment update
-  const updateEnvironment = (phase: string, field: keyof EnvironmentPhase, value: number) => {
-    setEnvironmentSchedule(prev => ({
-      ...prev,
-      [phase]: {
-        ...prev[phase],
-        [field]: value,
-      },
-    }));
+  const addClimateEntry = () => {
+    setClimateSchedule(prev => [...prev, {
+      stage: 'Custom',
+      weeks: '',
+      temp_day: 24,
+      temp_night: 20,
+      humidity: 50,
+      vpd: '1.0-1.2'
+    }]);
   };
 
-  // Timeline management
-  const addTimelinePhase = () => {
-    setTimeline(prev => [...prev, { phase: '', duration: '', desc: '' }]);
-  };
-
-  const updateTimelinePhase = (index: number, field: keyof TimelinePhase, value: string) => {
-    setTimeline(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
-  };
-
-  const removeTimelinePhase = (index: number) => {
-    setTimeline(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // Nutrient week management
-  const addNutrientWeek = () => {
-    const nextWeek = nutrientWeeks.length + 1;
-    setNutrientWeeks(prev => [...prev, { week: nextWeek, grow: 0, bloom: 0 }]);
-  };
-
-  const removeNutrientWeek = (index: number) => {
-    setNutrientWeeks(prev => prev.filter((_, i) => i !== index).map((w, i) => ({ ...w, week: i + 1 })));
-  };
-
-  const updateNutrientWeek = (index: number, field: keyof NutrientWeek, value: number) => {
-    setNutrientWeeks(prev => prev.map((w, i) => i === index ? { ...w, [field]: value } : w));
-  };
-
-  // Toggle risk
-  const toggleRisk = (risk: string) => {
-    setRisks(prev => prev.includes(risk) ? prev.filter(r => r !== risk) : [...prev, risk]);
+  const removeClimateEntry = (index: number) => {
+    setClimateSchedule(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -301,38 +189,13 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     setLoading(true);
 
     try {
-      // Build lab_data
-      const labData: LabData = {
-        genetics_mix: geneticsMix,
-        height: { indoor: heightIndoor, outdoor: heightOutdoor },
-        cbd,
-        lifecycle_total: lifecycleTotal,
-        risks,
-        training,
+      // Build growing_params JSONB
+      const growingParams: GrowingParams = {
+        climate_schedule: climateSchedule,
+        lighting,
+        nutrition,
+        general_info: generalInfo,
       };
-
-      // Build complete presets
-      const presets: StrainPresets = {
-        lab_data: labData,
-        timeline: timeline.filter(t => t.phase && t.duration),
-        environment_schedule: environmentSchedule as Record<'seedling' | 'veg' | 'bloom' | 'flush', EnvironmentPhase>,
-        nutrient_schedule: nutrientWeeks,
-      };
-
-      // Also add legacy format for backward compatibility
-      for (const phase of PHASE_CONFIG) {
-        const env = environmentSchedule[phase.key];
-        (presets as any)[phase.key] = {
-          temp: env.temp_day,
-          temp_day: env.temp_day,
-          temp_night: env.temp_night,
-          hum: env.rh,
-          light_h: env.light_h,
-          vpd: env.vpd,
-          ec: env.ec,
-          ppfd: env.ppfd,
-        };
-      }
 
       const currentPhotoUrl = photoUrl;
       const finalPhotoUrl = currentPhotoUrl && currentPhotoUrl.trim() !== '' 
@@ -345,14 +208,15 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         name: name.trim(),
         breeder: breeder.trim() || null,
         type: type || null,
+        genotype: genotype.trim() || null,
+        thc_percent: thcPercent ? parseFloat(thcPercent) : null,
         description: description.trim() || null,
         flowering_days: floweringDays ? parseInt(floweringDays) : null,
         photo_url: finalPhotoUrl,
-        thc_content: thcContent.trim() || null,
         genetics: genetics.trim() || null,
         difficulty: difficulty || null,
         yield_indoor: yieldIndoor.trim() || null,
-        presets: presets as unknown as Record<string, unknown>,
+        growing_params: growingParams as unknown as Record<string, unknown>,
         ...(isAdmin && { is_public: isPublic }),
       };
 
@@ -409,11 +273,10 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         <ScrollArea className="max-h-[calc(90vh-140px)]">
           <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="basic" className="text-xs sm:text-sm">📋 Основне</TabsTrigger>
-                <TabsTrigger value="lab" className="text-xs sm:text-sm">🧬 Лаб. дані</TabsTrigger>
                 <TabsTrigger value="environment" className="text-xs sm:text-sm">🌡️ Середовище</TabsTrigger>
-                <TabsTrigger value="nutrients" className="text-xs sm:text-sm">🧪 Живлення</TabsTrigger>
+                <TabsTrigger value="nutrients" className="text-xs sm:text-sm">💡 Живлення</TabsTrigger>
               </TabsList>
 
               {/* Basic Info Tab */}
@@ -427,7 +290,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                           id="name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          placeholder="Gorilla Glue"
+                          placeholder="Auto AK-47"
                           required
                         />
                       </div>
@@ -438,6 +301,25 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                           value={breeder}
                           onChange={(e) => setBreeder(e.target.value)}
                           placeholder="FastBuds"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Генотип</Label>
+                        <Input
+                          value={genotype}
+                          onChange={(e) => setGenotype(e.target.value)}
+                          placeholder="Indica-dominant Hybrid"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Генетика (батьки)</Label>
+                        <Input
+                          value={genetics}
+                          onChange={(e) => setGenetics(e.target.value)}
+                          placeholder="Colombian × Mexican × Thai × Afghan"
                         />
                       </div>
                     </div>
@@ -482,22 +364,16 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                       <div className="space-y-2">
                         <Label>THC %</Label>
                         <Input
-                          value={thcContent}
-                          onChange={(e) => setThcContent(e.target.value)}
-                          placeholder="20-25%"
+                          type="number"
+                          step="0.1"
+                          value={thcPercent}
+                          onChange={(e) => setThcPercent(e.target.value)}
+                          placeholder="22"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Генетика</Label>
-                        <Input
-                          value={genetics}
-                          onChange={(e) => setGenetics(e.target.value)}
-                          placeholder="OG Kush x Sour Diesel"
-                        />
-                      </div>
                       <div className="space-y-2">
                         <Label>Урожай Indoor</Label>
                         <Input
@@ -506,6 +382,32 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                           placeholder="400-500 g/m²"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label>Висота Indoor</Label>
+                        <Input
+                          value={generalInfo.height_indoor}
+                          onChange={(e) => setGeneralInfo(prev => ({ ...prev, height_indoor: e.target.value }))}
+                          placeholder="60-100 cm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Рівень запаху</Label>
+                      <Select 
+                        value={generalInfo.smell_level} 
+                        onValueChange={(v) => setGeneralInfo(prev => ({ ...prev, smell_level: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Low">Low</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="High">High</SelectItem>
+                          <SelectItem value="Very High">Very High</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {/* Photo Upload */}
@@ -546,391 +448,183 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                 </Card>
               </TabsContent>
 
-              {/* Lab Data Tab */}
-              <TabsContent value="lab" className="mt-4 space-y-4">
-                {/* Genetics Sliders */}
+              {/* Environment Tab - Climate Schedule */}
+              <TabsContent value="environment" className="mt-4 space-y-4">
                 <Card className="border-border/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Dna className="h-4 w-4 text-primary" />
-                      Генетичний склад (%)
+                      <Thermometer className="h-4 w-4 text-primary" />
+                      Кліматичний розклад по стадіях
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-4">
-                        <span className="w-20 text-sm text-orange-400">Sativa</span>
-                        <Slider
-                          value={[geneticsMix.sativa]}
-                          onValueChange={([v]) => updateGenetics('sativa', v)}
-                          max={100}
-                          step={5}
-                          className="flex-1"
-                        />
-                        <span className="w-12 text-sm text-right">{geneticsMix.sativa}%</span>
+                    {climateSchedule.map((entry, index) => (
+                      <div key={index} className="grid grid-cols-7 gap-2 items-end p-3 rounded-lg bg-muted/50">
+                        <div className="col-span-2 space-y-1">
+                          <Label className="text-xs">Стадія</Label>
+                          <Select 
+                            value={entry.stage} 
+                            onValueChange={(v) => updateClimateEntry(index, 'stage', v)}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Seedling">🌱 Seedling</SelectItem>
+                              <SelectItem value="Vegetation">🌿 Vegetation</SelectItem>
+                              <SelectItem value="Flowering">🌸 Flowering</SelectItem>
+                              <SelectItem value="Custom">📋 Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Тижні</Label>
+                          <Input
+                            value={entry.weeks}
+                            onChange={(e) => updateClimateEntry(index, 'weeks', e.target.value)}
+                            placeholder="1-2"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Thermometer className="h-3 w-3 text-orange-400" /> День
+                          </Label>
+                          <Input
+                            type="number"
+                            value={entry.temp_day}
+                            onChange={(e) => updateClimateEntry(index, 'temp_day', parseInt(e.target.value) || 0)}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Thermometer className="h-3 w-3 text-blue-400" /> Ніч
+                          </Label>
+                          <Input
+                            type="number"
+                            value={entry.temp_night}
+                            onChange={(e) => updateClimateEntry(index, 'temp_night', parseInt(e.target.value) || 0)}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Droplets className="h-3 w-3 text-blue-400" /> RH%
+                          </Label>
+                          <Input
+                            type="number"
+                            value={entry.humidity}
+                            onChange={(e) => updateClimateEntry(index, 'humidity', parseInt(e.target.value) || 0)}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="flex items-end gap-1">
+                          <div className="flex-1 space-y-1">
+                            <Label className="text-xs flex items-center gap-1">
+                              <Activity className="h-3 w-3 text-cyan-400" /> VPD
+                            </Label>
+                            <Input
+                              value={entry.vpd}
+                              onChange={(e) => updateClimateEntry(index, 'vpd', e.target.value)}
+                              placeholder="0.8-1.2"
+                              className="h-9"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-destructive"
+                            onClick={() => removeClimateEntry(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="w-20 text-sm text-purple-400">Indica</span>
-                        <Slider
-                          value={[geneticsMix.indica]}
-                          onValueChange={([v]) => updateGenetics('indica', v)}
-                          max={100}
-                          step={5}
-                          className="flex-1"
-                        />
-                        <span className="w-12 text-sm text-right">{geneticsMix.indica}%</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="w-20 text-sm text-green-400">Ruderalis</span>
-                        <Slider
-                          value={[geneticsMix.ruderalis]}
-                          onValueChange={([v]) => updateGenetics('ruderalis', v)}
-                          max={100}
-                          step={5}
-                          className="flex-1"
-                        />
-                        <span className="w-12 text-sm text-right">{geneticsMix.ruderalis}%</span>
-                      </div>
-                    </div>
+                    ))}
                     
-                    {/* Preview bar */}
-                    <div className="flex h-4 rounded-full overflow-hidden border border-border">
-                      <div className="bg-orange-500" style={{ width: `${geneticsMix.sativa}%` }} />
-                      <div className="bg-purple-500" style={{ width: `${geneticsMix.indica}%` }} />
-                      <div className="bg-green-500" style={{ width: `${geneticsMix.ruderalis}%` }} />
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addClimateEntry}
+                      className="w-full gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Додати стадію
+                    </Button>
                   </CardContent>
                 </Card>
+              </TabsContent>
 
-                {/* Physical Stats */}
-                <Card className="border-border/50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">📏 Фізичні характеристики</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs">Висота Indoor</Label>
-                        <Input
-                          value={heightIndoor}
-                          onChange={(e) => setHeightIndoor(e.target.value)}
-                          placeholder="60-100 cm"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Висота Outdoor</Label>
-                        <Input
-                          value={heightOutdoor}
-                          onChange={(e) => setHeightOutdoor(e.target.value)}
-                          placeholder="100-150 cm"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">CBD</Label>
-                        <Input
-                          value={cbd}
-                          onChange={(e) => setCbd(e.target.value)}
-                          placeholder="< 1%"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Загальний цикл</Label>
-                        <Input
-                          value={lifecycleTotal}
-                          onChange={(e) => setLifecycleTotal(e.target.value)}
-                          placeholder="60-75 days"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Risks */}
+              {/* Nutrients & Light Tab */}
+              <TabsContent value="nutrients" className="mt-4 space-y-4">
+                {/* Lighting PPFD */}
                 <Card className="border-border/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Ризики
+                      <Sun className="h-4 w-4 text-yellow-500" />
+                      Освітлення (PPFD µmol/m²/s)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {RISK_OPTIONS.map((risk) => (
-                        <Badge
-                          key={risk}
-                          variant={risks.includes(risk) ? 'default' : 'outline'}
-                          className={`cursor-pointer transition-colors ${
-                            risks.includes(risk) 
-                              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
-                              : 'hover:bg-muted'
-                          }`}
-                          onClick={() => toggleRisk(risk)}
-                        >
-                          {risk}
-                        </Badge>
-                      ))}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs">🌱 Seedling</Label>
+                        <Input
+                          value={lighting.seedling_ppfd}
+                          onChange={(e) => setLighting(prev => ({ ...prev, seedling_ppfd: e.target.value }))}
+                          placeholder="150-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">🌿 Vegetative</Label>
+                        <Input
+                          value={lighting.veg_ppfd}
+                          onChange={(e) => setLighting(prev => ({ ...prev, veg_ppfd: e.target.value }))}
+                          placeholder="300-600"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">🌸 Bloom</Label>
+                        <Input
+                          value={lighting.bloom_ppfd}
+                          onChange={(e) => setLighting(prev => ({ ...prev, bloom_ppfd: e.target.value }))}
+                          placeholder="600-900"
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Training */}
-                <Card className="border-border/50">
-                  <CardContent className="pt-4">
-                    <div className="space-y-2">
-                      <Label>Рекомендований тренінг</Label>
-                      <Select value={training} onValueChange={setTraining}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Оберіть метод" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="None">None (Natural)</SelectItem>
-                          <SelectItem value="LST Only">LST Only</SelectItem>
-                          <SelectItem value="HST">HST (High Stress)</SelectItem>
-                          <SelectItem value="Topping">Topping</SelectItem>
-                          <SelectItem value="FIM">FIM</SelectItem>
-                          <SelectItem value="ScrOG">ScrOG</SelectItem>
-                          <SelectItem value="SOG">SOG</SelectItem>
-                          <SelectItem value="Mainlining">Mainlining</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Timeline */}
+                {/* Nutrition EC */}
                 <Card className="border-border/50">
                   <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-primary" />
-                        Таймлайн росту
-                      </CardTitle>
-                      <Button type="button" variant="outline" size="sm" onClick={addTimelinePhase} className="gap-1">
-                        <Plus className="h-3.5 w-3.5" />
-                        Фаза
-                      </Button>
-                    </div>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FlaskConical className="h-4 w-4 text-purple-500" />
+                      Живлення (EC mS/cm)
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {timeline.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Натисніть "+ Фаза" щоб додати таймлайн
-                      </p>
-                    ) : (
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        {timeline.map((phase, index) => (
-                          <div key={index} className="grid grid-cols-[1fr_1fr_2fr_auto] gap-2 items-start">
-                            <Input
-                              placeholder="Week 1-2"
-                              value={phase.duration}
-                              onChange={(e) => updateTimelinePhase(index, 'duration', e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                            <Input
-                              placeholder="Germination"
-                              value={phase.phase}
-                              onChange={(e) => updateTimelinePhase(index, 'phase', e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                            <Input
-                              placeholder="Description..."
-                              value={phase.desc}
-                              onChange={(e) => updateTimelinePhase(index, 'desc', e.target.value)}
-                              className="h-9 text-sm"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => removeTimelinePhase(index)}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
+                        <Label className="text-xs">🌿 Vegetative EC</Label>
+                        <Input
+                          value={nutrition.veg_ec}
+                          onChange={(e) => setNutrition(prev => ({ ...prev, veg_ec: e.target.value }))}
+                          placeholder="1.0-1.4"
+                        />
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Environment Tab */}
-              <TabsContent value="environment" className="mt-4 space-y-4">
-                <Tabs value={activePhaseTab} onValueChange={setActivePhaseTab}>
-                  <TabsList className="grid w-full grid-cols-4 mb-4">
-                    {PHASE_CONFIG.map((phase) => (
-                      <TabsTrigger key={phase.key} value={phase.key} className="text-xs">
-                        {phase.icon} {phase.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-
-                  {PHASE_CONFIG.map((phase) => (
-                    <TabsContent key={phase.key} value={phase.key} className="space-y-4">
-                      {/* Climate Row */}
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="space-y-1 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Thermometer className="h-3 w-3" /> Temp Day (°C)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={environmentSchedule[phase.key]?.temp_day || ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'temp_day', parseFloat(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1 p-3 rounded-lg bg-orange-500/5 border border-orange-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Thermometer className="h-3 w-3" /> Temp Night (°C)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={environmentSchedule[phase.key]?.temp_night || ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'temp_night', parseFloat(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Droplets className="h-3 w-3" /> Humidity (%)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={environmentSchedule[phase.key]?.rh || ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'rh', parseInt(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1 p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Activity className="h-3 w-3" /> VPD (kPa)
-                          </Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={environmentSchedule[phase.key]?.vpd || ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'vpd', parseFloat(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">🌸 Bloom EC</Label>
+                        <Input
+                          value={nutrition.bloom_ec}
+                          onChange={(e) => setNutrition(prev => ({ ...prev, bloom_ec: e.target.value }))}
+                          placeholder="1.5-1.8"
+                        />
                       </div>
-
-                      {/* Light & Nutrition Row */}
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                        <div className="space-y-1 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Sun className="h-3 w-3" /> Light Hours
-                          </Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="24"
-                            value={environmentSchedule[phase.key]?.light_h || ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'light_h', parseInt(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Zap className="h-3 w-3" /> PPFD (µmol/m²/s)
-                          </Label>
-                          <Input
-                            type="number"
-                            value={environmentSchedule[phase.key]?.ppfd || ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'ppfd', parseInt(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1 p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
-                          <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                            <FlaskConical className="h-3 w-3" /> EC (mS/cm)
-                          </Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={environmentSchedule[phase.key]?.ec ?? ''}
-                            onChange={(e) => updateEnvironment(phase.key, 'ec', parseFloat(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              </TabsContent>
-
-              {/* Nutrients Tab */}
-              <TabsContent value="nutrients" className="mt-4">
-                <Card className="border-border/50">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <FlaskConical className="h-4 w-4 text-primary" />
-                        Графік живлення (ml/L)
-                      </CardTitle>
-                      <Button type="button" variant="outline" size="sm" onClick={addNutrientWeek} className="gap-1">
-                        <Plus className="h-3.5 w-3.5" />
-                        Тиждень
-                      </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {nutrientWeeks.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        Натисніть "+ Тиждень" щоб додати графік
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-[60px_1fr_1fr_1fr_40px] gap-2 text-xs text-muted-foreground font-medium px-1">
-                          <span>Тиждень</span>
-                          <span>Grow</span>
-                          <span>Bloom</span>
-                          <span>Micro</span>
-                          <span></span>
-                        </div>
-
-                        {nutrientWeeks.map((week, index) => (
-                          <div key={index} className="grid grid-cols-[60px_1fr_1fr_1fr_40px] gap-2 items-center p-2 rounded-lg bg-muted/30">
-                            <span className="text-sm font-medium text-center">W{week.week}</span>
-                            <Input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={week.grow}
-                              onChange={(e) => updateNutrientWeek(index, 'grow', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                            <Input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={week.bloom}
-                              onChange={(e) => updateNutrientWeek(index, 'bloom', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                            <Input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={week.micro || ''}
-                              onChange={(e) => updateNutrientWeek(index, 'micro', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => removeNutrientWeek(index)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -939,12 +633,12 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         </ScrollArea>
 
         <DialogFooter className="px-6 py-4 border-t">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Скасувати
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            {strain ? 'Зберегти зміни' : 'Додати сорт'}
+          <Button onClick={handleSubmit} disabled={loading} className="gap-2">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {strain ? 'Зберегти' : 'Додати'}
           </Button>
         </DialogFooter>
       </DialogContent>

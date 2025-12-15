@@ -397,12 +397,15 @@ export type Database = {
           difficulty: string | null
           flowering_days: number | null
           genetics: string | null
+          genotype: string | null
+          growing_params: Json | null
           id: number
           is_public: boolean | null
           name: string
           photo_url: string | null
           presets: Json | null
           thc_content: string | null
+          thc_percent: number | null
           type: string | null
           user_id: string
           yield_indoor: string | null
@@ -414,12 +417,15 @@ export type Database = {
           difficulty?: string | null
           flowering_days?: number | null
           genetics?: string | null
+          genotype?: string | null
+          growing_params?: Json | null
           id?: number
           is_public?: boolean | null
           name: string
           photo_url?: string | null
           presets?: Json | null
           thc_content?: string | null
+          thc_percent?: number | null
           type?: string | null
           user_id: string
           yield_indoor?: string | null
@@ -431,12 +437,15 @@ export type Database = {
           difficulty?: string | null
           flowering_days?: number | null
           genetics?: string | null
+          genotype?: string | null
+          growing_params?: Json | null
           id?: number
           is_public?: boolean | null
           name?: string
           photo_url?: string | null
           presets?: Json | null
           thc_content?: string | null
+          thc_percent?: number | null
           type?: string | null
           user_id?: string
           yield_indoor?: string | null

@@ -90,7 +90,7 @@ export interface TimelinePhase {
 }
 
 /**
- * Environment settings for each phase
+ * Environment settings for each phase (legacy presets format)
  */
 export interface EnvironmentPhase {
   temp_day: number;   // Day temperature °C
@@ -103,7 +103,7 @@ export interface EnvironmentPhase {
 }
 
 /**
- * Complete strain presets structure
+ * Complete strain presets structure (legacy format)
  */
 export interface StrainPresets {
   lab_data?: LabData;
@@ -123,6 +123,57 @@ export interface NutrientWeek {
   cal_mag?: number;
 }
 
+// =============================================================================
+// 🧬 NEW GROWING_PARAMS JSONB Structure (v2.0)
+// =============================================================================
+
+/**
+ * Climate schedule entry for growing_params
+ */
+export interface ClimateScheduleEntry {
+  stage: string;        // "Seedling" | "Vegetation" | "Flowering"
+  weeks: string;        // e.g. "1-2"
+  temp_day: number;     // Day temperature °C
+  temp_night: number;   // Night temperature °C
+  humidity: number;     // RH %
+  vpd: string;          // e.g. "0.6-0.8" kPa
+}
+
+/**
+ * Lighting data for growing_params
+ */
+export interface GrowingLighting {
+  seedling_ppfd: string;  // e.g. "150-300"
+  veg_ppfd: string;       // e.g. "300-600"
+  bloom_ppfd: string;     // e.g. "600-900"
+}
+
+/**
+ * Nutrition EC targets for growing_params
+ */
+export interface GrowingNutrition {
+  veg_ec: string;   // e.g. "1.0-1.4"
+  bloom_ec: string; // e.g. "1.5-1.8"
+}
+
+/**
+ * General info for growing_params
+ */
+export interface GrowingGeneralInfo {
+  height_indoor: string;  // e.g. "60-100 cm"
+  smell_level: string;    // e.g. "High"
+}
+
+/**
+ * Complete growing_params JSONB structure
+ */
+export interface GrowingParams {
+  climate_schedule: ClimateScheduleEntry[];
+  lighting: GrowingLighting;
+  nutrition: GrowingNutrition;
+  general_info: GrowingGeneralInfo;
+}
+
 /**
  * Full library strain record
  */
@@ -131,14 +182,17 @@ export interface LibraryStrainFull {
   name: string;
   breeder: string | null;
   type: string | null;
+  genotype: string | null;           // NEW: e.g. "Indica-dominant Hybrid"
+  thc_percent: number | null;        // NEW: numeric THC %
   flowering_days: number | null;
   photo_url: string | null;
   description: string | null;
-  thc_content: string | null;
+  thc_content: string | null;        // Legacy string THC
   genetics: string | null;
   difficulty: string | null;
   yield_indoor: string | null;
-  presets: StrainPresets | null;
+  presets: StrainPresets | null;     // Legacy presets
+  growing_params: GrowingParams | null; // NEW: structured growing data
   is_public: boolean | null;
   user_id: string;
 }
