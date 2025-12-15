@@ -247,54 +247,76 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         presets.nutrient_schedule = nutrientWeeks;
       }
 
-      // Ensure we use the current photoUrl state (which may have been updated by ImageUpload)
-      const finalPhotoUrl = photoUrl.trim() || null;
-      console.log('[LibraryStrainEditor] Saving with photo_url:', finalPhotoUrl);
+      // CRITICAL FIX: Explicitly capture the current photoUrl state value
+      // This ensures we always use the latest value from ImageUpload
+      const currentPhotoUrl = photoUrl; // Capture the current state directly
+      const finalPhotoUrl = currentPhotoUrl && currentPhotoUrl.trim() !== '' 
+        ? currentPhotoUrl.trim() 
+        : null;
+      
+      console.log('[LibraryStrainEditor] Current photoUrl state:', currentPhotoUrl);
+      console.log('[LibraryStrainEditor] Final photo_url to save:', finalPhotoUrl);
 
+      // Build the data object with explicit photo_url assignment
       const data = {
         name: name.trim(),
         breeder: breeder.trim() || null,
         type: type || null,
         description: description.trim() || null,
         flowering_days: floweringDays ? parseInt(floweringDays) : null,
-        photo_url: finalPhotoUrl,
+        photo_url: finalPhotoUrl, // EXPLICIT: Use the captured photo URL
         presets,
         ...(isAdmin && { is_public: isPublic }),
       };
 
+      console.log('[LibraryStrainEditor] Full payload:', JSON.stringify(data, null, 2));
+
       if (strain?.id) {
-        // Update existing
+        // Update existing strain
+        console.log('[LibraryStrainEditor] Updating strain ID:', strain.id);
+        
         const { error } = await supabase
           .from('library_strains')
           .update(data)
           .eq('id', strain.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('[LibraryStrainEditor] Update error:', error);
+          throw error;
+        }
 
         toast({
-          title: 'Успіх',
-          description: 'Сорт оновлено',
+          title: '✅ Успіх',
+          description: `Сорт оновлено${finalPhotoUrl ? ' (з фото)' : ''}`,
         });
       } else {
-        // Insert new - user_id is required
+        // Insert new strain - user_id is required
         if (!user?.id) {
           throw new Error('Ви не авторизовані');
         }
+        
+        const insertData = { ...data, user_id: user.id, is_public: isPublic };
+        console.log('[LibraryStrainEditor] Inserting new strain:', JSON.stringify(insertData, null, 2));
+        
         const { error } = await supabase
           .from('library_strains')
-          .insert({ ...data, user_id: user.id, is_public: isPublic });
+          .insert(insertData);
 
-        if (error) throw error;
+        if (error) {
+          console.error('[LibraryStrainEditor] Insert error:', error);
+          throw error;
+        }
 
         toast({
-          title: 'Успіх',
-          description: 'Сорт додано до бібліотеки',
+          title: '✅ Успіх',
+          description: `Сорт додано до бібліотеки${finalPhotoUrl ? ' (з фото)' : ''}`,
         });
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
+      console.error('[LibraryStrainEditor] Submit error:', error);
       toast({
         title: 'Помилка',
         description: error.message,
