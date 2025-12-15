@@ -421,7 +421,7 @@ export default function LibraryPage() {
         <StrainDetailsDialog
           open={detailsDialogOpen}
           onOpenChange={setDetailsDialogOpen}
-          strain={selectedStrainForDetails}
+          strain={selectedStrainForDetails as any}
           onGrowThis={handleGrowThis}
         />
 
@@ -429,7 +429,7 @@ export default function LibraryPage() {
         <LibraryStrainEditor
           open={strainEditorOpen}
           onOpenChange={setStrainEditorOpen}
-          strain={editingStrain}
+          strain={editingStrain as any}
           onSuccess={handleStrainSaved}
           isAdmin={isAdmin}
         />
