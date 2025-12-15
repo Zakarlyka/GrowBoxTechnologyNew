@@ -54,3 +54,91 @@ export interface DeviceControl {
   value: boolean;
   intensity: number;
 }
+
+// =============================================================================
+// 🧬 LABORATORY PASSPORT - Strain Library Types
+// =============================================================================
+
+/**
+ * Genetics percentage breakdown
+ */
+export interface GeneticMix {
+  sativa: number;    // e.g. 60
+  indica: number;    // e.g. 30
+  ruderalis: number; // e.g. 10
+}
+
+/**
+ * Lab data for strain passport
+ */
+export interface LabData {
+  genetics_mix: GeneticMix;
+  height: { indoor: string; outdoor: string }; // e.g. "60-100 cm"
+  cbd: string;              // e.g. "< 1%"
+  lifecycle_total: string;  // e.g. "60-75 days"
+  risks: string[];          // e.g. ["Mold", "Odor"]
+  training: string;         // e.g. "LST Only"
+}
+
+/**
+ * Timeline phase for growth stages
+ */
+export interface TimelinePhase {
+  phase: string;      // e.g. "Vegetation"
+  duration: string;   // e.g. "Week 3-4"
+  desc: string;       // Description
+}
+
+/**
+ * Environment settings for each phase
+ */
+export interface EnvironmentPhase {
+  temp_day: number;   // Day temperature °C
+  temp_night: number; // Night temperature °C
+  rh: number;         // Humidity %
+  vpd: number;        // kPa target
+  ppfd: number;       // µmol/m²/s
+  ec: number;         // Electrical Conductivity
+  light_h: number;    // Hours of light
+}
+
+/**
+ * Complete strain presets structure
+ */
+export interface StrainPresets {
+  lab_data?: LabData;
+  timeline?: TimelinePhase[];
+  environment_schedule?: Record<'seedling' | 'veg' | 'bloom' | 'flush', EnvironmentPhase>;
+  nutrient_schedule?: NutrientWeek[];
+}
+
+/**
+ * Nutrient schedule week entry
+ */
+export interface NutrientWeek {
+  week: number;
+  grow: number;
+  bloom: number;
+  micro?: number;
+  cal_mag?: number;
+}
+
+/**
+ * Full library strain record
+ */
+export interface LibraryStrainFull {
+  id: number;
+  name: string;
+  breeder: string | null;
+  type: string | null;
+  flowering_days: number | null;
+  photo_url: string | null;
+  description: string | null;
+  thc_content: string | null;
+  genetics: string | null;
+  difficulty: string | null;
+  yield_indoor: string | null;
+  presets: StrainPresets | null;
+  is_public: boolean | null;
+  user_id: string;
+}
