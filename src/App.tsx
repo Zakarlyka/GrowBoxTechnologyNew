@@ -23,8 +23,12 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false, // Prevents modals from closing on tab switch
+      staleTime: 1000 * 60 * 60, // 1 hour - data stays fresh longer
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours
+      refetchOnWindowFocus: false, // CRITICAL: Stop refreshing on tab switch
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      retry: false,
     },
   },
 });

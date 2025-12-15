@@ -248,7 +248,7 @@ export function LibraryStrainManager() {
       <LibraryStrainEditor
         open={isEditorOpen}
         onOpenChange={setIsEditorOpen}
-        strain={editingStrain}
+        strain={editingStrain as any}
         onSuccess={handleEditorSuccess}
         isAdmin={true}
       />
