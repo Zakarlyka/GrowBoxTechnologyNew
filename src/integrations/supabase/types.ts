@@ -394,40 +394,52 @@ export type Database = {
           breeder: string | null
           created_at: string | null
           description: string | null
+          difficulty: string | null
           flowering_days: number | null
+          genetics: string | null
           id: number
           is_public: boolean | null
           name: string
           photo_url: string | null
           presets: Json | null
+          thc_content: string | null
           type: string | null
           user_id: string
+          yield_indoor: string | null
         }
         Insert: {
           breeder?: string | null
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           flowering_days?: number | null
+          genetics?: string | null
           id?: number
           is_public?: boolean | null
           name: string
           photo_url?: string | null
           presets?: Json | null
+          thc_content?: string | null
           type?: string | null
           user_id: string
+          yield_indoor?: string | null
         }
         Update: {
           breeder?: string | null
           created_at?: string | null
           description?: string | null
+          difficulty?: string | null
           flowering_days?: number | null
+          genetics?: string | null
           id?: number
           is_public?: boolean | null
           name?: string
           photo_url?: string | null
           presets?: Json | null
+          thc_content?: string | null
           type?: string | null
           user_id?: string
+          yield_indoor?: string | null
         }
         Relationships: []
       }
