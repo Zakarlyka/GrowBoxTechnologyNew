@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole>('user');
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false); // Track initial load only
 
   // Функція для завантаження профілю ТА ролі
   const loadProfileAndRole = useCallback(async (sessionUser: User) => {
@@ -89,8 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, loadProfileAndRole]);
 
   useEffect(() => {
+    // Only run initial load once
+    if (isInitialized) return;
+
     const getSession = async () => {
-      setLoading(true);
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -105,7 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error('Помилка getSession:', error);
       } finally {
+        // Only set loading false on initial load, never set true again
         setLoading(false);
+        setIsInitialized(true);
       }
     };
 
@@ -113,16 +118,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // CRITICAL: Never set loading=true here - it causes dialog unmount on tab switch
         setSession(session);
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' && session?.user) {
-          // Використовуємо setTimeout(0) щоб уникнути deadlock
+          // Background profile load - NO loading state change
           setTimeout(() => {
-            setLoading(true);
             loadProfileAndRole(session.user!)
-              .catch(error => console.error('Помилка onAuthStateChange SIGNED_IN:', error))
-              .finally(() => setLoading(false));
+              .catch(error => console.error('Помилка onAuthStateChange SIGNED_IN:', error));
           }, 0);
         }
         
@@ -136,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [loadProfileAndRole]);
+  }, [loadProfileAndRole, isInitialized]);
 
   const signIn = async (email: string, password: string) => {
     try {
