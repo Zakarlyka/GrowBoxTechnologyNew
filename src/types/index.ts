@@ -124,54 +124,89 @@ export interface NutrientWeek {
 }
 
 // =============================================================================
-// 🧬 NEW GROWING_PARAMS JSONB Structure (v2.0)
+// 🧬 NEW GROWING_PARAMS JSONB Structure (v3.0 - Dynamic Stages)
 // =============================================================================
 
 /**
- * Climate schedule entry for growing_params
+ * Stage entry for growing_params - dynamic, not hardcoded
  */
-export interface ClimateScheduleEntry {
-  stage: string;        // "Seedling" | "Vegetation" | "Flowering"
-  weeks: string;        // e.g. "1-2"
-  temp_day: number;     // Day temperature °C
-  temp_night: number;   // Night temperature °C
-  humidity: number;     // RH %
-  vpd: string;          // e.g. "0.6-0.8" kPa
+export interface GrowingStage {
+  name: string;           // "Seedling", "Vegetation", "Pre-flowering", "Flowering", "Drying"
+  weeks?: string;         // e.g. "1-2" - optional duration
+  temp: [number, number]; // [night, day] or [min, max] temperature
+  humidity: number;       // RH %
+  vpd: string;            // e.g. "0.6-0.8" kPa
+  ppfd: string;           // e.g. "150-300" µmol/m²/s
+  ec: string;             // e.g. "0.6-0.8" mS/cm
+  light_hours?: number;   // Optional light cycle hours
 }
 
 /**
- * Lighting data for growing_params
+ * Phenotype characteristics
  */
-export interface GrowingLighting {
-  seedling_ppfd: string;  // e.g. "150-300"
-  veg_ppfd: string;       // e.g. "300-600"
-  bloom_ppfd: string;     // e.g. "600-900"
+export interface GrowingPhenotype {
+  height_indoor?: string;   // e.g. "60-100 cm"
+  height_outdoor?: string;  // e.g. "100-150 cm"
+  aroma?: string;           // e.g. "Spicy", "Fruity"
+  structure?: string;       // e.g. "Bushy", "Tall"
+  color?: string;           // e.g. "Green with purple"
 }
 
 /**
- * Nutrition EC targets for growing_params
+ * Growing recommendations
  */
-export interface GrowingNutrition {
-  veg_ec: string;   // e.g. "1.0-1.4"
-  bloom_ec: string; // e.g. "1.5-1.8"
+export interface GrowingRecommendations {
+  ph_soil?: string;       // e.g. "6.0-7.0"
+  ph_hydro?: string;      // e.g. "5.5-6.5"
+  training?: string;      // e.g. "LST, SCROG"
+  notes?: string;         // Additional tips
 }
 
 /**
- * General info for growing_params
+ * Post-harvest instructions (drying/curing)
  */
-export interface GrowingGeneralInfo {
-  height_indoor: string;  // e.g. "60-100 cm"
-  smell_level: string;    // e.g. "High"
+export interface PostHarvest {
+  drying_temp?: number;   // °C
+  drying_humidity?: number; // RH %
+  drying_days?: string;   // e.g. "7-14"
+  curing_notes?: string;
 }
 
 /**
- * Complete growing_params JSONB structure
+ * Complete growing_params JSONB structure (v3.0)
  */
 export interface GrowingParams {
-  climate_schedule: ClimateScheduleEntry[];
-  lighting: GrowingLighting;
-  nutrition: GrowingNutrition;
-  general_info: GrowingGeneralInfo;
+  stages: GrowingStage[];
+  risks?: string[];                     // e.g. ["Mold", "Odor", "Heat Stress"]
+  phenotype?: GrowingPhenotype;
+  recommendations?: GrowingRecommendations;
+  post_harvest?: PostHarvest;
+}
+
+// Legacy types for backward compatibility
+export interface ClimateScheduleEntry {
+  stage: string;
+  weeks: string;
+  temp_day: number;
+  temp_night: number;
+  humidity: number;
+  vpd: string;
+}
+
+export interface GrowingLighting {
+  seedling_ppfd: string;
+  veg_ppfd: string;
+  bloom_ppfd: string;
+}
+
+export interface GrowingNutrition {
+  veg_ec: string;
+  bloom_ec: string;
+}
+
+export interface GrowingGeneralInfo {
+  height_indoor: string;
+  smell_level: string;
 }
 
 /**

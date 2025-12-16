@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { 
   Leaf, Clock, Thermometer, Droplets, Sun, FlaskConical, 
-  Dna, TrendingUp, AlertTriangle, Ruler, Activity, Zap, User
+  Dna, TrendingUp, AlertTriangle, Ruler, Activity, Zap, User,
+  Wind, Beaker
 } from 'lucide-react';
 import {
   Dialog,
@@ -22,7 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { LibraryStrainFull, GrowingParams, ClimateScheduleEntry } from '@/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { LibraryStrainFull, GrowingParams, GrowingStage } from '@/types';
 
 interface StrainDetailsDialogProps {
   open: boolean;
@@ -40,7 +42,11 @@ const getTypeColor = (type: string | null) => {
     case 'hybrid':
       return 'bg-green-500/20 text-green-400 border-green-500/30';
     case 'autoflower':
+    case 'auto':
       return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    case 'photoperiod':
+    case 'photo':
+      return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -59,6 +65,17 @@ const getDifficultyColor = (difficulty: string | null) => {
   }
 };
 
+const getStageIcon = (stageName: string) => {
+  const name = stageName.toLowerCase();
+  if (name.includes('seedling') || name.includes('germination')) return '🌱';
+  if (name.includes('veg')) return '🌿';
+  if (name.includes('pre-flower') || name.includes('preflower')) return '🌼';
+  if (name.includes('flower') || name.includes('bloom')) return '🌸';
+  if (name.includes('flush')) return '💧';
+  if (name.includes('dry') || name.includes('harvest')) return '🍂';
+  return '📊';
+};
+
 export function StrainDetailsDialog({
   open,
   onOpenChange,
@@ -70,10 +87,11 @@ export function StrainDetailsDialog({
   if (!strain) return null;
 
   const growingParams = strain.growing_params as GrowingParams | null;
-  const climateSchedule = growingParams?.climate_schedule || [];
-  const lighting = growingParams?.lighting;
-  const nutrition = growingParams?.nutrition;
-  const generalInfo = growingParams?.general_info;
+  const stages = growingParams?.stages || [];
+  const risks = growingParams?.risks || [];
+  const phenotype = growingParams?.phenotype;
+  const recommendations = growingParams?.recommendations;
+  const postHarvest = growingParams?.post_harvest;
 
   // Helper to add cache busting to Supabase Storage URLs only
   const getImageUrl = (url: string | null) => {
@@ -98,6 +116,12 @@ export function StrainDetailsDialog({
   const thcDisplay = strain.thc_percent 
     ? `${strain.thc_percent}%` 
     : strain.thc_content || null;
+
+  // Format temp array as "night°C / day°C"
+  const formatTemp = (temp: [number, number] | undefined) => {
+    if (!temp || !Array.isArray(temp)) return '--';
+    return `${temp[0]}°C / ${temp[1]}°C`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -286,36 +310,6 @@ export function StrainDetailsDialog({
                 </Card>
               )}
 
-              {/* Height Card */}
-              {generalInfo?.height_indoor && (
-                <Card className="bg-card/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                      <Ruler className="h-4 w-4 text-primary" />
-                      Висота Indoor
-                    </div>
-                    <div className="text-sm font-medium text-foreground">
-                      {generalInfo.height_indoor}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Smell Level Card */}
-              {generalInfo?.smell_level && (
-                <Card className="bg-card/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Рівень запаху
-                    </div>
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
-                      {generalInfo.smell_level}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Difficulty Card */}
               {strain.difficulty && (
                 <Card className="bg-card/50">
@@ -332,6 +326,69 @@ export function StrainDetailsDialog({
               )}
             </div>
 
+            {/* Phenotype Section */}
+            {phenotype && (Object.keys(phenotype).length > 0) && (
+              <Card className="bg-card/50">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Ruler className="h-4 w-4 text-primary" />
+                    Фенотип
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {phenotype.height_indoor && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Висота Indoor:</span>
+                        <span className="ml-2 font-medium">{phenotype.height_indoor}</span>
+                      </div>
+                    )}
+                    {phenotype.height_outdoor && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Висота Outdoor:</span>
+                        <span className="ml-2 font-medium">{phenotype.height_outdoor}</span>
+                      </div>
+                    )}
+                    {phenotype.aroma && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Аромат:</span>
+                        <span className="ml-2 font-medium">{phenotype.aroma}</span>
+                      </div>
+                    )}
+                    {phenotype.structure && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Структура:</span>
+                        <span className="ml-2 font-medium">{phenotype.structure}</span>
+                      </div>
+                    )}
+                    {phenotype.color && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Колір:</span>
+                        <span className="ml-2 font-medium">{phenotype.color}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Risks Warning Box */}
+            {risks.length > 0 && (
+              <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/30 text-amber-400">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Ризики та особливості</AlertTitle>
+                <AlertDescription>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {risks.map((risk, idx) => (
+                      <Badge key={idx} variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                        ⚠️ {risk}
+                      </Badge>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Full Description */}
             {strain.description && (
               <Card className="bg-card/50">
@@ -344,14 +401,14 @@ export function StrainDetailsDialog({
             )}
           </TabsContent>
 
-          {/* Environment Tab - Climate Schedule Table */}
-          <TabsContent value="environment" className="mt-4 space-y-3">
-            {climateSchedule.length > 0 ? (
+          {/* Environment Tab - Dynamic Stages Timeline */}
+          <TabsContent value="environment" className="mt-4 space-y-4">
+            {stages.length > 0 ? (
               <Card className="bg-card/50">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Thermometer className="h-4 w-4 text-primary" />
-                    Кліматичний розклад
+                    Кліматичний розклад по стадіях
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
@@ -364,7 +421,7 @@ export function StrainDetailsDialog({
                           <TableHead className="font-medium">
                             <div className="flex items-center gap-1">
                               <Thermometer className="h-3 w-3 text-orange-400" />
-                              День/Ніч
+                              Ніч/День
                             </div>
                           </TableHead>
                           <TableHead className="font-medium">
@@ -382,30 +439,27 @@ export function StrainDetailsDialog({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {climateSchedule.map((entry: ClimateScheduleEntry, idx: number) => (
+                        {stages.map((stage: GrowingStage, idx: number) => (
                           <TableRow key={idx}>
                             <TableCell className="font-medium">
-                              {entry.stage === 'Seedling' && '🌱 '}
-                              {entry.stage === 'Vegetation' && '🌿 '}
-                              {entry.stage === 'Flowering' && '🌸 '}
-                              {entry.stage}
+                              {getStageIcon(stage.name)} {stage.name}
                             </TableCell>
                             <TableCell className="text-muted-foreground">
-                              {entry.weeks}
+                              {stage.weeks || '--'}
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
-                                {entry.temp_day}°C / {entry.temp_night}°C
+                                {formatTemp(stage.temp)}
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
-                                {entry.humidity}%
+                                {stage.humidity}%
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
-                                {entry.vpd} kPa
+                                {stage.vpd} kPa
                               </Badge>
                             </TableCell>
                           </TableRow>
@@ -423,93 +477,191 @@ export function StrainDetailsDialog({
                 </CardContent>
               </Card>
             )}
+
+            {/* Post-Harvest / Drying Instructions */}
+            {postHarvest && (
+              <Card className="bg-card/50 border-amber-500/20">
+                <CardHeader className="py-3 px-4">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    🍂 Пост-харвест (Сушіння)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {postHarvest.drying_temp && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Температура:</span>
+                        <Badge variant="outline" className="ml-2 bg-orange-500/10 text-orange-400">
+                          {postHarvest.drying_temp}°C
+                        </Badge>
+                      </div>
+                    )}
+                    {postHarvest.drying_humidity && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Вологість:</span>
+                        <Badge variant="outline" className="ml-2 bg-blue-500/10 text-blue-400">
+                          {postHarvest.drying_humidity}%
+                        </Badge>
+                      </div>
+                    )}
+                    {postHarvest.drying_days && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Тривалість:</span>
+                        <span className="ml-2 font-medium">{postHarvest.drying_days} днів</span>
+                      </div>
+                    )}
+                  </div>
+                  {postHarvest.curing_notes && (
+                    <p className="text-sm text-muted-foreground mt-3 italic">
+                      💡 {postHarvest.curing_notes}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
-          {/* Nutrients & Light Tab */}
+          {/* Nutrients & Light Tab - PPFD/EC from Stages */}
           <TabsContent value="nutrients" className="mt-4 space-y-4">
-            {/* Lighting PPFD */}
-            {lighting && (
-              <Card className="bg-card/50">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <Sun className="h-4 w-4 text-yellow-500" />
-                    Освітлення (PPFD µmol/m²/s)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-0">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div className="text-xs text-muted-foreground mb-1">🌱 Seedling</div>
-                      <div className="text-lg font-bold text-green-400">
-                        {lighting.seedling_ppfd}
-                      </div>
+            {stages.length > 0 ? (
+              <>
+                {/* PPFD & EC per Stage */}
+                <Card className="bg-card/50">
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <Sun className="h-4 w-4 text-yellow-500" />
+                      Освітлення та Живлення по стадіях
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 pt-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-medium">Стадія</TableHead>
+                            <TableHead className="font-medium">
+                              <div className="flex items-center gap-1">
+                                <Sun className="h-3 w-3 text-yellow-400" />
+                                PPFD
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-medium">
+                              <div className="flex items-center gap-1">
+                                <Zap className="h-3 w-3 text-green-400" />
+                                EC
+                              </div>
+                            </TableHead>
+                            {stages.some(s => s.light_hours) && (
+                              <TableHead className="font-medium">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-amber-400" />
+                                  Світло
+                                </div>
+                              </TableHead>
+                            )}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {stages.map((stage: GrowingStage, idx: number) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">
+                                {getStageIcon(stage.name)} {stage.name}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                                  {stage.ppfd} µmol
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                                  {stage.ec} mS/cm
+                                </Badge>
+                              </TableCell>
+                              {stages.some(s => s.light_hours) && (
+                                <TableCell>
+                                  {stage.light_hours ? (
+                                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
+                                      {stage.light_hours}h ON
+                                    </Badge>
+                                  ) : '--'}
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="text-xs text-muted-foreground mb-1">🌿 Veg</div>
-                      <div className="text-lg font-bold text-emerald-400">
-                        {lighting.veg_ppfd}
-                      </div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <div className="text-xs text-muted-foreground mb-1">🌸 Bloom</div>
-                      <div className="text-lg font-bold text-amber-400">
-                        {lighting.bloom_ppfd}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
 
-            {/* Nutrition EC */}
-            {nutrition && (
-              <Card className="bg-card/50">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <FlaskConical className="h-4 w-4 text-purple-500" />
-                    Живлення (EC mS/cm)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-0">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                      <div className="text-xs text-muted-foreground mb-1">🌿 Vegetative EC</div>
-                      <div className="text-lg font-bold text-emerald-400">
-                        {nutrition.veg_ec}
+                {/* pH Recommendations */}
+                {recommendations && (recommendations.ph_soil || recommendations.ph_hydro) && (
+                  <Card className="bg-card/50">
+                    <CardHeader className="py-3 px-4">
+                      <CardTitle className="text-base font-medium flex items-center gap-2">
+                        <Beaker className="h-4 w-4 text-cyan-500" />
+                        Рекомендації pH
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 pt-0">
+                      <div className="grid grid-cols-2 gap-4">
+                        {recommendations.ph_soil && (
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                              <span className="text-lg">🌱</span>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">pH Ґрунт</div>
+                              <div className="text-lg font-bold text-amber-400">{recommendations.ph_soil}</div>
+                            </div>
+                          </div>
+                        )}
+                        {recommendations.ph_hydro && (
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                              <span className="text-lg">💧</span>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">pH Гідро</div>
+                              <div className="text-lg font-bold text-cyan-400">{recommendations.ph_hydro}</div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="text-center p-3 rounded-lg bg-pink-500/10 border border-pink-500/20">
-                      <div className="text-xs text-muted-foreground mb-1">🌸 Bloom EC</div>
-                      <div className="text-lg font-bold text-pink-400">
-                        {nutrition.bloom_ec}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Empty State */}
-            {!lighting && !nutrition && (
+                      {recommendations.training && (
+                        <div className="mt-4 pt-3 border-t border-border">
+                          <div className="text-sm text-muted-foreground">Тренування:</div>
+                          <div className="font-medium">{recommendations.training}</div>
+                        </div>
+                      )}
+                      {recommendations.notes && (
+                        <p className="text-sm text-muted-foreground mt-3 italic">
+                          💡 {recommendations.notes}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
               <Card>
                 <CardContent className="p-6 text-center text-muted-foreground">
                   <FlaskConical className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                  <p>Дані про живлення для цього сорту поки не налаштовано</p>
+                  <p>Дані про живлення для цього сорту ще не налаштовано</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
         </Tabs>
 
-        {/* Footer */}
-        <div className="pt-4">
-          <Button 
-            onClick={handleGrow} 
-            className="w-full gap-2" 
-            size="lg"
-          >
-            <Leaf className="h-5 w-5" />
-            🌱 Вирощувати цей сорт
+        {/* Footer Actions */}
+        <div className="flex gap-3 pt-4 border-t border-border">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            Закрити
+          </Button>
+          <Button onClick={handleGrow} className="flex-1 bg-primary hover:bg-primary/90 gap-2">
+            <Leaf className="h-4 w-4" />
+            🌱 Вирощувати
           </Button>
         </div>
       </DialogContent>

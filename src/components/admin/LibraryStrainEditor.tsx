@@ -23,12 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, FlaskConical, Zap, Activity } from 'lucide-react';
+import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, FlaskConical, Zap, Activity, AlertTriangle, Beaker } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import type { 
-  LibraryStrainFull, GrowingParams, ClimateScheduleEntry, 
-  GrowingLighting, GrowingNutrition, GrowingGeneralInfo 
+  LibraryStrainFull, GrowingParams, GrowingStage, 
+  GrowingPhenotype, GrowingRecommendations, PostHarvest 
 } from '@/types';
 
 interface LibraryStrainEditorProps {
@@ -39,26 +40,30 @@ interface LibraryStrainEditorProps {
   isAdmin?: boolean;
 }
 
-const DEFAULT_CLIMATE_SCHEDULE: ClimateScheduleEntry[] = [
-  { stage: 'Seedling', weeks: '1-2', temp_day: 25, temp_night: 22, humidity: 70, vpd: '0.6-0.8' },
-  { stage: 'Vegetation', weeks: '3-4', temp_day: 26, temp_night: 22, humidity: 60, vpd: '0.8-1.1' },
-  { stage: 'Flowering', weeks: '5-9', temp_day: 24, temp_night: 20, humidity: 45, vpd: '1.2-1.5' },
+const DEFAULT_STAGES: GrowingStage[] = [
+  { name: 'Seedling', weeks: '1-2', temp: [22, 25], humidity: 70, vpd: '0.6-0.8', ppfd: '150-300', ec: '0.6-0.8' },
+  { name: 'Vegetation', weeks: '3-4', temp: [22, 26], humidity: 60, vpd: '0.8-1.1', ppfd: '300-600', ec: '1.0-1.4' },
+  { name: 'Flowering', weeks: '5-9', temp: [20, 24], humidity: 45, vpd: '1.2-1.5', ppfd: '600-900', ec: '1.5-1.8' },
 ];
 
-const DEFAULT_LIGHTING: GrowingLighting = {
-  seedling_ppfd: '150-300',
-  veg_ppfd: '300-600',
-  bloom_ppfd: '600-900',
-};
-
-const DEFAULT_NUTRITION: GrowingNutrition = {
-  veg_ec: '1.0-1.4',
-  bloom_ec: '1.5-1.8',
-};
-
-const DEFAULT_GENERAL_INFO: GrowingGeneralInfo = {
+const DEFAULT_PHENOTYPE: GrowingPhenotype = {
   height_indoor: '',
-  smell_level: 'Medium',
+  aroma: '',
+  structure: '',
+};
+
+const DEFAULT_RECOMMENDATIONS: GrowingRecommendations = {
+  ph_soil: '6.0-7.0',
+  ph_hydro: '5.5-6.5',
+  training: '',
+  notes: '',
+};
+
+const DEFAULT_POST_HARVEST: PostHarvest = {
+  drying_temp: 18,
+  drying_humidity: 55,
+  drying_days: '7-14',
+  curing_notes: '',
 };
 
 export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isAdmin = false }: LibraryStrainEditorProps) {
@@ -80,11 +85,13 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
   const [difficulty, setDifficulty] = useState('medium');
   const [yieldIndoor, setYieldIndoor] = useState('');
 
-  // Growing params state
-  const [climateSchedule, setClimateSchedule] = useState<ClimateScheduleEntry[]>(DEFAULT_CLIMATE_SCHEDULE);
-  const [lighting, setLighting] = useState<GrowingLighting>(DEFAULT_LIGHTING);
-  const [nutrition, setNutrition] = useState<GrowingNutrition>(DEFAULT_NUTRITION);
-  const [generalInfo, setGeneralInfo] = useState<GrowingGeneralInfo>(DEFAULT_GENERAL_INFO);
+  // Growing params state (new structure)
+  const [stages, setStages] = useState<GrowingStage[]>(DEFAULT_STAGES);
+  const [risks, setRisks] = useState<string[]>([]);
+  const [newRisk, setNewRisk] = useState('');
+  const [phenotype, setPhenotype] = useState<GrowingPhenotype>(DEFAULT_PHENOTYPE);
+  const [recommendations, setRecommendations] = useState<GrowingRecommendations>(DEFAULT_RECOMMENDATIONS);
+  const [postHarvest, setPostHarvest] = useState<PostHarvest>(DEFAULT_POST_HARVEST);
 
   // Track initialization
   const [isInitialized, setIsInitialized] = useState(false);
@@ -113,20 +120,23 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       setYieldIndoor(strain.yield_indoor || '');
       setIsPublic(strain.is_public || false);
 
-      // Parse growing_params
+      // Parse growing_params (new v3.0 structure)
       const gp = strain.growing_params as GrowingParams | null;
       if (gp) {
-        if (gp.climate_schedule?.length > 0) {
-          setClimateSchedule(gp.climate_schedule);
+        if (gp.stages?.length > 0) {
+          setStages(gp.stages);
         }
-        if (gp.lighting) {
-          setLighting(gp.lighting);
+        if (gp.risks) {
+          setRisks(gp.risks);
         }
-        if (gp.nutrition) {
-          setNutrition(gp.nutrition);
+        if (gp.phenotype) {
+          setPhenotype({ ...DEFAULT_PHENOTYPE, ...gp.phenotype });
         }
-        if (gp.general_info) {
-          setGeneralInfo(gp.general_info);
+        if (gp.recommendations) {
+          setRecommendations({ ...DEFAULT_RECOMMENDATIONS, ...gp.recommendations });
+        }
+        if (gp.post_harvest) {
+          setPostHarvest({ ...DEFAULT_POST_HARVEST, ...gp.post_harvest });
         }
       }
     } else {
@@ -143,35 +153,58 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       setDifficulty('medium');
       setYieldIndoor('');
       setIsPublic(isAdmin);
-      setClimateSchedule(JSON.parse(JSON.stringify(DEFAULT_CLIMATE_SCHEDULE)));
-      setLighting({ ...DEFAULT_LIGHTING });
-      setNutrition({ ...DEFAULT_NUTRITION });
-      setGeneralInfo({ ...DEFAULT_GENERAL_INFO });
+      setStages(JSON.parse(JSON.stringify(DEFAULT_STAGES)));
+      setRisks([]);
+      setPhenotype({ ...DEFAULT_PHENOTYPE });
+      setRecommendations({ ...DEFAULT_RECOMMENDATIONS });
+      setPostHarvest({ ...DEFAULT_POST_HARVEST });
     }
     
     setIsInitialized(true);
   }, [strain, open, isInitialized, isAdmin]);
 
-  // Climate schedule management
-  const updateClimateEntry = (index: number, field: keyof ClimateScheduleEntry, value: string | number) => {
-    setClimateSchedule(prev => prev.map((entry, i) => 
-      i === index ? { ...entry, [field]: value } : entry
+  // Stage management
+  const updateStage = (index: number, field: keyof GrowingStage, value: any) => {
+    setStages(prev => prev.map((stage, i) => 
+      i === index ? { ...stage, [field]: value } : stage
     ));
   };
 
-  const addClimateEntry = () => {
-    setClimateSchedule(prev => [...prev, {
-      stage: 'Custom',
+  const updateStageTemp = (index: number, tempIndex: 0 | 1, value: number) => {
+    setStages(prev => prev.map((stage, i) => {
+      if (i !== index) return stage;
+      const newTemp: [number, number] = [...stage.temp] as [number, number];
+      newTemp[tempIndex] = value;
+      return { ...stage, temp: newTemp };
+    }));
+  };
+
+  const addStage = () => {
+    setStages(prev => [...prev, {
+      name: 'Custom',
       weeks: '',
-      temp_day: 24,
-      temp_night: 20,
+      temp: [20, 24],
       humidity: 50,
-      vpd: '1.0-1.2'
+      vpd: '1.0-1.2',
+      ppfd: '400-600',
+      ec: '1.2-1.6'
     }]);
   };
 
-  const removeClimateEntry = (index: number) => {
-    setClimateSchedule(prev => prev.filter((_, i) => i !== index));
+  const removeStage = (index: number) => {
+    setStages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Risk management
+  const addRisk = () => {
+    if (newRisk.trim() && !risks.includes(newRisk.trim())) {
+      setRisks(prev => [...prev, newRisk.trim()]);
+      setNewRisk('');
+    }
+  };
+
+  const removeRisk = (risk: string) => {
+    setRisks(prev => prev.filter(r => r !== risk));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -189,12 +222,13 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     setLoading(true);
 
     try {
-      // Build growing_params JSONB
+      // Build growing_params JSONB (v3.0 structure)
       const growingParams: GrowingParams = {
-        climate_schedule: climateSchedule,
-        lighting,
-        nutrition,
-        general_info: generalInfo,
+        stages,
+        risks: risks.length > 0 ? risks : undefined,
+        phenotype: Object.values(phenotype).some(v => v) ? phenotype : undefined,
+        recommendations: Object.values(recommendations).some(v => v) ? recommendations : undefined,
+        post_harvest: postHarvest.drying_temp ? postHarvest : undefined,
       };
 
       const currentPhotoUrl = photoUrl;
@@ -202,7 +236,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
         ? currentPhotoUrl.trim() 
         : null;
 
-      console.log('[LibraryStrainEditor] Saving with photo_url:', finalPhotoUrl);
+      console.log('[LibraryStrainEditor] Saving with growing_params:', growingParams);
 
       const data = {
         name: name.trim(),
@@ -274,12 +308,12 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
           <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic" className="text-xs sm:text-sm">📋 Основне</TabsTrigger>
+                <TabsTrigger value="basic" className="text-xs sm:text-sm">📋 Паспорт</TabsTrigger>
                 <TabsTrigger value="environment" className="text-xs sm:text-sm">🌡️ Середовище</TabsTrigger>
                 <TabsTrigger value="nutrients" className="text-xs sm:text-sm">💡 Живлення</TabsTrigger>
               </TabsList>
 
-              {/* Basic Info Tab */}
+              {/* Basic Info / Passport Tab */}
               <TabsContent value="basic" className="mt-4 space-y-4">
                 <Card className="border-border/50">
                   <CardContent className="pt-4 space-y-4">
@@ -319,7 +353,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                         <Input
                           value={genetics}
                           onChange={(e) => setGenetics(e.target.value)}
-                          placeholder="Colombian × Mexican × Thai × Afghan"
+                          placeholder="Colombian × Mexican × Thai"
                         />
                       </div>
                     </div>
@@ -336,6 +370,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                             <SelectItem value="sativa">Sativa</SelectItem>
                             <SelectItem value="hybrid">Hybrid</SelectItem>
                             <SelectItem value="autoflower">Autoflower</SelectItem>
+                            <SelectItem value="photoperiod">Photoperiod</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -382,32 +417,6 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                           placeholder="400-500 g/m²"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Висота Indoor</Label>
-                        <Input
-                          value={generalInfo.height_indoor}
-                          onChange={(e) => setGeneralInfo(prev => ({ ...prev, height_indoor: e.target.value }))}
-                          placeholder="60-100 cm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Рівень запаху</Label>
-                      <Select 
-                        value={generalInfo.smell_level} 
-                        onValueChange={(v) => setGeneralInfo(prev => ({ ...prev, smell_level: v }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Low">Low</SelectItem>
-                          <SelectItem value="Medium">Medium</SelectItem>
-                          <SelectItem value="High">High</SelectItem>
-                          <SelectItem value="Very High">Very High</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
 
                     {/* Photo Upload */}
@@ -446,9 +455,88 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                     )}
                   </CardContent>
                 </Card>
+
+                {/* Phenotype Card */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      🧬 Фенотип
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Висота Indoor</Label>
+                        <Input
+                          value={phenotype.height_indoor || ''}
+                          onChange={(e) => setPhenotype(prev => ({ ...prev, height_indoor: e.target.value }))}
+                          placeholder="60-100 cm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Аромат</Label>
+                        <Input
+                          value={phenotype.aroma || ''}
+                          onChange={(e) => setPhenotype(prev => ({ ...prev, aroma: e.target.value }))}
+                          placeholder="Spicy, Earthy"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Структура</Label>
+                        <Input
+                          value={phenotype.structure || ''}
+                          onChange={(e) => setPhenotype(prev => ({ ...prev, structure: e.target.value }))}
+                          placeholder="Bushy, Compact"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Risks Card */}
+                <Card className="border-border/50 border-amber-500/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-amber-400">
+                      <AlertTriangle className="h-4 w-4" />
+                      Ризики та особливості
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {risks.map((risk, idx) => (
+                        <Badge 
+                          key={idx} 
+                          variant="outline" 
+                          className="bg-amber-500/10 text-amber-400 border-amber-500/30 gap-1"
+                        >
+                          ⚠️ {risk}
+                          <button
+                            type="button"
+                            onClick={() => removeRisk(risk)}
+                            className="ml-1 text-amber-300 hover:text-amber-100"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newRisk}
+                        onChange={(e) => setNewRisk(e.target.value)}
+                        placeholder="Mold, Odor, Heat Stress..."
+                        className="flex-1"
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addRisk())}
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={addRisk}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
-              {/* Environment Tab - Climate Schedule */}
+              {/* Environment Tab - Dynamic Stages */}
               <TabsContent value="environment" className="mt-4 space-y-4">
                 <Card className="border-border/50">
                   <CardHeader className="pb-2">
@@ -458,88 +546,108 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {climateSchedule.map((entry, index) => (
-                      <div key={index} className="grid grid-cols-7 gap-2 items-end p-3 rounded-lg bg-muted/50">
-                        <div className="col-span-2 space-y-1">
-                          <Label className="text-xs">Стадія</Label>
-                          <Select 
-                            value={entry.stage} 
-                            onValueChange={(v) => updateClimateEntry(index, 'stage', v)}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Seedling">🌱 Seedling</SelectItem>
-                              <SelectItem value="Vegetation">🌿 Vegetation</SelectItem>
-                              <SelectItem value="Flowering">🌸 Flowering</SelectItem>
-                              <SelectItem value="Custom">📋 Custom</SelectItem>
-                            </SelectContent>
-                          </Select>
+                    {stages.map((stage, index) => (
+                      <div key={index} className="p-3 rounded-lg bg-muted/50 space-y-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Назва стадії</Label>
+                            <Select 
+                              value={stage.name} 
+                              onValueChange={(v) => updateStage(index, 'name', v)}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Seedling">🌱 Seedling</SelectItem>
+                                <SelectItem value="Vegetation">🌿 Vegetation</SelectItem>
+                                <SelectItem value="Pre-flowering">🌼 Pre-flowering</SelectItem>
+                                <SelectItem value="Flowering">🌸 Flowering</SelectItem>
+                                <SelectItem value="Flushing">💧 Flushing</SelectItem>
+                                <SelectItem value="Drying">🍂 Drying</SelectItem>
+                                <SelectItem value="Custom">📋 Custom</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Тижні</Label>
+                            <Input
+                              value={stage.weeks || ''}
+                              onChange={(e) => updateStage(index, 'weeks', e.target.value)}
+                              placeholder="1-2"
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-9 text-destructive"
+                              onClick={() => removeStage(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Тижні</Label>
-                          <Input
-                            value={entry.weeks}
-                            onChange={(e) => updateClimateEntry(index, 'weeks', e.target.value)}
-                            placeholder="1-2"
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1">
-                            <Thermometer className="h-3 w-3 text-orange-400" /> День
-                          </Label>
-                          <Input
-                            type="number"
-                            value={entry.temp_day}
-                            onChange={(e) => updateClimateEntry(index, 'temp_day', parseInt(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1">
-                            <Thermometer className="h-3 w-3 text-blue-400" /> Ніч
-                          </Label>
-                          <Input
-                            type="number"
-                            value={entry.temp_night}
-                            onChange={(e) => updateClimateEntry(index, 'temp_night', parseInt(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1">
-                            <Droplets className="h-3 w-3 text-blue-400" /> RH%
-                          </Label>
-                          <Input
-                            type="number"
-                            value={entry.humidity}
-                            onChange={(e) => updateClimateEntry(index, 'humidity', parseInt(e.target.value) || 0)}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="flex items-end gap-1">
-                          <div className="flex-1 space-y-1">
+                        
+                        <div className="grid grid-cols-5 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs flex items-center gap-1">
+                              <Thermometer className="h-3 w-3 text-blue-400" /> Ніч °C
+                            </Label>
+                            <Input
+                              type="number"
+                              value={stage.temp[0]}
+                              onChange={(e) => updateStageTemp(index, 0, parseInt(e.target.value) || 0)}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs flex items-center gap-1">
+                              <Thermometer className="h-3 w-3 text-orange-400" /> День °C
+                            </Label>
+                            <Input
+                              type="number"
+                              value={stage.temp[1]}
+                              onChange={(e) => updateStageTemp(index, 1, parseInt(e.target.value) || 0)}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs flex items-center gap-1">
+                              <Droplets className="h-3 w-3 text-blue-400" /> RH%
+                            </Label>
+                            <Input
+                              type="number"
+                              value={stage.humidity}
+                              onChange={(e) => updateStage(index, 'humidity', parseInt(e.target.value) || 0)}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
                             <Label className="text-xs flex items-center gap-1">
                               <Activity className="h-3 w-3 text-cyan-400" /> VPD
                             </Label>
                             <Input
-                              value={entry.vpd}
-                              onChange={(e) => updateClimateEntry(index, 'vpd', e.target.value)}
+                              value={stage.vpd}
+                              onChange={(e) => updateStage(index, 'vpd', e.target.value)}
                               placeholder="0.8-1.2"
                               className="h-9"
                             />
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-destructive"
-                            onClick={() => removeClimateEntry(index)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="space-y-1">
+                            <Label className="text-xs flex items-center gap-1">
+                              <Sun className="h-3 w-3 text-amber-400" /> Світло
+                            </Label>
+                            <Input
+                              type="number"
+                              value={stage.light_hours || ''}
+                              onChange={(e) => updateStage(index, 'light_hours', e.target.value ? parseInt(e.target.value) : undefined)}
+                              placeholder="18"
+                              className="h-9"
+                            />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -548,7 +656,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={addClimateEntry}
+                      onClick={addStage}
                       className="w-full gap-2"
                     >
                       <Plus className="h-4 w-4" />
@@ -556,72 +664,145 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                     </Button>
                   </CardContent>
                 </Card>
-              </TabsContent>
 
-              {/* Nutrients & Light Tab */}
-              <TabsContent value="nutrients" className="mt-4 space-y-4">
-                {/* Lighting PPFD */}
-                <Card className="border-border/50">
+                {/* Post-Harvest Settings */}
+                <Card className="border-border/50 border-amber-500/20">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Sun className="h-4 w-4 text-yellow-500" />
-                      Освітлення (PPFD µmol/m²/s)
+                      🍂 Пост-харвест (Сушіння)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-xs">🌱 Seedling</Label>
+                        <Label className="text-xs">Температура °C</Label>
                         <Input
-                          value={lighting.seedling_ppfd}
-                          onChange={(e) => setLighting(prev => ({ ...prev, seedling_ppfd: e.target.value }))}
-                          placeholder="150-300"
+                          type="number"
+                          value={postHarvest.drying_temp || ''}
+                          onChange={(e) => setPostHarvest(prev => ({ ...prev, drying_temp: parseInt(e.target.value) || undefined }))}
+                          placeholder="18"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">🌿 Vegetative</Label>
+                        <Label className="text-xs">Вологість %</Label>
                         <Input
-                          value={lighting.veg_ppfd}
-                          onChange={(e) => setLighting(prev => ({ ...prev, veg_ppfd: e.target.value }))}
-                          placeholder="300-600"
+                          type="number"
+                          value={postHarvest.drying_humidity || ''}
+                          onChange={(e) => setPostHarvest(prev => ({ ...prev, drying_humidity: parseInt(e.target.value) || undefined }))}
+                          placeholder="55"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">🌸 Bloom</Label>
+                        <Label className="text-xs">Тривалість</Label>
                         <Input
-                          value={lighting.bloom_ppfd}
-                          onChange={(e) => setLighting(prev => ({ ...prev, bloom_ppfd: e.target.value }))}
-                          placeholder="600-900"
+                          value={postHarvest.drying_days || ''}
+                          onChange={(e) => setPostHarvest(prev => ({ ...prev, drying_days: e.target.value }))}
+                          placeholder="7-14 днів"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Примітки</Label>
+                        <Input
+                          value={postHarvest.curing_notes || ''}
+                          onChange={(e) => setPostHarvest(prev => ({ ...prev, curing_notes: e.target.value }))}
+                          placeholder="Cure 2-4 weeks"
                         />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
 
-                {/* Nutrition EC */}
+              {/* Nutrients & Light Tab - PPFD/EC per Stage */}
+              <TabsContent value="nutrients" className="mt-4 space-y-4">
                 <Card className="border-border/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <FlaskConical className="h-4 w-4 text-purple-500" />
-                      Живлення (EC mS/cm)
+                      <Sun className="h-4 w-4 text-yellow-500" />
+                      PPFD та EC по стадіях
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {stages.map((stage, index) => (
+                      <div key={index} className="grid grid-cols-3 gap-3 p-3 rounded-lg bg-muted/50">
+                        <div className="font-medium text-sm flex items-center">
+                          {stage.name === 'Seedling' && '🌱'}
+                          {stage.name === 'Vegetation' && '🌿'}
+                          {stage.name === 'Pre-flowering' && '🌼'}
+                          {stage.name === 'Flowering' && '🌸'}
+                          {stage.name === 'Flushing' && '💧'}
+                          {stage.name === 'Drying' && '🍂'}
+                          <span className="ml-1">{stage.name}</span>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Sun className="h-3 w-3 text-yellow-400" /> PPFD µmol
+                          </Label>
+                          <Input
+                            value={stage.ppfd}
+                            onChange={(e) => updateStage(index, 'ppfd', e.target.value)}
+                            placeholder="300-600"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Zap className="h-3 w-3 text-green-400" /> EC mS/cm
+                          </Label>
+                          <Input
+                            value={stage.ec}
+                            onChange={(e) => updateStage(index, 'ec', e.target.value)}
+                            placeholder="1.0-1.4"
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* pH Recommendations */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Beaker className="h-4 w-4 text-cyan-500" />
+                      Рекомендації pH
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-xs">🌿 Vegetative EC</Label>
+                        <Label className="text-xs">🌱 pH Ґрунт</Label>
                         <Input
-                          value={nutrition.veg_ec}
-                          onChange={(e) => setNutrition(prev => ({ ...prev, veg_ec: e.target.value }))}
-                          placeholder="1.0-1.4"
+                          value={recommendations.ph_soil || ''}
+                          onChange={(e) => setRecommendations(prev => ({ ...prev, ph_soil: e.target.value }))}
+                          placeholder="6.0-7.0"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-xs">🌸 Bloom EC</Label>
+                        <Label className="text-xs">💧 pH Гідро</Label>
                         <Input
-                          value={nutrition.bloom_ec}
-                          onChange={(e) => setNutrition(prev => ({ ...prev, bloom_ec: e.target.value }))}
-                          placeholder="1.5-1.8"
+                          value={recommendations.ph_hydro || ''}
+                          onChange={(e) => setRecommendations(prev => ({ ...prev, ph_hydro: e.target.value }))}
+                          placeholder="5.5-6.5"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs">🏋️ Тренування</Label>
+                        <Input
+                          value={recommendations.training || ''}
+                          onChange={(e) => setRecommendations(prev => ({ ...prev, training: e.target.value }))}
+                          placeholder="LST, SCROG, Topping"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">📝 Примітки</Label>
+                        <Input
+                          value={recommendations.notes || ''}
+                          onChange={(e) => setRecommendations(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Additional tips..."
                         />
                       </div>
                     </div>
