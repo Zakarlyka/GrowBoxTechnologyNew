@@ -86,12 +86,35 @@ export function StrainDetailsDialog({
 
   if (!strain) return null;
 
-  const growingParams = strain.growing_params as GrowingParams | null;
-  const stages = growingParams?.stages || [];
-  const risks = growingParams?.risks || [];
-  const phenotype = growingParams?.phenotype;
-  const recommendations = growingParams?.recommendations;
-  const postHarvest = growingParams?.post_harvest;
+  // EXPLICIT DATA EXTRACTION - Parse growing_params carefully
+  const rawParams = strain.growing_params;
+  const growingParams: GrowingParams | null = rawParams ? (typeof rawParams === 'string' ? JSON.parse(rawParams) : rawParams as GrowingParams) : null;
+  
+  // EXPLICIT: Extract stages array
+  const stages: GrowingStage[] = growingParams?.stages && Array.isArray(growingParams.stages) 
+    ? growingParams.stages 
+    : [];
+  
+  // EXPLICIT: Extract risks array  
+  const risks: string[] = growingParams?.risks && Array.isArray(growingParams.risks) 
+    ? growingParams.risks 
+    : [];
+  
+  // EXPLICIT: Extract phenotype object
+  const phenotype = growingParams?.phenotype || null;
+  
+  // EXPLICIT: Extract recommendations object
+  const recommendations = growingParams?.recommendations || null;
+  
+  // EXPLICIT: Extract post_harvest object
+  const postHarvest = growingParams?.post_harvest || null;
+
+  // DEBUG LOG - Remove after verification
+  console.log('[StrainDetails] strain:', strain.name);
+  console.log('[StrainDetails] growingParams:', growingParams);
+  console.log('[StrainDetails] stages:', stages);
+  console.log('[StrainDetails] risks:', risks);
+  console.log('[StrainDetails] phenotype:', phenotype);
 
   // Helper to add cache busting to Supabase Storage URLs only
   const getImageUrl = (url: string | null) => {
@@ -118,8 +141,8 @@ export function StrainDetailsDialog({
     : strain.thc_content || null;
 
   // Format temp array as "night°C / day°C"
-  const formatTemp = (temp: [number, number] | undefined) => {
-    if (!temp || !Array.isArray(temp)) return '--';
+  const formatTemp = (temp: [number, number] | number[] | undefined) => {
+    if (!temp || !Array.isArray(temp) || temp.length < 2) return '--';
     return `${temp[0]}°C / ${temp[1]}°C`;
   };
 
@@ -333,8 +356,8 @@ export function StrainDetailsDialog({
               )}
             </div>
 
-            {/* Phenotype Section */}
-            {phenotype && (Object.keys(phenotype).length > 0) && (
+            {/* PHENOTYPE SECTION - EXPLICIT RENDERING */}
+            {phenotype && (
               <Card className="bg-card/50">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -343,35 +366,73 @@ export function StrainDetailsDialog({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {phenotype.height_indoor && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Висота Indoor:</span>
-                        <span className="ml-2 font-medium">{phenotype.height_indoor}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Height Indoor - EXPLICIT */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                        <Ruler className="h-5 w-5 text-green-500" />
                       </div>
-                    )}
+                      <div>
+                        <div className="text-xs text-muted-foreground">Висота Indoor</div>
+                        <div className="font-medium text-foreground">
+                          {phenotype.height_indoor || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Height Outdoor - EXPLICIT */}
                     {phenotype.height_outdoor && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Висота Outdoor:</span>
-                        <span className="ml-2 font-medium">{phenotype.height_outdoor}</span>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                        <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                          <Ruler className="h-5 w-5 text-emerald-500" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">Висота Outdoor</div>
+                          <div className="font-medium text-foreground">
+                            {phenotype.height_outdoor}
+                          </div>
+                        </div>
                       </div>
                     )}
-                    {phenotype.aroma && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Аромат:</span>
-                        <span className="ml-2 font-medium">{phenotype.aroma}</span>
+
+                    {/* Aroma - EXPLICIT */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                        <span className="text-lg">🌸</span>
                       </div>
-                    )}
-                    {phenotype.structure && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Структура:</span>
-                        <span className="ml-2 font-medium">{phenotype.structure}</span>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Аромат</div>
+                        <div className="font-medium text-foreground">
+                          {phenotype.aroma || 'N/A'}
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Structure - EXPLICIT */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 sm:col-span-2 lg:col-span-3">
+                      <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                        <Leaf className="h-5 w-5 text-purple-500" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Структура</div>
+                        <div className="font-medium text-foreground">
+                          {phenotype.structure || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Color if exists */}
                     {phenotype.color && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Колір:</span>
-                        <span className="ml-2 font-medium">{phenotype.color}</span>
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                        <div className="h-10 w-10 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                          <span className="text-lg">🎨</span>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground">Колір</div>
+                          <div className="font-medium text-foreground">
+                            {phenotype.color}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -379,15 +440,21 @@ export function StrainDetailsDialog({
               </Card>
             )}
 
-            {/* Risks Warning Box */}
+            {/* RISKS WARNING BOX - EXPLICIT RENDERING */}
             {risks.length > 0 && (
-              <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/30 text-amber-400">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Ризики та особливості</AlertTitle>
+              <Alert className="bg-red-500/10 border-red-500/30">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                <AlertTitle className="text-red-400 font-semibold">
+                  ⚠️ Ризики та Особливості
+                </AlertTitle>
                 <AlertDescription>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {risks.map((risk, idx) => (
-                      <Badge key={idx} variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {risks.map((risk: string, idx: number) => (
+                      <Badge 
+                        key={idx} 
+                        variant="outline" 
+                        className="bg-red-500/20 text-red-400 border-red-500/40 py-1.5"
+                      >
                         ⚠️ {risk}
                       </Badge>
                     ))}
@@ -528,11 +595,11 @@ export function StrainDetailsDialog({
             )}
           </TabsContent>
 
-          {/* Nutrients & Light Tab - PPFD/EC from Stages */}
+          {/* NUTRIENTS & LIGHT TAB - EXPLICIT PPFD/EC from Stages */}
           <TabsContent value="nutrients" className="mt-4 space-y-4">
             {stages.length > 0 ? (
               <>
-                {/* PPFD & EC per Stage */}
+                {/* PPFD & EC per Stage - EXPLICIT TABLE */}
                 <Card className="bg-card/50">
                   <CardHeader className="py-3 px-4">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -549,50 +616,49 @@ export function StrainDetailsDialog({
                             <TableHead className="font-medium">
                               <div className="flex items-center gap-1">
                                 <Sun className="h-3 w-3 text-yellow-400" />
-                                PPFD
+                                PPFD (µmol)
                               </div>
                             </TableHead>
                             <TableHead className="font-medium">
                               <div className="flex items-center gap-1">
                                 <Zap className="h-3 w-3 text-green-400" />
-                                EC
+                                EC (mS/cm)
                               </div>
                             </TableHead>
-                            {stages.some(s => s.light_hours) && (
-                              <TableHead className="font-medium">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3 text-amber-400" />
-                                  Світло
-                                </div>
-                              </TableHead>
-                            )}
+                            <TableHead className="font-medium">
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 text-amber-400" />
+                                Світло (год)
+                              </div>
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
+                          {/* EXPLICIT ITERATION THROUGH STAGES */}
                           {stages.map((stage: GrowingStage, idx: number) => (
                             <TableRow key={idx}>
                               <TableCell className="font-medium">
-                                {getStageIcon(stage.name)} {stage.label_ua || stage.name}
+                                {getStageIcon(stage.name || '')} {stage.label_ua || stage.name || `Stage ${idx + 1}`}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
-                                  {stage.ppfd} µmol
+                                  {stage.ppfd || 'N/A'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                                  {stage.ec} mS/cm
+                                  {stage.ec || 'N/A'}
                                 </Badge>
                               </TableCell>
-                              {stages.some(s => s.light_hours) && (
-                                <TableCell>
-                                  {stage.light_hours ? (
-                                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
-                                      {stage.light_hours}h ON
-                                    </Badge>
-                                  ) : '--'}
-                                </TableCell>
-                              )}
+                              <TableCell>
+                                {stage.light_hours ? (
+                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
+                                    {stage.light_hours}h
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">--</span>
+                                )}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
