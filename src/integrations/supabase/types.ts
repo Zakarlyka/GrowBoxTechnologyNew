@@ -407,7 +407,7 @@ export type Database = {
           thc_content: string | null
           thc_percent: number | null
           type: string | null
-          user_id: string
+          user_id: string | null
           yield_indoor: string | null
         }
         Insert: {
@@ -427,7 +427,7 @@ export type Database = {
           thc_content?: string | null
           thc_percent?: number | null
           type?: string | null
-          user_id: string
+          user_id?: string | null
           yield_indoor?: string | null
         }
         Update: {
@@ -447,7 +447,7 @@ export type Database = {
           thc_content?: string | null
           thc_percent?: number | null
           type?: string | null
-          user_id?: string
+          user_id?: string | null
           yield_indoor?: string | null
         }
         Relationships: []
