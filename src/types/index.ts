@@ -131,14 +131,16 @@ export interface NutrientWeek {
  * Stage entry for growing_params - dynamic, not hardcoded
  */
 export interface GrowingStage {
-  name: string;           // "Seedling", "Vegetation", "Pre-flowering", "Flowering", "Drying"
-  weeks?: string;         // e.g. "1-2" - optional duration
-  temp: [number, number]; // [night, day] or [min, max] temperature
-  humidity: number;       // RH %
-  vpd: string;            // e.g. "0.6-0.8" kPa
-  ppfd: string;           // e.g. "150-300" µmol/m²/s
-  ec: string;             // e.g. "0.6-0.8" mS/cm
-  light_hours?: number;   // Optional light cycle hours
+  name: string;             // "Seedling", "Vegetation", "Pre-flowering", "Flowering", "Drying"
+  label_ua?: string;        // Ukrainian label e.g. "Розсада"
+  weeks?: string;           // e.g. "1-2" - string duration
+  weeks_duration?: number;  // numeric duration in weeks
+  temp: [number, number];   // [night, day] or [min, max] temperature
+  humidity: number;         // RH %
+  vpd: string;              // e.g. "0.6-0.8" kPa
+  ppfd: string;             // e.g. "150-300" µmol/m²/s
+  ec: string;               // e.g. "0.6-0.8" mS/cm
+  light_hours?: number;     // Optional light cycle hours
 }
 
 /**

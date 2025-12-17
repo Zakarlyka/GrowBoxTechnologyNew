@@ -124,7 +124,12 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       const gp = strain.growing_params as GrowingParams | null;
       if (gp) {
         if (gp.stages?.length > 0) {
-          setStages(gp.stages);
+          // Convert weeks_duration (number) to weeks (string) for editing
+          const normalizedStages = gp.stages.map(stage => ({
+            ...stage,
+            weeks: stage.weeks || (stage.weeks_duration ? `${stage.weeks_duration}` : ''),
+          }));
+          setStages(normalizedStages);
         }
         if (gp.risks) {
           setRisks(gp.risks);

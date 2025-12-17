@@ -123,6 +123,13 @@ export function StrainDetailsDialog({
     return `${temp[0]}°C / ${temp[1]}°C`;
   };
 
+  // Format weeks - handle both string "weeks" and numeric "weeks_duration"
+  const formatWeeks = (stage: GrowingStage) => {
+    if (stage.weeks) return stage.weeks;
+    if (stage.weeks_duration) return `${stage.weeks_duration} тиж.`;
+    return '--';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -442,10 +449,10 @@ export function StrainDetailsDialog({
                         {stages.map((stage: GrowingStage, idx: number) => (
                           <TableRow key={idx}>
                             <TableCell className="font-medium">
-                              {getStageIcon(stage.name)} {stage.name}
+                              {getStageIcon(stage.name)} {stage.label_ua || stage.name}
                             </TableCell>
                             <TableCell className="text-muted-foreground">
-                              {stage.weeks || '--'}
+                              {formatWeeks(stage)}
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
@@ -565,7 +572,7 @@ export function StrainDetailsDialog({
                           {stages.map((stage: GrowingStage, idx: number) => (
                             <TableRow key={idx}>
                               <TableCell className="font-medium">
-                                {getStageIcon(stage.name)} {stage.name}
+                                {getStageIcon(stage.name)} {stage.label_ua || stage.name}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">

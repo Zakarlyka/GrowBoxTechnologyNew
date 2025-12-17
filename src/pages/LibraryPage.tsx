@@ -78,17 +78,17 @@ export default function LibraryPage() {
     try {
       setLoading(true);
       
-      // Fetch global (public) strains
+      // Fetch global strains: public OR system strains (user_id IS NULL)
       const { data: publicData, error: publicError } = await supabase
         .from('library_strains')
         .select('*')
-        .eq('is_public', true)
+        .or('is_public.eq.true,user_id.is.null')
         .order('name');
 
       if (publicError) throw publicError;
       setGlobalStrains((publicData as LibraryStrain[]) || []);
 
-      // Fetch user's own strains
+      // Fetch user's own strains (both public and private)
       if (user?.id) {
         const { data: userData, error: userError } = await supabase
           .from('library_strains')
