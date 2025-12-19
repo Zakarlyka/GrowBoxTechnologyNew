@@ -4,10 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Sprout, Leaf, Flower2, Droplets, Sun, Droplet, BookOpen } from 'lucide-react';
+import { Sprout, Leaf, Flower2, Droplets, Sun, Droplet, BookOpen, Bell, Clock } from 'lucide-react';
 import { calculatePlantAge, PLANT_STAGES } from '@/hooks/usePlantData';
+import { Json } from '@/integrations/supabase/types';
+
+interface GrowingParams {
+  stages?: Array<{
+    name: string;
+    days: number;
+  }>;
+  timeline_alerts?: Array<{
+    trigger_stage: string;
+    day_offset: number;
+    message: string;
+    type?: string;
+  }>;
+  [key: string]: unknown;
+}
 
 interface Plant {
   id: string;
@@ -19,6 +33,8 @@ interface Plant {
   library_strains?: {
     name: string;
     flowering_days: number | null;
+    photo_url: string | null;
+    growing_params: Json | null;
   } | null;
   devices?: {
     id: string;
@@ -35,11 +51,11 @@ const stageIcons: Record<string, React.ElementType> = {
 };
 
 const stageColors: Record<string, string> = {
-  seedling: 'bg-lime-500/20 text-lime-400 border-lime-500/50',
-  vegetation: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
-  flowering: 'bg-purple-500/20 text-purple-400 border-purple-500/50',
-  flushing: 'bg-sky-500/20 text-sky-400 border-sky-500/50',
-  drying: 'bg-amber-500/20 text-amber-400 border-amber-500/50',
+  seedling: 'text-lime-400',
+  vegetation: 'text-emerald-400',
+  flowering: 'text-purple-400',
+  flushing: 'text-sky-400',
+  drying: 'text-amber-400',
 };
 
 const stageBgColors: Record<string, string> = {
@@ -68,7 +84,7 @@ export const ActiveGrowsSection = () => {
           start_date,
           device_id,
           strain_id,
-          library_strains (name, flowering_days)
+          library_strains (name, flowering_days, photo_url, growing_params)
         `)
         .eq('user_id', userData.user.id)
         .neq('current_stage', 'harvested')
@@ -109,11 +125,103 @@ export const ActiveGrowsSection = () => {
     return found?.label || stage || 'Unknown';
   };
 
+  // Calculate which stage the plant is in and how many days into that stage
+  const calculateStageInfo = (startDate: string | null, growingParams: GrowingParams | null) => {
+    if (!startDate || !growingParams?.stages) return null;
+    
+    const age = calculatePlantAge(startDate);
+    if (age === null) return null;
+
+    let cumulativeDays = 0;
+    for (const stage of growingParams.stages) {
+      if (age <= cumulativeDays + stage.days) {
+        const dayInStage = age - cumulativeDays;
+        return {
+          stageName: stage.name,
+          dayInStage,
+          stageDuration: stage.days,
+          stageStartDay: cumulativeDays,
+        };
+      }
+      cumulativeDays += stage.days;
+    }
+
+    // Past all stages
+    const lastStage = growingParams.stages[growingParams.stages.length - 1];
+    return {
+      stageName: lastStage?.name || 'Complete',
+      dayInStage: age - (cumulativeDays - (lastStage?.days || 0)),
+      stageDuration: lastStage?.days || 0,
+      stageStartDay: cumulativeDays - (lastStage?.days || 0),
+    };
+  };
+
+  // Find the next upcoming alert
+  const getNextAlert = (startDate: string | null, growingParams: GrowingParams | null) => {
+    if (!startDate || !growingParams?.timeline_alerts || !growingParams?.stages) return null;
+
+    const age = calculatePlantAge(startDate);
+    if (age === null) return null;
+
+    // Build stage start days map
+    const stageStartDays: Record<string, number> = {};
+    let cumulativeDays = 0;
+    for (const stage of growingParams.stages) {
+      stageStartDays[stage.name.toLowerCase()] = cumulativeDays;
+      cumulativeDays += stage.days;
+    }
+
+    // Find all alerts with their absolute day
+    const alertsWithDays = growingParams.timeline_alerts
+      .map(alert => {
+        const stageKey = alert.trigger_stage?.toLowerCase() || '';
+        const stageStart = stageStartDays[stageKey] ?? 0;
+        const absoluteDay = stageStart + (alert.day_offset || 0);
+        return { ...alert, absoluteDay };
+      })
+      .filter(alert => alert.absoluteDay > age)
+      .sort((a, b) => a.absoluteDay - b.absoluteDay);
+
+    if (alertsWithDays.length === 0) return null;
+
+    const nextAlert = alertsWithDays[0];
+    const daysUntil = nextAlert.absoluteDay - age;
+
+    return {
+      message: nextAlert.message,
+      daysUntil,
+      type: nextAlert.type || 'info',
+    };
+  };
+
+  const calculateProgress = (startDate: string | null, floweringDays: number | null): { percentage: number; currentDay: number; totalDays: number } | null => {
+    if (!startDate || !floweringDays) return null;
+    const age = calculatePlantAge(startDate);
+    if (age === null) return null;
+    const percentage = Math.min(Math.round((age / floweringDays) * 100), 100);
+    return { percentage, currentDay: age, totalDays: floweringDays };
+  };
+
+  const handleFeedClick = (e: React.MouseEvent, plantId: string) => {
+    e.stopPropagation();
+    const nutrientSection = document.getElementById('nutrient-calculator');
+    if (nutrientSection) {
+      nutrientSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleDiaryClick = (e: React.MouseEvent, plant: Plant) => {
+    e.stopPropagation();
+    if (plant.devices?.id) {
+      navigate(`/device/${plant.devices.id}`);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-32 rounded-xl" />
+          <Skeleton key={i} className="h-48 rounded-xl" />
         ))}
       </div>
     );
@@ -133,96 +241,119 @@ export const ActiveGrowsSection = () => {
     );
   }
 
-  const calculateProgress = (startDate: string | null, floweringDays: number | null): { percentage: number; currentDay: number; totalDays: number } | null => {
-    if (!startDate || !floweringDays) return null;
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-    const percentage = Math.min(Math.round((age / floweringDays) * 100), 100);
-    return { percentage, currentDay: age, totalDays: floweringDays };
-  };
-
-  const handleFeedClick = (e: React.MouseEvent, plantId: string) => {
-    e.stopPropagation();
-    // Scroll to nutrient calculator section
-    const nutrientSection = document.getElementById('nutrient-calculator');
-    if (nutrientSection) {
-      nutrientSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleDiaryClick = (e: React.MouseEvent, plant: Plant) => {
-    e.stopPropagation();
-    if (plant.devices?.id) {
-      navigate(`/device/${plant.devices.id}`);
-    }
-  };
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {plants.map((plant) => {
         const stage = plant.current_stage || 'seedling';
         const StageIcon = stageIcons[stage] || Sprout;
-        const stageColor = stageColors[stage] || stageColors.seedling;
+        const stageTextColor = stageColors[stage] || stageColors.seedling;
         const progressBarColor = stageBgColors[stage] || stageBgColors.seedling;
-        const strainData = plant.library_strains as { name: string; flowering_days: number | null } | null;
+        
+        const strainData = plant.library_strains as Plant['library_strains'];
         const strainName = strainData?.name;
         const floweringDays = strainData?.flowering_days;
+        const photoUrl = strainData?.photo_url;
+        const growingParams = strainData?.growing_params as GrowingParams | null;
+        
         const progress = calculateProgress(plant.start_date, floweringDays);
+        const stageInfo = calculateStageInfo(plant.start_date, growingParams);
+        const nextAlert = getNextAlert(plant.start_date, growingParams);
 
         return (
           <Card
             key={plant.id}
-            className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-lg relative overflow-hidden"
+            className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl relative overflow-hidden min-h-[200px]"
             onClick={() => handlePlantClick(plant)}
           >
-            <CardContent className="p-4">
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`p-2.5 rounded-lg border ${stageColor}`}>
-                    <StageIcon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-medium text-foreground truncate">
-                      {plant.custom_name || strainName || 'Unnamed Plant'}
-                    </h4>
-                    {strainName && plant.custom_name && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {strainName}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Badge className={`${stageColor} border font-semibold shrink-0`}>
-                  {getStageLabel(stage)}
-                </Badge>
+            {/* Background Image */}
+            {photoUrl && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${photoUrl})` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/90 to-background/60" />
               </div>
+            )}
+            
+            {/* Fallback gradient if no image */}
+            {!photoUrl && (
+              <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
+            )}
+
+            <CardContent className="relative p-4 h-full flex flex-col">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-lg text-foreground truncate leading-tight">
+                    {plant.custom_name || 'Unnamed Plant'}
+                  </h4>
+                  {strainName && (
+                    <Badge variant="secondary" className="mt-1 text-xs font-medium bg-background/60 backdrop-blur-sm">
+                      {strainName}
+                    </Badge>
+                  )}
+                </div>
+                <div className={`p-2 rounded-lg bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
+                  <StageIcon className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Stage Info */}
+              {stageInfo && (
+                <div className="flex items-center gap-2 text-sm mb-3">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className={`font-semibold capitalize ${stageTextColor}`}>
+                    {stageInfo.stageName}
+                  </span>
+                  <span className="text-muted-foreground">
+                    Day {stageInfo.dayInStage}/{stageInfo.stageDuration}
+                  </span>
+                </div>
+              )}
 
               {/* Location */}
               {plant.devices?.name && (
-                <p className="text-xs text-muted-foreground mt-2 truncate">
+                <p className="text-xs text-muted-foreground mb-3 truncate">
                   📍 {plant.devices.name}
                 </p>
               )}
 
+              {/* Spacer */}
+              <div className="flex-1" />
+
               {/* Progress Bar */}
               {progress && (
-                <div className="mt-4 space-y-1.5">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Day {progress.currentDay} / {progress.totalDays}</span>
-                    <span className="font-medium text-foreground">{progress.percentage}%</span>
+                <div className="space-y-1.5 mb-3">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Overall Progress</span>
+                    <span className="font-bold text-foreground">
+                      Day {progress.currentDay} / {progress.totalDays}
+                    </span>
                   </div>
-                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
                     <div 
-                      className={`h-full transition-all ${progressBarColor}`}
+                      className={`h-full transition-all duration-500 ${progressBarColor}`}
                       style={{ width: `${progress.percentage}%` }}
                     />
                   </div>
                 </div>
               )}
 
+              {/* Next Alert */}
+              {nextAlert && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs">
+                  <Bell className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                  <span className="text-amber-200 truncate">
+                    <span className="font-semibold">
+                      {nextAlert.daysUntil === 1 ? 'Tomorrow' : `In ${nextAlert.daysUntil} days`}:
+                    </span>{' '}
+                    {nextAlert.message}
+                  </span>
+                </div>
+              )}
+
               {/* Quick Actions Overlay */}
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                 <Button
                   size="sm"
                   variant="outline"
