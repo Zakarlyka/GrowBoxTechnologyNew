@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,23 @@ import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { AddPlantDialog } from './AddPlantDialog';
+import { useQuery } from '@tanstack/react-query';
 import { EditPlantDialog } from './EditPlantDialog';
 import { GreenhouseDrawer } from './GreenhouseDrawer';
+import { Json } from '@/integrations/supabase/types';
+
+interface GrowingParams {
+  stages?: Array<{ name: string; days: number }>;
+  environment_targets?: Array<{
+    stage: string;
+    temp_day?: number;
+    temp_night?: number;
+    humidity_min?: number;
+    humidity_max?: number;
+    vpd_target?: number;
+  }>;
+  [key: string]: unknown;
+}
 
 interface PlantHeaderProps {
   deviceId: string;
@@ -26,6 +41,41 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [editPlantOpen, setEditPlantOpen] = useState(false);
+
+  // Fetch growing_params from library_strains
+  const { data: strainData } = useQuery({
+    queryKey: ['strain-growing-params', plant?.strain_id],
+    queryFn: async () => {
+      if (!plant?.strain_id) return null;
+      const { data, error } = await supabase
+        .from('library_strains')
+        .select('growing_params')
+        .eq('id', plant.strain_id)
+        .maybeSingle();
+      if (error) return null;
+      return data?.growing_params as GrowingParams | null;
+    },
+    enabled: !!plant?.strain_id,
+  });
+
+  // Get targets from growing_params.environment_targets
+  const getEnvironmentTargets = useMemo(() => {
+    if (!strainData?.environment_targets || !plant?.current_stage) return null;
+    
+    const stageTarget = strainData.environment_targets.find(
+      t => t.stage?.toLowerCase() === plant.current_stage?.toLowerCase()
+    );
+    
+    if (!stageTarget) return null;
+    
+    return {
+      temp: stageTarget.temp_day,
+      hum: stageTarget.humidity_min !== undefined && stageTarget.humidity_max !== undefined
+        ? Math.round((stageTarget.humidity_min + stageTarget.humidity_max) / 2)
+        : undefined,
+      vpd: stageTarget.vpd_target,
+    };
+  }, [strainData, plant?.current_stage]);
 
   if (isLoading) {
     return (
@@ -71,29 +121,39 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
   }
 
   const plantAge = calculatePlantAge(plant.start_date);
+  
+  // Try presets first, then fall back to environment_targets from growing_params
   const stagePresets = getPresetsForStage(plant.strain?.presets, plant.current_stage);
+  const effectiveTargets = stagePresets || (getEnvironmentTargets ? {
+    temp: getEnvironmentTargets.temp,
+    hum: getEnvironmentTargets.hum,
+    light_h: undefined, // environment_targets doesn't have light info
+  } : null);
+  
+  // Has any target data available
+  const hasTargetData = effectiveTargets && (effectiveTargets.temp !== undefined || effectiveTargets.hum !== undefined);
 
   // Check if current settings match the presets for this stage
-  const settingsMatch = checkSettingsMatch(currentSettings, stagePresets);
+  const settingsMatch = checkSettingsMatch(currentSettings, effectiveTargets);
 
   const handleOptimize = async () => {
-    if (!stagePresets || !deviceUuid) return;
+    if (!effectiveTargets || !deviceUuid) return;
 
     setIsOptimizing(true);
     try {
       // Build the optimized settings object
       const optimizedSettings: Record<string, any> = { ...currentSettings };
 
-      if (stagePresets.temp !== undefined) {
-        optimizedSettings.target_temp = stagePresets.temp;
+      if (effectiveTargets.temp !== undefined) {
+        optimizedSettings.target_temp = effectiveTargets.temp;
       }
-      if (stagePresets.hum !== undefined) {
-        optimizedSettings.target_hum = stagePresets.hum;
+      if (effectiveTargets.hum !== undefined) {
+        optimizedSettings.target_hum = effectiveTargets.hum;
       }
-      if (stagePresets.light_h !== undefined) {
+      if (effectiveTargets.light_h !== undefined) {
         // Calculate light schedule based on hours
         // Default: start at 6:00, end based on light_h
-        const lightHours = stagePresets.light_h;
+        const lightHours = effectiveTargets.light_h;
         optimizedSettings.light_start_h = 6;
         optimizedSettings.light_start_m = 0;
         optimizedSettings.light_end_h = (6 + lightHours) % 24;
@@ -193,7 +253,7 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
 
             {/* Right Section - AI Actions + Add More */}
             <div className="flex items-center gap-3">
-              {stagePresets ? (
+              {hasTargetData ? (
                 settingsMatch ? (
                   <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
                     <Check className="h-4 w-4 text-green-500" />
@@ -259,18 +319,18 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
           </div>
 
           {/* Presets Preview (if available) */}
-          {stagePresets && !settingsMatch && (
+          {effectiveTargets && !settingsMatch && (
             <div className="mt-4 pt-4 border-t border-border/30">
               <div className="flex items-center gap-6 text-sm">
                 <span className="text-muted-foreground">Рекомендовані налаштування:</span>
-                {stagePresets.temp !== undefined && (
-                  <span className="text-orange-500">🌡️ {stagePresets.temp}°C</span>
+                {effectiveTargets.temp !== undefined && (
+                  <span className="text-orange-500">🌡️ {effectiveTargets.temp}°C</span>
                 )}
-                {stagePresets.hum !== undefined && (
-                  <span className="text-blue-500">💧 {stagePresets.hum}%</span>
+                {effectiveTargets.hum !== undefined && (
+                  <span className="text-blue-500">💧 {effectiveTargets.hum}%</span>
                 )}
-                {stagePresets.light_h !== undefined && (
-                  <span className="text-yellow-500">☀️ {stagePresets.light_h}год світла</span>
+                {effectiveTargets.light_h !== undefined && (
+                  <span className="text-yellow-500">☀️ {effectiveTargets.light_h}год світла</span>
                 )}
               </div>
             </div>

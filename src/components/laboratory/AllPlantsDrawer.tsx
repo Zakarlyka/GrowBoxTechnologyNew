@@ -13,17 +13,41 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Leaf, ExternalLink } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Leaf, 
+  ExternalLink, 
+  Bell, 
+  Target, 
+  Sprout, 
+  Flower2, 
+  Droplets,
+  Sun,
+  Clock
+} from 'lucide-react';
 import { calculatePlantAge, PLANT_STAGES } from '@/hooks/usePlantData';
-import { format } from 'date-fns';
+import { Json } from '@/integrations/supabase/types';
+
+interface GrowingParams {
+  stages?: Array<{
+    name: string;
+    days: number;
+  }>;
+  timeline_alerts?: Array<{
+    trigger_stage: string;
+    day_offset: number;
+    message: string;
+    type?: string;
+  }>;
+  environment_targets?: Array<{
+    stage: string;
+    temp_day?: number;
+    humidity_min?: number;
+    humidity_max?: number;
+    vpd_target?: number;
+  }>;
+  [key: string]: unknown;
+}
 
 interface Plant {
   id: string;
@@ -34,6 +58,9 @@ interface Plant {
   strain_id: number | null;
   library_strains?: {
     name: string;
+    flowering_days: number | null;
+    photo_url: string | null;
+    growing_params: Json | null;
   } | null;
   devices?: {
     id: string;
@@ -41,13 +68,28 @@ interface Plant {
   } | null;
 }
 
+const stageIcons: Record<string, React.ElementType> = {
+  seedling: Sprout,
+  vegetation: Leaf,
+  flowering: Flower2,
+  flushing: Droplets,
+  drying: Sun,
+};
+
 const stageColors: Record<string, string> = {
-  seedling: 'bg-lime-500/10 text-lime-500 border-lime-500/30',
-  vegetation: 'bg-green-500/10 text-green-500 border-green-500/30',
-  flowering: 'bg-pink-500/10 text-pink-500 border-pink-500/30',
-  flushing: 'bg-blue-500/10 text-blue-500 border-blue-500/30',
-  drying: 'bg-amber-500/10 text-amber-500 border-amber-500/30',
-  harvested: 'bg-muted text-muted-foreground border-muted',
+  seedling: 'text-lime-400',
+  vegetation: 'text-emerald-400',
+  flowering: 'text-purple-400',
+  flushing: 'text-sky-400',
+  drying: 'text-amber-400',
+};
+
+const stageBgColors: Record<string, string> = {
+  seedling: 'bg-lime-500',
+  vegetation: 'bg-emerald-500',
+  flowering: 'bg-purple-500',
+  flushing: 'bg-sky-500',
+  drying: 'bg-amber-500',
 };
 
 interface AllPlantsDrawerProps {
@@ -59,7 +101,7 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
   const [open, setOpen] = useState(false);
 
   const { data: plants, isLoading } = useQuery({
-    queryKey: ['all-plants-master'],
+    queryKey: ['all-plants-drawer'],
     queryFn: async (): Promise<Plant[]> => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return [];
@@ -73,7 +115,7 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
           start_date,
           device_id,
           strain_id,
-          library_strains (name)
+          library_strains (name, flowering_days, photo_url, growing_params)
         `)
         .eq('user_id', userData.user.id)
         .neq('current_stage', 'harvested')
@@ -109,6 +151,97 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
     return found?.label || stage || 'Unknown';
   };
 
+  // Calculate which stage the plant is in
+  const calculateStageInfo = (startDate: string | null, growingParams: GrowingParams | null) => {
+    if (!startDate || !growingParams?.stages) return null;
+    
+    const age = calculatePlantAge(startDate);
+    if (age === null) return null;
+
+    let cumulativeDays = 0;
+    for (const stage of growingParams.stages) {
+      if (age <= cumulativeDays + stage.days) {
+        const dayInStage = age - cumulativeDays;
+        return {
+          stageName: stage.name,
+          dayInStage,
+          stageDuration: stage.days,
+        };
+      }
+      cumulativeDays += stage.days;
+    }
+
+    const lastStage = growingParams.stages[growingParams.stages.length - 1];
+    return {
+      stageName: lastStage?.name || 'Complete',
+      dayInStage: age - (cumulativeDays - (lastStage?.days || 0)),
+      stageDuration: lastStage?.days || 0,
+    };
+  };
+
+  // Find the next upcoming alert
+  const getNextAlert = (startDate: string | null, growingParams: GrowingParams | null) => {
+    if (!startDate || !growingParams?.timeline_alerts || !growingParams?.stages) return null;
+
+    const age = calculatePlantAge(startDate);
+    if (age === null) return null;
+
+    const stageStartDays: Record<string, number> = {};
+    let cumulativeDays = 0;
+    for (const stage of growingParams.stages) {
+      stageStartDays[stage.name.toLowerCase()] = cumulativeDays;
+      cumulativeDays += stage.days;
+    }
+
+    const alertsWithDays = growingParams.timeline_alerts
+      .map(alert => {
+        const stageKey = alert.trigger_stage?.toLowerCase() || '';
+        const stageStart = stageStartDays[stageKey] ?? 0;
+        const absoluteDay = stageStart + (alert.day_offset || 0);
+        return { ...alert, absoluteDay };
+      })
+      .filter(alert => alert.absoluteDay > age)
+      .sort((a, b) => a.absoluteDay - b.absoluteDay);
+
+    if (alertsWithDays.length === 0) return null;
+
+    const nextAlert = alertsWithDays[0];
+    const daysUntil = nextAlert.absoluteDay - age;
+
+    return {
+      message: nextAlert.message,
+      daysUntil,
+      type: nextAlert.type || 'info',
+    };
+  };
+
+  // Get current stage targets
+  const getStageTargets = (growingParams: GrowingParams | null, currentStage: string | null) => {
+    if (!growingParams?.environment_targets || !currentStage) return null;
+
+    const stageTarget = growingParams.environment_targets.find(
+      t => t.stage?.toLowerCase() === currentStage?.toLowerCase()
+    );
+
+    if (!stageTarget) return null;
+
+    return {
+      vpd: stageTarget.vpd_target,
+      humidity: stageTarget.humidity_min !== undefined && stageTarget.humidity_max !== undefined
+        ? Math.round((stageTarget.humidity_min + stageTarget.humidity_max) / 2)
+        : undefined,
+      temp: stageTarget.temp_day,
+    };
+  };
+
+  const calculateProgress = (startDate: string | null, floweringDays: number | null) => {
+    if (!startDate || !floweringDays) return null;
+    const age = calculatePlantAge(startDate);
+    if (age === null) return null;
+    const percentage = Math.min(Math.round((age / floweringDays) * 100), 100);
+    return { percentage, currentDay: age, totalDays: floweringDays };
+  };
+
   const handleGoToDevice = (deviceId: string) => {
     setOpen(false);
     navigate(`/device/${deviceId}`);
@@ -124,102 +257,178 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0">
+        <SheetHeader className="p-6 pb-4 border-b border-border/50">
           <SheetTitle className="flex items-center gap-2">
-            <Leaf className="h-5 w-5 text-green-500" />
-            Всі активні рослини
+            <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
+              <Leaf className="h-5 w-5 text-green-500" />
+            </div>
+            Мої рослини
           </SheetTitle>
           <SheetDescription>
-            Огляд всіх рослин у вашій теплиці
+            {plants?.length || 0} активних рослин
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6">
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : !plants || plants.length === 0 ? (
-            <div className="text-center py-12">
-              <Leaf className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground">Немає активних рослин</p>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead>Назва</TableHead>
-                    <TableHead>Сорт</TableHead>
-                    <TableHead>Локація</TableHead>
-                    <TableHead>Стадія</TableHead>
-                    <TableHead className="text-right">Вік</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {plants.map((plant) => {
-                    const stage = plant.current_stage || 'seedling';
-                    const stageColor = stageColors[stage] || stageColors.seedling;
-                    const age = calculatePlantAge(plant.start_date);
-                    const strainName = (plant.library_strains as any)?.name;
+        <ScrollArea className="h-[calc(100vh-120px)]">
+          <div className="p-4 space-y-3">
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-44 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : !plants || plants.length === 0 ? (
+              <div className="text-center py-16">
+                <Leaf className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">Немає активних рослин</p>
+              </div>
+            ) : (
+              plants.map((plant) => {
+                const stage = plant.current_stage || 'seedling';
+                const StageIcon = stageIcons[stage] || Sprout;
+                const stageTextColor = stageColors[stage] || stageColors.seedling;
+                const progressBarColor = stageBgColors[stage] || stageBgColors.seedling;
+                
+                const strainData = plant.library_strains as Plant['library_strains'];
+                const strainName = strainData?.name;
+                const floweringDays = strainData?.flowering_days;
+                const photoUrl = strainData?.photo_url;
+                const growingParams = strainData?.growing_params as GrowingParams | null;
+                
+                const progress = calculateProgress(plant.start_date, floweringDays);
+                const stageInfo = calculateStageInfo(plant.start_date, growingParams);
+                const nextAlert = getNextAlert(plant.start_date, growingParams);
+                const stageTargets = getStageTargets(growingParams, stage);
 
-                    return (
-                      <TableRow key={plant.id} className="hover:bg-muted/30">
-                        <TableCell className="font-medium">
-                          {plant.custom_name || strainName || 'Без назви'}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {strainName || '—'}
-                        </TableCell>
-                        <TableCell>
-                          {plant.devices?.name ? (
-                            <span className="text-sm">📍 {plant.devices.name}</span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${stageColor} border text-xs`}>
-                            {getStageLabel(stage)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {age !== null ? (
-                            <span className="text-sm">{age} д.</span>
-                          ) : (
-                            '—'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {plant.devices?.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleGoToDevice(plant.devices!.id)}
+                return (
+                  <div
+                    key={plant.id}
+                    className="relative rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all cursor-pointer group"
+                    onClick={() => plant.devices?.id && handleGoToDevice(plant.devices.id)}
+                  >
+                    {/* Background Image */}
+                    <div className="absolute inset-0">
+                      {photoUrl ? (
+                        <>
+                          <div 
+                            className="absolute inset-0 bg-cover bg-center scale-110 blur-sm"
+                            style={{ backgroundImage: `url(${photoUrl})` }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-muted to-background" />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="relative p-4 space-y-3">
+                      {/* Header Row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-lg font-bold text-foreground truncate">
+                            {plant.custom_name || 'Unnamed Plant'}
+                          </h4>
+                          {strainName && (
+                            <Badge 
+                              variant="secondary" 
+                              className="mt-1 bg-background/60 backdrop-blur-sm text-xs"
                             >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
+                              {strainName}
+                            </Badge>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                        </div>
+                        <div className={`p-2.5 rounded-xl bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
+                          <StageIcon className="h-5 w-5" />
+                        </div>
+                      </div>
 
-          {plants && plants.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-4 text-center">
-              Всього: {plants.length} активних рослин
-            </p>
-          )}
-        </div>
+                      {/* Stage Info */}
+                      {stageInfo && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className={`font-semibold capitalize ${stageTextColor}`}>
+                            {stageInfo.stageName}
+                          </span>
+                          <span className="text-muted-foreground">
+                            Day {stageInfo.dayInStage}/{stageInfo.stageDuration}
+                          </span>
+                          {plant.devices?.name && (
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              📍 {plant.devices.name}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Progress Bar */}
+                      {progress && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="font-bold text-foreground">
+                              Day {progress.currentDay} / {progress.totalDays}
+                            </span>
+                          </div>
+                          <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
+                            <div 
+                              className={`h-full transition-all duration-500 ${progressBarColor}`}
+                              style={{ width: `${progress.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bottom Row: Next Alert OR Stage Targets */}
+                      {nextAlert ? (
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                          <Bell className="h-4 w-4 text-amber-400 shrink-0" />
+                          <span className="text-sm text-amber-200 truncate">
+                            <span className="font-semibold">
+                              {nextAlert.daysUntil === 0 
+                                ? 'Today' 
+                                : nextAlert.daysUntil === 1 
+                                  ? 'Tomorrow' 
+                                  : `In ${nextAlert.daysUntil} days`}:
+                            </span>{' '}
+                            {nextAlert.message}
+                          </span>
+                        </div>
+                      ) : stageTargets ? (
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
+                          <Target className="h-4 w-4 text-primary shrink-0" />
+                          <span className="text-sm text-foreground/80">
+                            <span className="font-semibold">Target:</span>{' '}
+                            {stageTargets.vpd && `VPD ${stageTargets.vpd}`}
+                            {stageTargets.humidity && ` • ${stageTargets.humidity}% RH`}
+                            {stageTargets.temp && ` • ${stageTargets.temp}°C`}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30">
+                          <span className="text-sm text-muted-foreground italic">
+                            {getStageLabel(stage)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Hover Overlay */}
+                      {plant.devices?.id && (
+                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Button variant="outline" className="gap-2">
+                            <ExternalLink className="h-4 w-4" />
+                            Open Dashboard
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );
