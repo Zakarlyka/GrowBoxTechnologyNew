@@ -119,10 +119,8 @@ export function StrainDetailsDialog({
 }: StrainDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState('resistance');
 
-  if (!strain) return null;
-
-  // ========== DATA EXTRACTION ==========
-  const rawParams = strain.growing_params;
+  // ========== DATA EXTRACTION (before any early returns) ==========
+  const rawParams = strain?.growing_params;
   const growingParams: any = rawParams 
     ? (typeof rawParams === 'string' ? JSON.parse(rawParams) : rawParams) 
     : null;
@@ -139,7 +137,7 @@ export function StrainDetailsDialog({
     : [];
   const phenotype = growingParams?.phenotype || null;
   const cultivationTips = growingParams?.cultivation_tips || null;
-  const difficultyLevel = growingParams?.difficulty_level || strain.difficulty || null;
+  const difficultyLevel = growingParams?.difficulty_level || strain?.difficulty || null;
 
   // Build Radar Chart data for resistance
   const radarData = useMemo(() => {
@@ -194,6 +192,9 @@ export function StrainDetailsDialog({
     
     return timeline.sort((a, b) => a.day - b.day);
   }, [stages, timelineAlerts]);
+
+  // Early return AFTER all hooks
+  if (!strain) return null;
 
   const getImageUrl = (url: string | null) => {
     if (!url) return null;
