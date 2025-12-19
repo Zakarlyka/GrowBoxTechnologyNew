@@ -225,7 +225,8 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
   const updateStageTemp = (index: number, tempIndex: 0 | 1, value: number) => {
     setStages(prev => prev.map((stage, i) => {
       if (i !== index) return stage;
-      const newTemp: [number, number] = [...stage.temp] as [number, number];
+      const currentTemp = stage.temp || [20, 24];
+      const newTemp: [number, number] = [...currentTemp] as [number, number];
       newTemp[tempIndex] = value;
       return { ...stage, temp: newTemp };
     }));
@@ -681,7 +682,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                             </Label>
                             <Input
                               type="number"
-                              value={stage.temp[0]}
+                              value={stage.temp?.[0] ?? 20}
                               onChange={(e) => updateStageTemp(index, 0, parseInt(e.target.value) || 0)}
                               className="h-9"
                             />
@@ -692,7 +693,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                             </Label>
                             <Input
                               type="number"
-                              value={stage.temp[1]}
+                              value={stage.temp?.[1] ?? 24}
                               onChange={(e) => updateStageTemp(index, 1, parseInt(e.target.value) || 0)}
                               className="h-9"
                             />
