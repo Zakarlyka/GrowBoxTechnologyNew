@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Leaf, Clock, Thermometer, Droplets, Sun, FlaskConical, 
-  Dna, TrendingUp, AlertTriangle, Ruler, Activity, Zap, User,
-  Wind, Beaker, BookOpen, GraduationCap, Lightbulb, Shield
+  Dna, TrendingUp, AlertTriangle, Ruler, Activity, Zap,
+  Wind, Beaker, BookOpen, GraduationCap, Shield, Target,
+  Calendar, Bell, Cpu, Gauge, Bug, Snowflake, Flame
 } from 'lucide-react';
 import {
   Dialog,
@@ -15,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import {
   Table,
   TableBody,
@@ -24,7 +26,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { LibraryStrainFull, GrowingParams, GrowingStage } from '@/types';
+import {
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+} from 'recharts';
+import type { LibraryStrainFull, GrowingStage } from '@/types';
 
 interface StrainDetailsDialogProps {
   open: boolean;
@@ -44,9 +54,6 @@ const getTypeColor = (type: string | null) => {
     case 'autoflower':
     case 'auto':
       return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-    case 'photoperiod':
-    case 'photo':
-      return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -55,10 +62,13 @@ const getTypeColor = (type: string | null) => {
 const getDifficultyColor = (difficulty: string | null) => {
   switch (difficulty?.toLowerCase()) {
     case 'easy':
+    case 'beginner':
       return 'bg-green-500/20 text-green-400 border-green-500/30';
     case 'medium':
+    case 'intermediate':
       return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
     case 'hard':
+    case 'expert':
       return 'bg-red-500/20 text-red-400 border-red-500/30';
     default:
       return 'bg-muted text-muted-foreground';
@@ -76,55 +86,115 @@ const getStageIcon = (stageName: string) => {
   return '📊';
 };
 
+// Intensity bar component for 1-10 scale
+const IntensityBar = ({ value, max = 10, color = 'primary' }: { value: number; max?: number; color?: string }) => {
+  const percentage = (value / max) * 100;
+  const colorClasses: Record<string, string> = {
+    primary: 'bg-primary',
+    green: 'bg-green-500',
+    yellow: 'bg-yellow-500',
+    red: 'bg-red-500',
+    purple: 'bg-purple-500',
+    cyan: 'bg-cyan-500',
+  };
+  
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <div 
+          className={`h-full rounded-full transition-all ${colorClasses[color] || colorClasses.primary}`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <span className="text-xs font-medium w-6 text-right">{value}/{max}</span>
+    </div>
+  );
+};
+
 export function StrainDetailsDialog({
   open,
   onOpenChange,
   strain,
   onGrowThis,
 }: StrainDetailsDialogProps) {
-  const [activeTab, setActiveTab] = useState('passport');
+  const [activeTab, setActiveTab] = useState('resistance');
 
   if (!strain) return null;
 
-  // ========== EXPLICIT DATA EXTRACTION ==========
+  // ========== DATA EXTRACTION ==========
   const rawParams = strain.growing_params;
   const growingParams: any = rawParams 
     ? (typeof rawParams === 'string' ? JSON.parse(rawParams) : rawParams) 
     : null;
   
-  // EXPLICIT: Extract genetic_passport object (NEW STRUCTURE)
+  // Extract new Universal Plant Schema fields
   const geneticPassport = growingParams?.genetic_passport || null;
-  
-  // EXPLICIT: Extract stages array
+  const morphology = growingParams?.morphology || null;
+  const resistanceRating = growingParams?.resistance_rating || null;
+  const environmentTargets = growingParams?.environment_targets || null;
+  const timelineAlerts = growingParams?.timeline_alerts || [];
+  const conditionalAlerts = growingParams?.conditional_alerts || [];
   const stages: GrowingStage[] = growingParams?.stages && Array.isArray(growingParams.stages) 
     ? growingParams.stages 
     : [];
-  
-  // EXPLICIT: Extract risks array  
-  const risks: string[] = growingParams?.risks && Array.isArray(growingParams.risks) 
-    ? growingParams.risks 
-    : [];
-  
-  // EXPLICIT: Extract phenotype object
   const phenotype = growingParams?.phenotype || null;
-  
-  // EXPLICIT: Extract recommendations object (legacy)
-  const recommendations = growingParams?.recommendations || null;
-  
-  // EXPLICIT: Extract cultivation_tips object (NEW STRUCTURE)
   const cultivationTips = growingParams?.cultivation_tips || null;
-  
-  // EXPLICIT: Extract post_harvest object
-  const postHarvest = growingParams?.post_harvest || null;
+  const difficultyLevel = growingParams?.difficulty_level || strain.difficulty || null;
 
-  // DEBUG LOG
-  console.log('[StrainDetails] strain:', strain.name);
-  console.log('[StrainDetails] growingParams:', growingParams);
-  console.log('[StrainDetails] geneticPassport:', geneticPassport);
-  console.log('[StrainDetails] cultivationTips:', cultivationTips);
-  console.log('[StrainDetails] stages:', stages);
+  // Build Radar Chart data for resistance
+  const radarData = useMemo(() => {
+    if (!resistanceRating) return [];
+    return [
+      { subject: 'Mold', value: resistanceRating.mold || 0, fullMark: 5 },
+      { subject: 'Pests', value: resistanceRating.pests || 0, fullMark: 5 },
+      { subject: 'Cold', value: resistanceRating.cold || 0, fullMark: 5 },
+      { subject: 'Heat', value: resistanceRating.heat || 0, fullMark: 5 },
+      { subject: 'Drought', value: resistanceRating.drought || 0, fullMark: 5 },
+    ].filter(item => item.value > 0);
+  }, [resistanceRating]);
 
-  // Helper to add cache busting to Supabase Storage URLs only
+  // Build Smart Timeline - combine stages with alerts
+  const smartTimeline = useMemo(() => {
+    if (!stages.length) return [];
+    
+    let cumulativeDay = 0;
+    const timeline: { day: number; stageName: string; stageDay: number; event: string; type: 'stage_start' | 'alert' }[] = [];
+    
+    stages.forEach((stage, idx) => {
+      const stageDays = (stage.weeks_duration || 0) * 7 || parseInt(stage.weeks || '0') * 7 || 14;
+      const stageStartDay = cumulativeDay;
+      
+      // Add stage start marker
+      timeline.push({
+        day: stageStartDay,
+        stageName: stage.label_ua || stage.name || `Stage ${idx + 1}`,
+        stageDay: 0,
+        event: `${getStageIcon(stage.name || '')} Початок: ${stage.label_ua || stage.name}`,
+        type: 'stage_start'
+      });
+      
+      // Find alerts for this stage
+      const stageAlerts = timelineAlerts.filter((alert: any) => 
+        alert.trigger_stage?.toLowerCase() === stage.name?.toLowerCase()
+      );
+      
+      stageAlerts.forEach((alert: any) => {
+        const alertDay = stageStartDay + (alert.day_offset || 0);
+        timeline.push({
+          day: alertDay,
+          stageName: stage.label_ua || stage.name || '',
+          stageDay: alert.day_offset || 0,
+          event: alert.message || alert.alert_message || 'Alert',
+          type: 'alert'
+        });
+      });
+      
+      cumulativeDay += stageDays;
+    });
+    
+    return timeline.sort((a, b) => a.day - b.day);
+  }, [stages, timelineAlerts]);
+
   const getImageUrl = (url: string | null) => {
     if (!url) return null;
     if (url.includes('supabase')) {
@@ -143,676 +213,661 @@ export function StrainDetailsDialog({
     onOpenChange(false);
   };
 
-  // Get THC value - prefer genetic_passport, then numeric thc_percent, fallback to string
-  const thcDisplay = geneticPassport?.thc_range 
-    || (strain.thc_percent ? `${strain.thc_percent}%` : null)
-    || strain.thc_content 
-    || null;
-
-  // Format temp array as "night°C / day°C"
-  const formatTemp = (temp: [number, number] | number[] | undefined) => {
-    if (!temp || !Array.isArray(temp) || temp.length < 2) return '--';
-    return `${temp[0]}°C / ${temp[1]}°C`;
+  // Format temperature display
+  const formatTempRange = (temp: any) => {
+    if (!temp) return 'N/A';
+    if (Array.isArray(temp)) return `${temp[0]}°C - ${temp[1]}°C`;
+    if (typeof temp === 'object') {
+      if (temp.day !== undefined && temp.night !== undefined) {
+        return `${temp.night}°C / ${temp.day}°C`;
+      }
+      if (temp.min !== undefined && temp.max !== undefined) {
+        return `${temp.min}°C - ${temp.max}°C`;
+      }
+    }
+    return `${temp}°C`;
   };
 
-  // Format weeks
-  const formatWeeks = (stage: GrowingStage) => {
-    if (stage.weeks) return stage.weeks;
-    if (stage.weeks_duration) return `${stage.weeks_duration} тиж.`;
-    return '--';
+  const formatHumidity = (hum: any) => {
+    if (!hum) return 'N/A';
+    if (Array.isArray(hum)) return `${hum[0]}% - ${hum[1]}%`;
+    if (typeof hum === 'object') {
+      if (hum.min !== undefined && hum.max !== undefined) {
+        return `${hum.min}% - ${hum.max}%`;
+      }
+    }
+    return `${hum}%`;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-0">
           <DialogTitle className="sr-only">{strain.name}</DialogTitle>
         </DialogHeader>
 
-        {/* Hero Section */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Image */}
-          <div className="w-full sm:w-48 h-48 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex-shrink-0">
-            {strain.photo_url ? (
-              <img
-                src={getImageUrl(strain.photo_url) || ''}
-                alt={strain.name}
-                className="w-full h-full object-cover"
-                onError={handleImageError}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Leaf className="h-20 w-20 text-primary/30" />
+        {/* ========== HERO SECTION WITH MORPHOLOGY ========== */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left: Image + Basic Info */}
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-4 lg:w-64">
+            {/* Image */}
+            <div className="w-full sm:w-48 lg:w-full h-48 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex-shrink-0">
+              {strain.photo_url ? (
+                <img
+                  src={getImageUrl(strain.photo_url) || ''}
+                  alt={strain.name}
+                  className="w-full h-full object-cover"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Leaf className="h-20 w-20 text-primary/30" />
+                </div>
+              )}
+            </div>
+            
+            {/* Quick Info */}
+            <div className="flex-1 lg:flex-none space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">{strain.name}</h2>
+              {strain.breeder && (
+                <p className="text-sm text-muted-foreground">🏭 {strain.breeder}</p>
+              )}
+              
+              {/* Type Badges */}
+              <div className="flex flex-wrap gap-2">
+                {geneticPassport && (
+                  <>
+                    {geneticPassport.sativa_percent > 0 && (
+                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                        ☀️ {geneticPassport.sativa_percent}% Sativa
+                      </Badge>
+                    )}
+                    {geneticPassport.indica_percent > 0 && (
+                      <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                        🌙 {geneticPassport.indica_percent}% Indica
+                      </Badge>
+                    )}
+                  </>
+                )}
+                {!geneticPassport && strain.type && (
+                  <Badge className={`border ${getTypeColor(strain.type)}`}>
+                    {strain.type}
+                  </Badge>
+                )}
+                {difficultyLevel && (
+                  <Badge className={`border ${getDifficultyColor(difficultyLevel)}`}>
+                    {difficultyLevel}
+                  </Badge>
+                )}
               </div>
-            )}
+              
+              {geneticPassport?.thc_range && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
+                  THC {geneticPassport.thc_range}
+                </Badge>
+              )}
+            </div>
           </div>
 
-          {/* Info */}
-          <div className="flex-1 space-y-3">
-            <h2 className="text-2xl font-bold text-foreground">{strain.name}</h2>
-            
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2">
-              {strain.breeder && (
-                <Badge variant="secondary" className="text-sm">
-                  🏭 {strain.breeder}
-                </Badge>
-              )}
-              {strain.type && (
-                <Badge className={`text-sm border ${getTypeColor(strain.type)}`}>
-                  {strain.type}
-                </Badge>
-              )}
-              {strain.difficulty && (
-                <Badge className={`text-sm border ${getDifficultyColor(strain.difficulty)}`}>
-                  {strain.difficulty}
-                </Badge>
-              )}
-              {strain.flowering_days && (
-                <Badge variant="outline" className="text-sm gap-1">
-                  <Clock className="h-3 w-3" />
-                  {strain.flowering_days}d bloom
-                </Badge>
-              )}
-              {thcDisplay && (
-                <Badge variant="outline" className="text-sm gap-1 bg-green-500/10 text-green-400 border-green-500/30">
-                  THC {thcDisplay}
-                </Badge>
-              )}
-            </div>
+          {/* Right: Morphology Dashboard */}
+          <div className="flex-1">
+            <Card className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-cyan-500/20 h-full">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Gauge className="h-4 w-4 text-cyan-400" />
+                  📊 Морфологія
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                {morphology ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Stretch Ratio */}
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-xs text-muted-foreground">Stretch Ratio</span>
+                      </div>
+                      <div className="text-2xl font-bold text-green-400">
+                        x{morphology.stretch_ratio || 'N/A'}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {morphology.stretch_ratio >= 2.5 ? 'High stretch' : 
+                         morphology.stretch_ratio >= 1.5 ? 'Moderate' : 'Low stretch'}
+                      </p>
+                    </div>
+                    
+                    {/* Bud Density */}
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="h-4 w-4 text-purple-400" />
+                        <span className="text-xs text-muted-foreground">Bud Density</span>
+                      </div>
+                      <div className="text-lg font-bold text-purple-400 capitalize">
+                        {morphology.bud_density || 'N/A'}
+                      </div>
+                    </div>
+                    
+                    {/* Odor Intensity */}
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Wind className="h-4 w-4 text-pink-400" />
+                        <span className="text-xs text-muted-foreground">Odor Intensity</span>
+                      </div>
+                      {morphology.odor_intensity !== undefined ? (
+                        <IntensityBar value={morphology.odor_intensity} max={10} color="purple" />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">N/A</span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <Gauge className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Morphology data not available</p>
+                  </div>
+                )}
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {strain.genotype && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Dna className="h-4 w-4" />
-                  {strain.genotype}
-                </div>
-              )}
-              {strain.yield_indoor && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <TrendingUp className="h-4 w-4" />
-                  {strain.yield_indoor}
-                </div>
-              )}
-            </div>
-
-            {/* Description */}
-            {strain.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                {strain.description}
-              </p>
-            )}
+                {/* Additional phenotype info */}
+                {phenotype && (
+                  <div className="mt-4 pt-4 border-t border-border/50 grid grid-cols-2 gap-3">
+                    {phenotype.height_indoor && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Ruler className="h-4 w-4 text-green-400" />
+                        <span className="text-muted-foreground">Indoor:</span>
+                        <span className="font-medium">{phenotype.height_indoor}</span>
+                      </div>
+                    )}
+                    {phenotype.aroma && (
+                      <div className="flex items-center gap-2 text-sm col-span-2">
+                        <span className="text-lg">🌸</span>
+                        <span className="text-pink-300 font-medium">{phenotype.aroma}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
         <Separator className="my-4" />
 
-        {/* 4 TABS */}
+        {/* ========== 5 TABS ========== */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="passport" className="gap-1 text-xs">
-              <Dna className="h-4 w-4" />
-              <span className="hidden sm:inline">Паспорт</span>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="resistance" className="gap-1 text-xs">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Resistance</span>
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-1 text-xs">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
             <TabsTrigger value="environment" className="gap-1 text-xs">
               <Thermometer className="h-4 w-4" />
-              <span className="hidden sm:inline">Середовище</span>
+              <span className="hidden sm:inline">Environment</span>
             </TabsTrigger>
-            <TabsTrigger value="nutrients" className="gap-1 text-xs">
-              <FlaskConical className="h-4 w-4" />
-              <span className="hidden sm:inline">Живлення</span>
+            <TabsTrigger value="watchdog" className="gap-1 text-xs">
+              <Cpu className="h-4 w-4" />
+              <span className="hidden sm:inline">AI Watchdog</span>
             </TabsTrigger>
-            <TabsTrigger value="knowledge" className="gap-1 text-xs">
+            <TabsTrigger value="wiki" className="gap-1 text-xs">
               <GraduationCap className="h-4 w-4" />
               <span className="hidden sm:inline">Wiki</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* ============ TAB 1: PASSPORT (Genetics & Phenotype) ============ */}
-          <TabsContent value="passport" className="mt-4 space-y-4">
-            
-            {/* GENETICS BREAKDOWN - EXPLICIT FROM genetic_passport */}
-            {geneticPassport && (
-              <Card className="bg-gradient-to-br from-purple-500/10 to-orange-500/10 border-purple-500/20">
+          {/* ============ TAB 1: RESISTANCE MATRIX ============ */}
+          <TabsContent value="resistance" className="mt-4 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Radar Chart */}
+              <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <Dna className="h-4 w-4 text-purple-400" />
-                    🧬 Генетичний склад
+                    <Shield className="h-4 w-4 text-green-400" />
+                    🛡️ Resistance Matrix
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
-                  {/* Percentage Bars */}
-                  <div className="space-y-3">
-                    {/* Sativa */}
-                    {geneticPassport.sativa_percent !== undefined && (
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-orange-400 font-medium">☀️ Sativa</span>
-                          <span className="text-orange-400 font-bold">{geneticPassport.sativa_percent}%</span>
-                        </div>
-                        <div className="h-3 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all"
-                            style={{ width: `${geneticPassport.sativa_percent}%` }}
+                  {radarData.length > 0 ? (
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart data={radarData}>
+                          <PolarGrid stroke="hsl(var(--border))" />
+                          <PolarAngleAxis 
+                            dataKey="subject" 
+                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                           />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Indica */}
-                    {geneticPassport.indica_percent !== undefined && (
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-purple-400 font-medium">🌙 Indica</span>
-                          <span className="text-purple-400 font-bold">{geneticPassport.indica_percent}%</span>
-                        </div>
-                        <div className="h-3 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all"
-                            style={{ width: `${geneticPassport.indica_percent}%` }}
+                          <PolarRadiusAxis 
+                            angle={90} 
+                            domain={[0, 5]} 
+                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                           />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Ruderalis */}
-                    {geneticPassport.ruderalis_percent !== undefined && geneticPassport.ruderalis_percent > 0 && (
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-green-400 font-medium">🌾 Ruderalis</span>
-                          <span className="text-green-400 font-bold">{geneticPassport.ruderalis_percent}%</span>
-                        </div>
-                        <div className="h-3 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all"
-                            style={{ width: `${geneticPassport.ruderalis_percent}%` }}
+                          <Radar
+                            name="Resistance"
+                            dataKey="value"
+                            stroke="hsl(var(--primary))"
+                            fill="hsl(var(--primary))"
+                            fillOpacity={0.4}
                           />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    /* Fallback: Progress bars */
+                    <div className="space-y-4 py-4">
+                      {resistanceRating ? (
+                        <>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm flex items-center gap-2">
+                                <Bug className="h-4 w-4 text-amber-400" /> Mold
+                              </span>
+                              <span className="text-sm font-medium">{resistanceRating.mold || 0}/5</span>
+                            </div>
+                            <Progress value={(resistanceRating.mold || 0) * 20} className="h-2" />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm flex items-center gap-2">
+                                <Bug className="h-4 w-4 text-red-400" /> Pests
+                              </span>
+                              <span className="text-sm font-medium">{resistanceRating.pests || 0}/5</span>
+                            </div>
+                            <Progress value={(resistanceRating.pests || 0) * 20} className="h-2" />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm flex items-center gap-2">
+                                <Snowflake className="h-4 w-4 text-blue-400" /> Cold
+                              </span>
+                              <span className="text-sm font-medium">{resistanceRating.cold || 0}/5</span>
+                            </div>
+                            <Progress value={(resistanceRating.cold || 0) * 20} className="h-2" />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm flex items-center gap-2">
+                                <Flame className="h-4 w-4 text-orange-400" /> Heat
+                              </span>
+                              <span className="text-sm font-medium">{resistanceRating.heat || 0}/5</span>
+                            </div>
+                            <Progress value={(resistanceRating.heat || 0) * 20} className="h-2" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-6 text-muted-foreground">
+                          <Shield className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>No resistance data available</p>
                         </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* THC Range */}
-                  {geneticPassport.thc_range && (
-                    <div className="mt-4 pt-3 border-t border-border/50">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                          <FlaskConical className="h-5 w-5 text-green-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground">THC Діапазон</div>
-                          <div className="text-lg font-bold text-green-400">{geneticPassport.thc_range}</div>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
               </Card>
-            )}
 
-            {/* PHENOTYPE BOX - EXPLICIT RENDERING */}
-            {phenotype && (
-              <Card className="bg-card/50">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <Ruler className="h-4 w-4 text-primary" />
-                    🌿 Фенотип
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Height Indoor */}
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                      <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                        <Ruler className="h-5 w-5 text-green-500" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">📏 Висота Indoor</div>
-                        <div className="font-medium text-foreground">
-                          {phenotype.height_indoor || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Height Outdoor */}
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                      <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                        <Ruler className="h-5 w-5 text-emerald-500" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">🌳 Висота Outdoor</div>
-                        <div className="font-medium text-foreground">
-                          {phenotype.height_outdoor || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Structure */}
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                      <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                        <Leaf className="h-5 w-5 text-purple-500" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">🌲 Структура</div>
-                        <div className="font-medium text-foreground">
-                          {phenotype.structure || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Aroma - HIGHLIGHTED */}
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-pink-500/20 to-rose-500/20 border border-pink-500/30">
-                      <div className="h-10 w-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
-                        <span className="text-xl">🌸</span>
-                      </div>
-                      <div>
-                        <div className="text-xs text-pink-300">✨ Аромат (Highlight!)</div>
-                        <div className="font-bold text-pink-200">
-                          {phenotype.aroma || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* RESISTANCE / RISKS - EXPLICIT RENDERING */}
-            {risks.length > 0 && (
-              <Alert className="bg-red-500/10 border-red-500/30">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <AlertTitle className="text-red-400 font-semibold">
-                  🛡️ Стійкість та Ризики
-                </AlertTitle>
-                <AlertDescription>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {risks.map((risk: string, idx: number) => (
-                      <Badge 
-                        key={idx} 
-                        variant="outline" 
-                        className="bg-red-500/20 text-red-400 border-red-500/40 py-1.5"
-                      >
-                        ⚠️ {risk}
+              {/* Difficulty & Stats */}
+              <div className="space-y-4">
+                {/* Difficulty Badge */}
+                <Card className="bg-card/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Difficulty Level</span>
+                      <Badge className={`text-lg px-4 py-1 ${getDifficultyColor(difficultyLevel)}`}>
+                        {difficultyLevel || 'Unknown'}
                       </Badge>
-                    ))}
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* Basic Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {strain.type && (
+                {/* Resistance Details */}
+                {resistanceRating && (
+                  <Card className="bg-card/50">
+                    <CardHeader className="py-3 px-4">
+                      <CardTitle className="text-sm font-medium">Resistance Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 pt-0 space-y-2">
+                      {Object.entries(resistanceRating).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between text-sm">
+                          <span className="capitalize text-muted-foreground">{key}</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <div
+                                key={i}
+                                className={`h-3 w-3 rounded-full ${
+                                  i <= (value as number) 
+                                    ? 'bg-green-500' 
+                                    : 'bg-muted'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Quick Stats */}
                 <Card className="bg-card/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Тип</div>
-                    <Badge className={`text-sm border ${getTypeColor(strain.type)}`}>
-                      {strain.type}
-                    </Badge>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      {strain.flowering_days && (
+                        <div>
+                          <span className="text-muted-foreground">Flowering</span>
+                          <div className="font-bold text-lg">{strain.flowering_days} days</div>
+                        </div>
+                      )}
+                      {strain.yield_indoor && (
+                        <div>
+                          <span className="text-muted-foreground">Yield Indoor</span>
+                          <div className="font-medium">{strain.yield_indoor}</div>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
-              )}
-              {strain.breeder && (
-                <Card className="bg-card/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Бридер</div>
-                    <div className="font-medium text-sm">{strain.breeder}</div>
-                  </CardContent>
-                </Card>
-              )}
-              {strain.flowering_days && (
-                <Card className="bg-card/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Цвітіння</div>
-                    <div className="font-bold text-lg">{strain.flowering_days}д</div>
-                  </CardContent>
-                </Card>
-              )}
-              {strain.difficulty && (
-                <Card className="bg-card/50">
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Складність</div>
-                    <Badge className={`text-sm border ${getDifficultyColor(strain.difficulty)}`}>
-                      {strain.difficulty}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              )}
+              </div>
             </div>
           </TabsContent>
 
-          {/* ============ TAB 2: ENVIRONMENT (Stage Table with Description) ============ */}
+          {/* ============ TAB 2: SMART TIMELINE ============ */}
+          <TabsContent value="timeline" className="mt-4 space-y-4">
+            <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-violet-400" />
+                  📅 Smart Timeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                {smartTimeline.length > 0 ? (
+                  <div className="space-y-3">
+                    {smartTimeline.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`flex items-start gap-4 p-3 rounded-lg ${
+                          item.type === 'stage_start' 
+                            ? 'bg-primary/10 border border-primary/20' 
+                            : 'bg-yellow-500/10 border border-yellow-500/20'
+                        }`}
+                      >
+                        <div className={`min-w-[80px] text-center p-2 rounded-lg ${
+                          item.type === 'stage_start' 
+                            ? 'bg-primary/20' 
+                            : 'bg-yellow-500/20'
+                        }`}>
+                          <div className="text-xs text-muted-foreground">Day</div>
+                          <div className="text-xl font-bold">{item.day}</div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {item.type === 'alert' && (
+                              <Bell className="h-4 w-4 text-yellow-400" />
+                            )}
+                            <span className={`font-medium ${
+                              item.type === 'stage_start' 
+                                ? 'text-primary' 
+                                : 'text-yellow-400'
+                            }`}>
+                              {item.event}
+                            </span>
+                          </div>
+                          {item.type === 'alert' && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {item.stageName} Day {item.stageDay}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>No timeline data configured</p>
+                    <p className="text-xs mt-1">Add stages and timeline_alerts to populate</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ============ TAB 3: ENVIRONMENT TARGETS ============ */}
           <TabsContent value="environment" className="mt-4 space-y-4">
-            {stages.length > 0 ? (
-              <Card className="bg-card/50">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <Thermometer className="h-4 w-4 text-primary" />
-                    🌡️ Кліматичний розклад (Robot's Guide)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-0">
+            <Card className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Thermometer className="h-4 w-4 text-orange-400" />
+                  🌡️ Environment Targets Grid
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                {(environmentTargets || stages.length > 0) ? (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="font-medium">Стадія</TableHead>
-                          <TableHead className="font-medium">Тижні</TableHead>
+                          <TableHead className="font-medium">Stage</TableHead>
                           <TableHead className="font-medium">
                             <div className="flex items-center gap-1">
                               <Thermometer className="h-3 w-3 text-orange-400" />
-                              Темп.
+                              Temp (D/N)
                             </div>
                           </TableHead>
                           <TableHead className="font-medium">
                             <div className="flex items-center gap-1">
                               <Droplets className="h-3 w-3 text-blue-400" />
-                              RH%
+                              Humidity
+                            </div>
+                          </TableHead>
+                          <TableHead className="font-medium">
+                            <div className="flex items-center gap-1 text-cyan-400">
+                              <Activity className="h-3 w-3" />
+                              <span className="font-bold">VPD ⭐</span>
                             </div>
                           </TableHead>
                           <TableHead className="font-medium">
                             <div className="flex items-center gap-1">
-                              <Activity className="h-3 w-3 text-cyan-400" />
-                              VPD
-                            </div>
-                          </TableHead>
-                          <TableHead className="font-medium min-w-[200px]">
-                            <div className="flex items-center gap-1">
-                              <BookOpen className="h-3 w-3 text-violet-400" />
-                              Опис
+                              <Sun className="h-3 w-3 text-yellow-400" />
+                              PPFD
                             </div>
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {stages.map((stage: GrowingStage, idx: number) => (
-                          <TableRow key={idx}>
-                            <TableCell className="font-medium whitespace-nowrap">
-                              {getStageIcon(stage.name || '')} {stage.label_ua || stage.name || `Stage ${idx + 1}`}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {formatWeeks(stage)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
-                                {formatTemp(stage.temp)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
-                                {stage.humidity ? `${stage.humidity}%` : '--'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
-                                {stage.vpd ? `${stage.vpd} kPa` : '--'}
-                              </Badge>
-                            </TableCell>
-                            {/* DESCRIPTION COLUMN - EXPLICIT */}
-                            <TableCell className="text-sm text-muted-foreground max-w-[250px]">
-                              {(stage as any).description || '--'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  <Thermometer className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                  <p>Дані про середовище для цього сорту ще не налаштовано</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Post-Harvest / Drying Instructions */}
-            {postHarvest && (
-              <Card className="bg-card/50 border-amber-500/20">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-medium flex items-center gap-2">
-                    🍂 Пост-харвест (Сушіння та Пролікування)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-0">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {postHarvest.drying_temp && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Температура:</span>
-                        <Badge variant="outline" className="ml-2 bg-orange-500/10 text-orange-400">
-                          {postHarvest.drying_temp}°C
-                        </Badge>
-                      </div>
-                    )}
-                    {postHarvest.drying_humidity && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Вологість:</span>
-                        <Badge variant="outline" className="ml-2 bg-blue-500/10 text-blue-400">
-                          {postHarvest.drying_humidity}%
-                        </Badge>
-                      </div>
-                    )}
-                    {postHarvest.drying_days && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Тривалість:</span>
-                        <span className="ml-2 font-medium">{postHarvest.drying_days} днів</span>
-                      </div>
-                    )}
-                  </div>
-                  {postHarvest.curing_notes && (
-                    <p className="text-sm text-muted-foreground mt-3 italic">
-                      💡 {postHarvest.curing_notes}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* ============ TAB 3: NUTRITION & LIGHT ============ */}
-          <TabsContent value="nutrients" className="mt-4 space-y-4">
-            {stages.length > 0 ? (
-              <>
-                {/* PPFD & EC per Stage Table */}
-                <Card className="bg-card/50">
-                  <CardHeader className="py-3 px-4">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <Sun className="h-4 w-4 text-yellow-500" />
-                      🧪 PPFD та EC по стадіях
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4 pt-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="font-medium">Стадія</TableHead>
-                            <TableHead className="font-medium">
-                              <div className="flex items-center gap-1">
-                                <Sun className="h-3 w-3 text-yellow-400" />
-                                PPFD (µmol)
-                              </div>
-                            </TableHead>
-                            <TableHead className="font-medium">
-                              <div className="flex items-center gap-1">
-                                <Zap className="h-3 w-3 text-green-400" />
-                                EC (mS/cm)
-                              </div>
-                            </TableHead>
-                            <TableHead className="font-medium">
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3 text-amber-400" />
-                                Світло (год)
-                              </div>
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {stages.map((stage: GrowingStage, idx: number) => (
+                        {/* Prefer environment_targets if available */}
+                        {environmentTargets ? (
+                          Object.entries(environmentTargets).map(([stageName, targets]: [string, any]) => (
+                            <TableRow key={stageName}>
+                              <TableCell className="font-medium whitespace-nowrap">
+                                {getStageIcon(stageName)} {stageName}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
+                                  {formatTempRange(targets.temp)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                                  {formatHumidity(targets.humidity)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/40 font-bold">
+                                  {targets.vpd ? `${targets.vpd} kPa` : 'N/A'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                                  {targets.ppfd || 'N/A'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          /* Fallback to stages */
+                          stages.map((stage, idx) => (
                             <TableRow key={idx}>
-                              <TableCell className="font-medium">
-                                {getStageIcon(stage.name || '')} {stage.label_ua || stage.name || `Stage ${idx + 1}`}
+                              <TableCell className="font-medium whitespace-nowrap">
+                                {getStageIcon(stage.name || '')} {stage.label_ua || stage.name}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30">
+                                  {formatTempRange(stage.temp)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                                  {stage.humidity ? `${stage.humidity}%` : 'N/A'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-cyan-500/20 text-cyan-400 border-cyan-500/40 font-bold">
+                                  {stage.vpd ? `${stage.vpd} kPa` : 'N/A'}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
                                   {stage.ppfd || 'N/A'}
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                                  {stage.ec || 'N/A'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {stage.light_hours ? (
-                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
-                                    {stage.light_hours}h
-                                  </Badge>
-                                ) : (
-                                  <span className="text-muted-foreground">--</span>
-                                )}
-                              </TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* LIGHT SCHEDULE FROM cultivation_tips */}
-                {cultivationTips?.light_schedule && (
-                  <Card className="bg-gradient-to-br from-yellow-500/10 to-amber-500/10 border-yellow-500/20">
-                    <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-base font-medium flex items-center gap-2">
-                        <Sun className="h-4 w-4 text-yellow-400" />
-                        💡 Світловий режим (Light Schedule)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4 pt-0">
-                      <p className="text-sm text-foreground leading-relaxed">
-                        {cultivationTips.light_schedule}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* pH Recommendations (legacy) */}
-                {recommendations && (recommendations.ph_soil || recommendations.ph_hydro) && (
-                  <Card className="bg-card/50">
-                    <CardHeader className="py-3 px-4">
-                      <CardTitle className="text-base font-medium flex items-center gap-2">
-                        <Beaker className="h-4 w-4 text-cyan-500" />
-                        🧪 Рекомендації pH
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4 pt-0">
-                      <div className="grid grid-cols-2 gap-4">
-                        {recommendations.ph_soil && (
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                              <span className="text-lg">🌱</span>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">pH Ґрунт</div>
-                              <div className="text-lg font-bold text-amber-400">{recommendations.ph_soil}</div>
-                            </div>
-                          </div>
+                          ))
                         )}
-                        {recommendations.ph_hydro && (
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                              <span className="text-lg">💧</span>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">pH Гідро</div>
-                              <div className="text-lg font-bold text-cyan-400">{recommendations.ph_hydro}</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Thermometer className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>No environment targets configured</p>
+                  </div>
                 )}
-              </>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  <FlaskConical className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                  <p>Дані про живлення для цього сорту ще не налаштовано</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ============ TAB 4: AI WATCHDOG (Conditional Alerts) ============ */}
+          <TabsContent value="watchdog" className="mt-4 space-y-4">
+            <Card className="bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/20">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Cpu className="h-4 w-4 text-red-400" />
+                  🤖 AI Watchdog - Active Rules
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                {conditionalAlerts.length > 0 ? (
+                  <div className="space-y-3">
+                    {conditionalAlerts.map((alert: any, idx: number) => (
+                      <Alert 
+                        key={idx} 
+                        className={`${
+                          alert.priority === 'high' || alert.severity === 'critical'
+                            ? 'bg-red-500/10 border-red-500/30' 
+                            : alert.priority === 'medium' 
+                              ? 'bg-yellow-500/10 border-yellow-500/30'
+                              : 'bg-blue-500/10 border-blue-500/30'
+                        }`}
+                      >
+                        <AlertTriangle className={`h-5 w-5 ${
+                          alert.priority === 'high' || alert.severity === 'critical'
+                            ? 'text-red-500' 
+                            : alert.priority === 'medium'
+                              ? 'text-yellow-500'
+                              : 'text-blue-500'
+                        }`} />
+                        <AlertTitle className="font-semibold flex items-center gap-2">
+                          {alert.priority === 'high' && '🔥'}
+                          {alert.priority === 'medium' && '⚠️'}
+                          {alert.priority === 'low' && 'ℹ️'}
+                          {alert.name || alert.rule_name || `Rule ${idx + 1}`}
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {alert.priority || 'normal'}
+                          </Badge>
+                        </AlertTitle>
+                        <AlertDescription className="mt-2">
+                          <div className="text-sm space-y-1">
+                            <p className="font-mono bg-background/50 p-2 rounded text-xs">
+                              IF {alert.condition || alert.trigger_condition || 'condition'} → {alert.action || alert.message || 'Send Alert'}
+                            </p>
+                            {alert.description && (
+                              <p className="text-muted-foreground text-xs mt-2">
+                                {alert.description}
+                              </p>
+                            )}
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Cpu className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>No conditional alerts configured</p>
+                    <p className="text-xs mt-1">Add conditional_alerts to enable AI monitoring</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Example Rule Card */}
+            {conditionalAlerts.length === 0 && (
+              <Card className="bg-card/50 border-dashed">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground mb-2">Example structure:</p>
+                  <pre className="text-xs bg-muted/50 p-3 rounded overflow-x-auto">
+{`{
+  "name": "Heat Stress Rule",
+  "condition": "temp > 30",
+  "action": "Send High Priority Alert",
+  "priority": "high"
+}`}
+                  </pre>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          {/* ============ TAB 4: KNOWLEDGE BASE (Wiki) ============ */}
-          <TabsContent value="knowledge" className="mt-4 space-y-4">
-            
-            {/* TRAINING ADVICE - EXPLICIT FROM cultivation_tips */}
+          {/* ============ TAB 5: WIKI / KNOWLEDGE BASE ============ */}
+          <TabsContent value="wiki" className="mt-4 space-y-4">
+            {/* Training Advice */}
             {cultivationTips?.training && (
               <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <GraduationCap className="h-4 w-4 text-violet-400" />
-                    🎓 Тренування (Training Advice)
+                    🎓 Training Advice
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {cultivationTips.training}
-                  </p>
+                  <p className="text-sm leading-relaxed">{cultivationTips.training}</p>
                 </CardContent>
               </Card>
             )}
 
-            {/* SUBSTRATE / pH - EXPLICIT FROM cultivation_tips */}
+            {/* Substrate */}
             {cultivationTips?.substrate && (
               <Card className="bg-card/50">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Beaker className="h-4 w-4 text-amber-400" />
-                    🌱 Субстрат та pH
+                    🌱 Substrate & pH
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {cultivationTips.substrate}
-                  </p>
+                  <p className="text-sm leading-relaxed">{cultivationTips.substrate}</p>
                 </CardContent>
               </Card>
             )}
 
-            {/* Legacy recommendations.training and notes */}
-            {recommendations?.training && !cultivationTips?.training && (
-              <Card className="bg-card/50">
-                <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-violet-400" />
-                    🎓 Тренування
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 pt-0">
-                  <p className="text-sm text-foreground leading-relaxed">
-                    {recommendations.training}
-                  </p>
-                  {recommendations.notes && (
-                    <p className="text-sm text-muted-foreground mt-3 italic">
-                      💡 {recommendations.notes}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* WARNINGS - EXPLICIT FROM cultivation_tips */}
+            {/* Warnings */}
             {cultivationTips?.warnings && Array.isArray(cultivationTips.warnings) && cultivationTips.warnings.length > 0 && (
               <Alert className="bg-yellow-500/10 border-yellow-500/30">
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
                 <AlertTitle className="text-yellow-400 font-semibold">
-                  ⚠️ Важливі Попередження
+                  ⚠️ Critical Warnings
                 </AlertTitle>
                 <AlertDescription>
                   <ul className="mt-3 space-y-2">
@@ -827,23 +882,13 @@ export function StrainDetailsDialog({
               </Alert>
             )}
 
-            {/* If no cultivation_tips at all */}
-            {!cultivationTips?.training && !cultivationTips?.substrate && !cultivationTips?.warnings?.length && !recommendations?.training && (
-              <Card>
-                <CardContent className="p-6 text-center text-muted-foreground">
-                  <GraduationCap className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
-                  <p>База знань для цього сорту ще не заповнена</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Full Description */}
+            {/* Description */}
             {strain.description && (
               <Card className="bg-card/50">
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-primary" />
-                    📝 Повний опис
+                    📝 Full Description
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">
@@ -853,17 +898,27 @@ export function StrainDetailsDialog({
                 </CardContent>
               </Card>
             )}
+
+            {/* Empty state */}
+            {!cultivationTips?.training && !cultivationTips?.substrate && !cultivationTips?.warnings?.length && !strain.description && (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  <GraduationCap className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>Wiki not populated for this strain</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
 
         {/* Footer Actions */}
         <div className="flex gap-3 pt-4 border-t border-border">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-            Закрити
+            Close
           </Button>
           <Button onClick={handleGrow} className="flex-1 bg-primary hover:bg-primary/90 gap-2">
             <Leaf className="h-4 w-4" />
-            🌱 Вирощувати
+            🌱 Grow This
           </Button>
         </div>
       </DialogContent>
