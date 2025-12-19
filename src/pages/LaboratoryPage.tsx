@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 import { ActiveGrowsSection } from '@/components/laboratory/ActiveGrowsSection';
 import { AllPlantsDrawer } from '@/components/laboratory/AllPlantsDrawer';
-
+import { MasterPlantController } from '@/components/laboratory/MasterPlantController';
 interface ToolConfig {
   id: string;
   icon: React.ElementType;
@@ -77,6 +77,20 @@ const LaboratoryPage = () => {
         </div>
         <AllPlantsDrawer />
       </div>
+
+      {/* Master Plant Controller */}
+      <Card className="border-2 border-amber-500/20 bg-amber-500/5">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-amber-500" />
+            <CardTitle className="text-lg">🎯 Climate Controller</CardTitle>
+          </div>
+          <CardDescription>Master Plant dictates the environment, neighbors must adapt</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MasterPlantController />
+        </CardContent>
+      </Card>
 
       {/* Active Grows Section */}
       <Card className="border-2 border-green-500/20 bg-green-500/5">
