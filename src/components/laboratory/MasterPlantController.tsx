@@ -249,9 +249,9 @@ export const MasterPlantController = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Skeleton className="h-72" />
-        <Skeleton className="h-72" />
+      <div className="grid grid-cols-1 gap-4">
+        <Skeleton className="h-56 md:h-72" />
+        <Skeleton className="h-56 md:h-72" />
       </div>
     );
   }
@@ -280,8 +280,8 @@ export const MasterPlantController = () => {
   const masterStrainData = masterPlant?.library_strains;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Left: Master Plant Dashboard */}
+    <div className="grid grid-cols-1 gap-4">
+      {/* Master Plant Dashboard */}
       <Card className="relative overflow-hidden border-2 border-amber-500/30">
         {/* Background Image */}
         {masterStrainData?.photo_url && (
@@ -294,39 +294,39 @@ export const MasterPlantController = () => {
           </div>
         )}
         
-        <CardContent className="relative p-5 space-y-4">
+        <CardContent className="relative p-4 md:p-5 space-y-3 md:space-y-4">
           {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/40">
-              <Crown className="h-5 w-5 text-amber-500" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-1.5 md:p-2 rounded-lg bg-amber-500/20 border border-amber-500/40">
+              <Crown className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-lg text-foreground">Master Plant</h3>
-              <p className="text-sm text-muted-foreground">Controls the environment</p>
+              <h3 className="font-bold text-base md:text-lg text-foreground">Master Plant</h3>
+              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Controls the environment</p>
             </div>
-            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40">
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-xs">
               👑 Controller
             </Badge>
           </div>
 
           {/* Plant Info with Photo */}
           {masterPlant && (
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-3 p-2.5 md:p-3 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50">
               {masterStrainData?.photo_url ? (
                 <div 
-                  className="w-16 h-16 rounded-xl bg-cover bg-center border-2 border-amber-500/30 shrink-0"
+                  className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-cover bg-center border-2 border-amber-500/30 shrink-0"
                   style={{ backgroundImage: `url(${masterStrainData.photo_url})` }}
                 />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
-                  <Star className="h-6 w-6 text-amber-500" />
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
+                  <Star className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-foreground truncate text-lg">
+                <h4 className="font-semibold text-foreground truncate text-base md:text-lg">
                   {masterPlant.custom_name || 'Unnamed Plant'}
                 </h4>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-xs md:text-sm text-muted-foreground truncate">
                   {masterStrainData?.name || 'Unknown Strain'}
                 </p>
                 {masterCurrentStage && (
@@ -338,35 +338,35 @@ export const MasterPlantController = () => {
             </div>
           )}
 
-          {/* Active Targets - Big Metrics */}
+          {/* Active Targets - Responsive Metrics */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <ArrowRight className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-muted-foreground">
+              <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
               Active Environment Targets
             </div>
             
             {masterTargets ? (
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-                  <Thermometer className="h-5 w-5 text-red-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-foreground">{masterTargets.temp}°</p>
-                  <p className="text-xs text-muted-foreground mt-1">Temperature</p>
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
+                <div className="p-2.5 md:p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+                  <Thermometer className="h-4 w-4 md:h-5 md:w-5 text-red-400 mx-auto mb-1 md:mb-2" />
+                  <p className="text-lg md:text-2xl font-bold text-foreground">{masterTargets.temp}°</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Temp</p>
                 </div>
-                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
-                  <Droplets className="h-5 w-5 text-blue-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-foreground">{masterTargets.humidity}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">Humidity</p>
+                <div className="p-2.5 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
+                  <Droplets className="h-4 w-4 md:h-5 md:w-5 text-blue-400 mx-auto mb-1 md:mb-2" />
+                  <p className="text-lg md:text-2xl font-bold text-foreground">{masterTargets.humidity}%</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">RH</p>
                 </div>
-                <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
-                  <Wind className="h-5 w-5 text-purple-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-foreground">{masterTargets.vpd.toFixed(1)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">VPD</p>
+                <div className="p-2.5 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
+                  <Wind className="h-4 w-4 md:h-5 md:w-5 text-purple-400 mx-auto mb-1 md:mb-2" />
+                  <p className="text-lg md:text-2xl font-bold text-foreground">{masterTargets.vpd.toFixed(1)}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">VPD</p>
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-muted/30 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No environment targets defined in strain passport
+              <div className="p-3 md:p-4 rounded-xl bg-muted/30 text-center">
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  No environment targets defined
                 </p>
               </div>
             )}
@@ -374,22 +374,22 @@ export const MasterPlantController = () => {
         </CardContent>
       </Card>
 
-      {/* Right: Neighbors Analysis */}
+      {/* Neighbors Analysis */}
       <Card className="border border-border/50">
-        <CardContent className="p-5 space-y-4">
+        <CardContent className="p-4 md:p-5 space-y-3 md:space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-lg text-foreground">Neighbors Analysis</h3>
-              <p className="text-sm text-muted-foreground">Climate compatibility check</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-bold text-base md:text-lg text-foreground">Neighbors</h3>
+              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Compatibility check</p>
             </div>
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="text-xs shrink-0">
               {neighborPlants.length} plants
             </Badge>
           </div>
 
-          {/* Neighbor Cards */}
-          <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+          {/* Neighbor Cards - Horizontal scroll on mobile, grid on larger */}
+          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
             {neighborPlants.map((plant) => {
               const strainData = plant.library_strains;
               const growingParams = strainData?.growing_params as GrowingParams | null;
@@ -422,44 +422,42 @@ export const MasterPlantController = () => {
               return (
                 <div
                   key={plant.id}
-                  className={`p-3 rounded-xl border transition-all ${
+                  className={`min-w-[260px] md:min-w-0 snap-start p-3 rounded-xl border transition-all ${
                     compatibility ? statusStyles[compatibility.status] : 'bg-muted/30 border-border/50'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2.5">
                     {/* Photo */}
                     {strainData?.photo_url ? (
                       <div 
-                        className="w-12 h-12 rounded-lg bg-cover bg-center border border-border shrink-0"
+                        className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-cover bg-center border border-border shrink-0"
                         style={{ backgroundImage: `url(${strainData.photo_url})` }}
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
                         <Star className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
                     
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-foreground truncate">
-                          {plant.custom_name || 'Unnamed'}
-                        </h4>
-                        {currentStage && (
-                          <Badge variant="outline" className="text-xs capitalize shrink-0">
-                            {currentStage}
-                          </Badge>
-                        )}
-                      </div>
+                      <h4 className="font-medium text-sm md:text-base text-foreground truncate">
+                        {plant.custom_name || 'Unnamed'}
+                      </h4>
                       <p className="text-xs text-muted-foreground truncate">
-                        {strainData?.name || 'Unknown Strain'}
+                        {strainData?.name || 'Unknown'}
                       </p>
+                      {currentStage && (
+                        <Badge variant="outline" className="text-[10px] capitalize mt-1">
+                          {currentStage}
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Status Icon */}
                     <div className="shrink-0">
                       {compatibility ? (
-                        <StatusIcon className={`h-6 w-6 ${statusColor[compatibility.status]}`} />
+                        <StatusIcon className={`h-5 w-5 md:h-6 md:w-6 ${statusColor[compatibility.status]}`} />
                       ) : (
                         <span className="text-xs text-muted-foreground">N/A</span>
                       )}
@@ -473,10 +471,10 @@ export const MasterPlantController = () => {
                       compatibility.status === 'warning' ? 'bg-amber-500/10' : 
                       'bg-green-500/10'
                     }`}>
-                      <p className={`text-sm font-medium ${statusColor[compatibility.status]}`}>
+                      <p className={`text-xs md:text-sm font-medium ${statusColor[compatibility.status]}`}>
                         {compatibility.status === 'sync' ? '✅' : '⚠️'} {compatibility.message}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 line-clamp-2">
                         {compatibility.details}
                       </p>
                     </div>
