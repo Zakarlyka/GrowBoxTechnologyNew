@@ -219,9 +219,9 @@ export const ActiveGrowsSection = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-48 rounded-xl" />
+          <Skeleton key={i} className="h-40 md:h-48 rounded-xl" />
         ))}
       </div>
     );
@@ -230,10 +230,10 @@ export const ActiveGrowsSection = () => {
   if (!plants || plants.length === 0) {
     return (
       <Card className="border-dashed border-2 border-muted-foreground/20">
-        <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-          <Sprout className="h-12 w-12 text-muted-foreground/50 mb-3" />
-          <p className="text-muted-foreground">Немає активних рослин</p>
-          <p className="text-sm text-muted-foreground/70">
+        <CardContent className="flex flex-col items-center justify-center py-6 md:py-8 text-center">
+          <Sprout className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/50 mb-2 md:mb-3" />
+          <p className="text-sm md:text-base text-muted-foreground">Немає активних рослин</p>
+          <p className="text-xs md:text-sm text-muted-foreground/70">
             Додайте рослину з Бібліотеки сортів
           </p>
         </CardContent>
@@ -242,7 +242,7 @@ export const ActiveGrowsSection = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
       {plants.map((plant) => {
         const stage = plant.current_stage || 'seedling';
         const StageIcon = stageIcons[stage] || Sprout;
@@ -262,7 +262,7 @@ export const ActiveGrowsSection = () => {
         return (
           <Card
             key={plant.id}
-            className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl relative overflow-hidden min-h-[200px]"
+            className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl relative overflow-hidden min-h-[180px] md:min-h-[200px]"
             onClick={() => handlePlantClick(plant)}
           >
             {/* Background Image */}
@@ -280,28 +280,28 @@ export const ActiveGrowsSection = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-muted/50 to-muted" />
             )}
 
-            <CardContent className="relative p-4 h-full flex flex-col">
+            <CardContent className="relative p-3 md:p-4 h-full flex flex-col">
               {/* Header */}
-              <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-lg text-foreground truncate leading-tight">
+                  <h4 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">
                     {plant.custom_name || 'Unnamed Plant'}
                   </h4>
                   {strainName && (
-                    <Badge variant="secondary" className="mt-1 text-xs font-medium bg-background/60 backdrop-blur-sm">
+                    <Badge variant="secondary" className="mt-1 text-[10px] md:text-xs font-medium bg-background/60 backdrop-blur-sm">
                       {strainName}
                     </Badge>
                   )}
                 </div>
-                <div className={`p-2 rounded-lg bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
-                  <StageIcon className="h-5 w-5" />
+                <div className={`p-1.5 md:p-2 rounded-lg bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
+                  <StageIcon className="h-4 w-4 md:h-5 md:w-5" />
                 </div>
               </div>
 
               {/* Stage Info */}
               {stageInfo && (
-                <div className="flex items-center gap-2 text-sm mb-3">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm mb-2 md:mb-3">
+                  <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
                   <span className={`font-semibold capitalize ${stageTextColor}`}>
                     {stageInfo.stageName}
                   </span>
@@ -313,7 +313,7 @@ export const ActiveGrowsSection = () => {
 
               {/* Location */}
               {plant.devices?.name && (
-                <p className="text-xs text-muted-foreground mb-3 truncate">
+                <p className="text-[10px] md:text-xs text-muted-foreground mb-2 md:mb-3 truncate">
                   📍 {plant.devices.name}
                 </p>
               )}
@@ -323,14 +323,14 @@ export const ActiveGrowsSection = () => {
 
               {/* Progress Bar */}
               {progress && (
-                <div className="space-y-1.5 mb-3">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Overall Progress</span>
+                <div className="space-y-1 md:space-y-1.5 mb-2 md:mb-3">
+                  <div className="flex justify-between text-[10px] md:text-xs">
+                    <span className="text-muted-foreground">Progress</span>
                     <span className="font-bold text-foreground">
                       Day {progress.currentDay} / {progress.totalDays}
                     </span>
                   </div>
-                  <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
+                  <div className="relative h-2 md:h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
                     <div 
                       className={`h-full transition-all duration-500 ${progressBarColor}`}
                       style={{ width: `${progress.percentage}%` }}
@@ -341,19 +341,19 @@ export const ActiveGrowsSection = () => {
 
               {/* Next Alert */}
               {nextAlert && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs">
-                  <Bell className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                <div className="flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] md:text-xs">
+                  <Bell className="h-3 w-3 md:h-3.5 md:w-3.5 text-amber-400 shrink-0" />
                   <span className="text-amber-200 truncate">
                     <span className="font-semibold">
-                      {nextAlert.daysUntil === 1 ? 'Tomorrow' : `In ${nextAlert.daysUntil} days`}:
+                      {nextAlert.daysUntil === 1 ? 'Tomorrow' : `In ${nextAlert.daysUntil}d`}:
                     </span>{' '}
                     {nextAlert.message}
                   </span>
                 </div>
               )}
 
-              {/* Quick Actions Overlay */}
-              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              {/* Quick Actions Overlay - Hide on touch devices */}
+              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center gap-3">
                 <Button
                   size="sm"
                   variant="outline"

@@ -257,31 +257,31 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0">
-        <SheetHeader className="p-6 pb-4 border-b border-border/50">
-          <SheetTitle className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/30">
-              <Leaf className="h-5 w-5 text-green-500" />
+      <SheetContent side="right" className="w-full sm:max-w-md p-0">
+        <SheetHeader className="p-4 md:p-6 pb-3 md:pb-4 border-b border-border/50">
+          <SheetTitle className="flex items-center gap-2 text-base md:text-lg">
+            <div className="p-1.5 md:p-2 rounded-lg bg-green-500/10 border border-green-500/30">
+              <Leaf className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
             </div>
             Мої рослини
           </SheetTitle>
-          <SheetDescription>
+          <SheetDescription className="text-xs md:text-sm">
             {plants?.length || 0} активних рослин
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-120px)]">
-          <div className="p-4 space-y-3">
+        <ScrollArea className="h-[calc(100vh-100px)] md:h-[calc(100vh-120px)]">
+          <div className="p-3 md:p-4 space-y-2.5 md:space-y-3">
             {isLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5 md:space-y-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-44 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-36 md:h-44 w-full rounded-xl" />
                 ))}
               </div>
             ) : !plants || plants.length === 0 ? (
-              <div className="text-center py-16">
-                <Leaf className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground">Немає активних рослин</p>
+              <div className="text-center py-12 md:py-16">
+                <Leaf className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground/30 mx-auto mb-3 md:mb-4" />
+                <p className="text-sm md:text-base text-muted-foreground">Немає активних рослин</p>
               </div>
             ) : (
               plants.map((plant) => {
@@ -323,31 +323,31 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
                     </div>
 
                     {/* Content */}
-                    <div className="relative p-4 space-y-3">
+                    <div className="relative p-3 md:p-4 space-y-2.5 md:space-y-3">
                       {/* Header Row */}
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2 md:gap-3">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-lg font-bold text-foreground truncate">
+                          <h4 className="text-base md:text-lg font-bold text-foreground truncate">
                             {plant.custom_name || 'Unnamed Plant'}
                           </h4>
                           {strainName && (
                             <Badge 
                               variant="secondary" 
-                              className="mt-1 bg-background/60 backdrop-blur-sm text-xs"
+                              className="mt-1 bg-background/60 backdrop-blur-sm text-[10px] md:text-xs"
                             >
                               {strainName}
                             </Badge>
                           )}
                         </div>
-                        <div className={`p-2.5 rounded-xl bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
-                          <StageIcon className="h-5 w-5" />
+                        <div className={`p-2 md:p-2.5 rounded-xl bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
+                          <StageIcon className="h-4 w-4 md:h-5 md:w-5" />
                         </div>
                       </div>
 
                       {/* Stage Info */}
                       {stageInfo && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
+                          <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
                           <span className={`font-semibold capitalize ${stageTextColor}`}>
                             {stageInfo.stageName}
                           </span>
@@ -355,7 +355,7 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
                             Day {stageInfo.dayInStage}/{stageInfo.stageDuration}
                           </span>
                           {plant.devices?.name && (
-                            <span className="text-xs text-muted-foreground ml-auto">
+                            <span className="text-[10px] md:text-xs text-muted-foreground ml-auto">
                               📍 {plant.devices.name}
                             </span>
                           )}
@@ -364,14 +364,14 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
 
                       {/* Progress Bar */}
                       {progress && (
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between text-xs">
+                        <div className="space-y-1 md:space-y-1.5">
+                          <div className="flex justify-between text-[10px] md:text-xs">
                             <span className="text-muted-foreground">Progress</span>
                             <span className="font-bold text-foreground">
                               Day {progress.currentDay} / {progress.totalDays}
                             </span>
                           </div>
-                          <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
+                          <div className="relative h-2 md:h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
                             <div 
                               className={`h-full transition-all duration-500 ${progressBarColor}`}
                               style={{ width: `${progress.percentage}%` }}
@@ -382,7 +382,7 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
 
                       {/* Bottom Row: Next Alert OR Stage Targets */}
                       {nextAlert ? (
-                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-center gap-1.5 md:gap-2 p-2 md:p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
                           <Bell className="h-4 w-4 text-amber-400 shrink-0" />
                           <span className="text-sm text-amber-200 truncate">
                             <span className="font-semibold">
