@@ -219,8 +219,18 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
   const getStageTargets = (growingParams: GrowingParams | null, currentStage: string | null) => {
     if (!growingParams?.environment_targets || !currentStage) return null;
 
-    const stageTarget = growingParams.environment_targets.find(
-      t => t.stage?.toLowerCase() === currentStage?.toLowerCase()
+    // Handle both array and object formats for environment_targets
+    let targets = growingParams.environment_targets;
+    if (!Array.isArray(targets)) {
+      if (typeof targets === 'object') {
+        targets = Object.values(targets);
+      } else {
+        return null;
+      }
+    }
+
+    const stageTarget = targets.find(
+      (t: any) => t?.stage?.toLowerCase() === currentStage?.toLowerCase()
     );
 
     if (!stageTarget) return null;
