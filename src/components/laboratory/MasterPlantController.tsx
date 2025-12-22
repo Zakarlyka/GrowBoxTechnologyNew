@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,49 +14,19 @@ import {
   AlertTriangle,
   XCircle,
   Star,
-  ArrowRight
+  ArrowRight,
+  Link2,
+  Clock,
+  Bell
 } from 'lucide-react';
 import { calculatePlantAge } from '@/hooks/usePlantData';
-import { Json } from '@/integrations/supabase/types';
-import { toast } from 'sonner';
-
-interface GrowingParams {
-  stages?: Array<{
-    name: string;
-    days: number;
-  }>;
-  environment_targets?: Array<{
-    stage: string;
-    temp_day?: number;
-    temp_night?: number;
-    humidity_min?: number;
-    humidity_max?: number;
-    vpd_target?: number;
-  }>;
-  [key: string]: unknown;
-}
-
-interface Plant {
-  id: string;
-  custom_name: string | null;
-  current_stage: string | null;
-  start_date: string | null;
-  is_main: boolean | null;
-  strain_id: number | null;
-  library_strains?: {
-    name: string;
-    flowering_days: number | null;
-    photo_url: string | null;
-    growing_params: Json | null;
-  } | null;
-}
-
-interface EnvironmentTarget {
-  temp: number;
-  humidity: number;
-  vpd: number;
-  stageName: string;
-}
+import { 
+  usePlantsWithStrains,
+  calculateStageInfo,
+  getEnvironmentTargets,
+  getNextAlert,
+  CalculatedTargets
+} from '@/hooks/usePlantsWithStrains';
 
 interface CompatibilityResult {
   status: 'sync' | 'warning' | 'critical';
@@ -69,126 +38,40 @@ interface CompatibilityResult {
 }
 
 export const MasterPlantController = () => {
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { 
+    plants, 
+    masterPlant, 
+    neighborPlants, 
+    isLoading, 
+    setMaster, 
+    isSettingMaster 
+  } = usePlantsWithStrains();
 
-  const { data: plants, isLoading } = useQuery({
-    queryKey: ['master-plants'],
-    queryFn: async (): Promise<Plant[]> => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return [];
+  // Calculate master plant targets
+  const masterStageInfo = useMemo(() => {
+    if (!masterPlant) return null;
+    return calculateStageInfo(masterPlant.start_date, masterPlant.growing_params);
+  }, [masterPlant]);
 
-      const { data, error } = await supabase
-        .from('plants')
-        .select(`
-          id,
-          custom_name,
-          current_stage,
-          start_date,
-          is_main,
-          strain_id,
-          library_strains (name, flowering_days, photo_url, growing_params)
-        `)
-        .eq('user_id', userData.user.id)
-        .neq('current_stage', 'harvested')
-        .order('is_main', { ascending: false })
-        .order('created_at', { ascending: false });
+  const masterTargets = useMemo(() => {
+    if (!masterPlant || !masterStageInfo) return null;
+    return getEnvironmentTargets(masterPlant.growing_params, masterStageInfo.stageName);
+  }, [masterPlant, masterStageInfo]);
 
-      if (error) {
-        console.error('Error fetching plants:', error);
-        return [];
-      }
+  const masterNextAlert = useMemo(() => {
+    if (!masterPlant) return null;
+    return getNextAlert(masterPlant.start_date, masterPlant.growing_params);
+  }, [masterPlant]);
 
-      return data || [];
-    },
-  });
-
-  const setMasterMutation = useMutation({
-    mutationFn: async (plantId: string) => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('Not authenticated');
-
-      await supabase
-        .from('plants')
-        .update({ is_main: false })
-        .eq('user_id', userData.user.id);
-
-      const { error } = await supabase
-        .from('plants')
-        .update({ is_main: true })
-        .eq('id', plantId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['master-plants'] });
-      queryClient.invalidateQueries({ queryKey: ['active-plants'] });
-      toast.success('Master plant updated');
-    },
-    onError: () => {
-      toast.error('Failed to update master plant');
-    },
-  });
-
-  const getCurrentStage = (startDate: string | null, growingParams: GrowingParams | null): string | null => {
-    if (!startDate || !growingParams?.stages) return null;
-    
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-
-    let cumulativeDays = 0;
-    for (const stage of growingParams.stages) {
-      if (age <= cumulativeDays + stage.days) {
-        return stage.name.toLowerCase();
-      }
-      cumulativeDays += stage.days;
-    }
-
-    return growingParams.stages[growingParams.stages.length - 1]?.name.toLowerCase() || null;
-  };
-
-  const getEnvironmentTargets = (growingParams: GrowingParams | null, stageName: string | null): EnvironmentTarget | null => {
-    if (!growingParams?.environment_targets || !stageName) return null;
-
-    // Handle both array and object formats for environment_targets
-    let targets = growingParams.environment_targets;
-    if (!Array.isArray(targets)) {
-      // If it's an object, try to convert or extract array
-      if (typeof targets === 'object') {
-        targets = Object.values(targets);
-      } else {
-        return null;
-      }
-    }
-
-    const stageTarget = targets.find(
-      (t: any) => t?.stage?.toLowerCase() === stageName?.toLowerCase()
-    );
-
-    if (!stageTarget) return null;
-
-    const avgTemp = stageTarget.temp_day 
-      ? (stageTarget.temp_night ? (stageTarget.temp_day + stageTarget.temp_night) / 2 : stageTarget.temp_day)
-      : 24;
-    
-    const avgHumidity = stageTarget.humidity_min !== undefined && stageTarget.humidity_max !== undefined
-      ? (stageTarget.humidity_min + stageTarget.humidity_max) / 2
-      : 60;
-
-    return {
-      temp: Math.round(avgTemp),
-      humidity: Math.round(avgHumidity),
-      vpd: stageTarget.vpd_target || 1.0,
-      stageName: stageName,
-    };
-  };
-
-  const compareCompatibility = (masterTargets: EnvironmentTarget, neighborTargets: EnvironmentTarget): CompatibilityResult => {
+  // Compare compatibility between master and neighbor
+  const compareCompatibility = (masterTargets: CalculatedTargets, neighborTargets: CalculatedTargets): CompatibilityResult => {
     const tempDiff = Math.abs(masterTargets.temp - neighborTargets.temp);
     const humidityDiff = Math.abs(masterTargets.humidity - neighborTargets.humidity);
     const vpdDiff = Math.abs(masterTargets.vpd - neighborTargets.vpd);
 
-    // Humidity conflict > 10%
-    if (humidityDiff > 10) {
+    // Humidity conflict > 15% (as per user request)
+    if (humidityDiff > 15) {
       const wantsMore = neighborTargets.humidity > masterTargets.humidity;
       return {
         status: 'critical',
@@ -196,8 +79,8 @@ export const MasterPlantController = () => {
         humidityDiff,
         vpdDiff,
         message: wantsMore 
-          ? `Wants ${Math.round(neighborTargets.humidity)}% RH, but Master set to ${Math.round(masterTargets.humidity)}%!`
-          : `Risk of Mold: ${Math.round(masterTargets.humidity)}% is too humid for ${neighborTargets.stageName}`,
+          ? `⚠️ Climate Conflict: Wants ${Math.round(neighborTargets.humidity)}% RH`
+          : `⚠️ Climate Conflict: ${Math.round(masterTargets.humidity)}% is too humid`,
         details: `Needs ${Math.round(neighborTargets.humidity)}% RH for optimal ${neighborTargets.stageName} growth`,
       };
     }
@@ -208,7 +91,7 @@ export const MasterPlantController = () => {
         tempDiff,
         humidityDiff,
         vpdDiff,
-        message: `Temperature ${tempDiff > 0 && masterTargets.temp > neighborTargets.temp ? 'too high' : 'too low'} for ${neighborTargets.stageName}`,
+        message: `Temperature ${masterTargets.temp > neighborTargets.temp ? 'too high' : 'too low'}`,
         details: `Needs ${neighborTargets.temp}°C, Master set to ${masterTargets.temp}°C`,
       };
     }
@@ -234,30 +117,6 @@ export const MasterPlantController = () => {
     };
   };
 
-  const masterPlant = useMemo(() => {
-    return plants?.find(p => p.is_main) || plants?.[0] || null;
-  }, [plants]);
-
-  const neighborPlants = useMemo(() => {
-    if (!masterPlant) return [];
-    return plants?.filter(p => p.id !== masterPlant.id) || [];
-  }, [plants, masterPlant]);
-
-  const masterTargets = useMemo(() => {
-    if (!masterPlant) return null;
-    const strainData = masterPlant.library_strains;
-    const growingParams = strainData?.growing_params as GrowingParams | null;
-    const currentStage = getCurrentStage(masterPlant.start_date, growingParams);
-    return getEnvironmentTargets(growingParams, currentStage);
-  }, [masterPlant]);
-
-  const masterCurrentStage = useMemo(() => {
-    if (!masterPlant) return null;
-    const strainData = masterPlant.library_strains;
-    const growingParams = strainData?.growing_params as GrowingParams | null;
-    return getCurrentStage(masterPlant.start_date, growingParams);
-  }, [masterPlant]);
-
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-4">
@@ -277,29 +136,19 @@ export const MasterPlantController = () => {
     );
   }
 
-  if (plants.length === 1) {
-    return (
-      <Alert>
-        <Crown className="h-4 w-4" />
-        <AlertDescription>
-          Only one plant active. Add more plants to compare climate compatibility.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const masterStrainData = masterPlant?.library_strains;
+  const masterAge = masterPlant ? calculatePlantAge(masterPlant.start_date) : null;
+  const displayPhoto = masterPlant?.photo_url || masterPlant?.strain_photo_url;
 
   return (
     <div className="grid grid-cols-1 gap-4">
       {/* Master Plant Dashboard */}
       <Card className="relative overflow-hidden border-2 border-amber-500/30">
         {/* Background Image */}
-        {masterStrainData?.photo_url && (
+        {displayPhoto && (
           <div className="absolute inset-0">
             <div 
               className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-30"
-              style={{ backgroundImage: `url(${masterStrainData.photo_url})` }}
+              style={{ backgroundImage: `url(${displayPhoto})` }}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
           </div>
@@ -323,10 +172,10 @@ export const MasterPlantController = () => {
           {/* Plant Info with Photo */}
           {masterPlant && (
             <div className="flex items-center gap-3 p-2.5 md:p-3 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50">
-              {masterStrainData?.photo_url ? (
+              {displayPhoto ? (
                 <div 
                   className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-cover bg-center border-2 border-amber-500/30 shrink-0"
-                  style={{ backgroundImage: `url(${masterStrainData.photo_url})` }}
+                  style={{ backgroundImage: `url(${displayPhoto})` }}
                 />
               ) : (
                 <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
@@ -338,18 +187,53 @@ export const MasterPlantController = () => {
                   {masterPlant.custom_name || 'Unnamed Plant'}
                 </h4>
                 <p className="text-xs md:text-sm text-muted-foreground truncate">
-                  {masterStrainData?.name || 'Unknown Strain'}
+                  {masterPlant.strain_name || 'Unknown Strain'}
                 </p>
-                {masterCurrentStage && (
-                  <Badge variant="secondary" className="mt-1 capitalize text-xs">
-                    {masterCurrentStage}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2 mt-1">
+                  {masterStageInfo && (
+                    <Badge variant="secondary" className="capitalize text-xs">
+                      {masterStageInfo.stageName}
+                    </Badge>
+                  )}
+                  {masterAge !== null && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Day {masterAge}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Active Targets - Responsive Metrics */}
+          {/* Missing Strain Warning */}
+          {masterPlant && !masterPlant.strain_id && (
+            <Button 
+              variant="outline" 
+              className="w-full gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+              onClick={() => navigate('/library')}
+            >
+              <Link2 className="h-4 w-4" />
+              🔗 Link to Strain Library
+            </Button>
+          )}
+
+          {/* Next Alert */}
+          {masterNextAlert && (
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Bell className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="text-sm text-amber-200 truncate">
+                <span className="font-semibold">
+                  {masterNextAlert.daysUntil === 0 ? 'Today' : 
+                   masterNextAlert.daysUntil === 1 ? 'Tomorrow' : 
+                   `In ${masterNextAlert.daysUntil}d`}:
+                </span>{' '}
+                {masterNextAlert.message}
+              </span>
+            </div>
+          )}
+
+          {/* Active Targets */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-muted-foreground">
               <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
@@ -377,7 +261,9 @@ export const MasterPlantController = () => {
             ) : (
               <div className="p-3 md:p-4 rounded-xl bg-muted/30 text-center">
                 <p className="text-xs md:text-sm text-muted-foreground">
-                  No environment targets defined
+                  {masterPlant?.strain_id 
+                    ? 'No environment targets defined in strain passport'
+                    : 'Link a strain to see environment targets'}
                 </p>
               </div>
             )}
@@ -386,128 +272,141 @@ export const MasterPlantController = () => {
       </Card>
 
       {/* Neighbors Analysis */}
-      <Card className="border border-border/50">
-        <CardContent className="p-4 md:p-5 space-y-3 md:space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="font-bold text-base md:text-lg text-foreground">Neighbors</h3>
-              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Compatibility check</p>
+      {neighborPlants.length > 0 && (
+        <Card className="border border-border/50">
+          <CardContent className="p-4 md:p-5 space-y-3 md:space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-bold text-base md:text-lg text-foreground">Neighbors</h3>
+                <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Compatibility check</p>
+              </div>
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {neighborPlants.length} plants
+              </Badge>
             </div>
-            <Badge variant="secondary" className="text-xs shrink-0">
-              {neighborPlants.length} plants
-            </Badge>
-          </div>
 
-          {/* Neighbor Cards - Horizontal scroll on mobile, grid on larger */}
-          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
-            {neighborPlants.map((plant) => {
-              const strainData = plant.library_strains;
-              const growingParams = strainData?.growing_params as GrowingParams | null;
-              const currentStage = getCurrentStage(plant.start_date, growingParams);
-              const neighborTargets = getEnvironmentTargets(growingParams, currentStage);
+            {/* Neighbor Cards */}
+            <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-3 overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
+              {neighborPlants.map((plant) => {
+                const stageInfo = calculateStageInfo(plant.start_date, plant.growing_params);
+                const neighborTargets = getEnvironmentTargets(plant.growing_params, stageInfo?.stageName || null);
+                const nextAlert = getNextAlert(plant.start_date, plant.growing_params);
+                const plantAge = calculatePlantAge(plant.start_date);
 
-              let compatibility: CompatibilityResult | null = null;
-              if (masterTargets && neighborTargets) {
-                compatibility = compareCompatibility(masterTargets, neighborTargets);
-              }
+                let compatibility: CompatibilityResult | null = null;
+                if (masterTargets && neighborTargets) {
+                  compatibility = compareCompatibility(masterTargets, neighborTargets);
+                }
 
-              const statusStyles = {
-                sync: 'bg-green-500/5 border-green-500/30',
-                warning: 'bg-amber-500/5 border-amber-500/30',
-                critical: 'bg-red-500/5 border-red-500/30',
-              };
+                const statusStyles = {
+                  sync: 'bg-green-500/5 border-green-500/30',
+                  warning: 'bg-amber-500/5 border-amber-500/30',
+                  critical: 'bg-red-500/5 border-red-500/30',
+                };
 
-              const StatusIcon = compatibility?.status === 'sync' 
-                ? CheckCircle2 
-                : compatibility?.status === 'critical' 
-                  ? XCircle 
-                  : AlertTriangle;
+                const StatusIcon = compatibility?.status === 'sync' 
+                  ? CheckCircle2 
+                  : compatibility?.status === 'critical' 
+                    ? XCircle 
+                    : AlertTriangle;
 
-              const statusColor = {
-                sync: 'text-green-500',
-                warning: 'text-amber-500',
-                critical: 'text-red-500',
-              };
+                const statusColor = {
+                  sync: 'text-green-500',
+                  warning: 'text-amber-500',
+                  critical: 'text-red-500',
+                };
 
-              return (
-                <div
-                  key={plant.id}
-                  className={`min-w-[260px] md:min-w-0 snap-start p-3 rounded-xl border transition-all ${
-                    compatibility ? statusStyles[compatibility.status] : 'bg-muted/30 border-border/50'
-                  }`}
-                >
-                  <div className="flex items-start gap-2.5">
-                    {/* Photo */}
-                    {strainData?.photo_url ? (
-                      <div 
-                        className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-cover bg-center border border-border shrink-0"
-                        style={{ backgroundImage: `url(${strainData.photo_url})` }}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-                        <Star className="h-4 w-4 text-muted-foreground" />
+                const displayPhoto = plant.photo_url || plant.strain_photo_url;
+
+                return (
+                  <div
+                    key={plant.id}
+                    className={`min-w-[280px] md:min-w-0 snap-start p-3 rounded-xl border transition-all ${
+                      compatibility ? statusStyles[compatibility.status] : 'bg-muted/30 border-border/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {/* Photo */}
+                      {displayPhoto ? (
+                        <div 
+                          className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-cover bg-center border border-border shrink-0"
+                          style={{ backgroundImage: `url(${displayPhoto})` }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                          <Star className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm md:text-base text-foreground truncate">
+                          {plant.custom_name || 'Unnamed'}
+                        </h4>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {plant.strain_name || 'Unknown Strain'}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {stageInfo && (
+                            <Badge variant="outline" className="text-[10px] capitalize">
+                              {stageInfo.stageName}
+                            </Badge>
+                          )}
+                          {plantAge !== null && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Day {plantAge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status Icon */}
+                      {compatibility && (
+                        <StatusIcon className={`h-5 w-5 shrink-0 ${statusColor[compatibility.status]}`} />
+                      )}
+                    </div>
+
+                    {/* Compatibility Message */}
+                    {compatibility && (
+                      <div className="mt-2.5 text-xs">
+                        <p className={`font-medium ${statusColor[compatibility.status]}`}>
+                          {compatibility.message}
+                        </p>
+                        <p className="text-muted-foreground mt-0.5">{compatibility.details}</p>
                       </div>
                     )}
-                    
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm md:text-base text-foreground truncate">
-                        {plant.custom_name || 'Unnamed'}
-                      </h4>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {strainData?.name || 'Unknown'}
-                      </p>
-                      {currentStage && (
-                        <Badge variant="outline" className="text-[10px] capitalize mt-1">
-                          {currentStage}
-                        </Badge>
-                      )}
-                    </div>
 
-                    {/* Status Icon */}
-                    <div className="shrink-0">
-                      {compatibility ? (
-                        <StatusIcon className={`h-5 w-5 md:h-6 md:w-6 ${statusColor[compatibility.status]}`} />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">N/A</span>
-                      )}
-                    </div>
+                    {/* Next Alert */}
+                    {nextAlert && (
+                      <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-400">
+                        <Bell className="h-3 w-3" />
+                        <span className="truncate">
+                          {nextAlert.daysUntil === 0 ? 'Today' : 
+                           nextAlert.daysUntil === 1 ? 'Tomorrow' : 
+                           `In ${nextAlert.daysUntil}d`}: {nextAlert.message}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Set as Master Button */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-full mt-2 text-xs gap-1.5 h-8"
+                      onClick={() => setMaster(plant.id)}
+                      disabled={isSettingMaster}
+                    >
+                      <Crown className="h-3.5 w-3.5" />
+                      Set as Master
+                    </Button>
                   </div>
-
-                  {/* Compatibility Message */}
-                  {compatibility && (
-                    <div className={`mt-2 p-2 rounded-lg ${
-                      compatibility.status === 'critical' ? 'bg-red-500/10' : 
-                      compatibility.status === 'warning' ? 'bg-amber-500/10' : 
-                      'bg-green-500/10'
-                    }`}>
-                      <p className={`text-xs md:text-sm font-medium ${statusColor[compatibility.status]}`}>
-                        {compatibility.status === 'sync' ? '✅' : '⚠️'} {compatibility.message}
-                      </p>
-                      <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {compatibility.details}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Set as Master Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2 h-7 text-xs w-full hover:bg-amber-500/10"
-                    onClick={() => setMasterMutation.mutate(plant.id)}
-                    disabled={setMasterMutation.isPending}
-                  >
-                    <Crown className="h-3 w-3 mr-1.5" />
-                    Set as Master
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

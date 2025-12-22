@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import {
   Sheet,
   SheetContent,
@@ -23,50 +21,19 @@ import {
   Flower2, 
   Droplets,
   Sun,
-  Clock
+  Clock,
+  Crown
 } from 'lucide-react';
-import { calculatePlantAge, PLANT_STAGES } from '@/hooks/usePlantData';
-import { Json } from '@/integrations/supabase/types';
-
-interface GrowingParams {
-  stages?: Array<{
-    name: string;
-    days: number;
-  }>;
-  timeline_alerts?: Array<{
-    trigger_stage: string;
-    day_offset: number;
-    message: string;
-    type?: string;
-  }>;
-  environment_targets?: Array<{
-    stage: string;
-    temp_day?: number;
-    humidity_min?: number;
-    humidity_max?: number;
-    vpd_target?: number;
-  }>;
-  [key: string]: unknown;
-}
-
-interface Plant {
-  id: string;
-  custom_name: string | null;
-  current_stage: string | null;
-  start_date: string | null;
-  device_id: string | null;
-  strain_id: number | null;
-  library_strains?: {
-    name: string;
-    flowering_days: number | null;
-    photo_url: string | null;
-    growing_params: Json | null;
-  } | null;
-  devices?: {
-    id: string;
-    name: string;
-  } | null;
-}
+import { calculatePlantAge } from '@/hooks/usePlantData';
+import { 
+  usePlantsWithStrains,
+  calculateStageInfo,
+  getEnvironmentTargets,
+  getNextAlert,
+  calculateProgress,
+  getTotalLifecycleDays,
+  PlantWithStrain
+} from '@/hooks/usePlantsWithStrains';
 
 const stageIcons: Record<string, React.ElementType> = {
   seedling: Sprout,
@@ -99,162 +66,16 @@ interface AllPlantsDrawerProps {
 export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-
-  const { data: plants, isLoading } = useQuery({
-    queryKey: ['all-plants-drawer'],
-    queryFn: async (): Promise<Plant[]> => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return [];
-
-      const { data, error } = await supabase
-        .from('plants')
-        .select(`
-          id,
-          custom_name,
-          current_stage,
-          start_date,
-          device_id,
-          strain_id,
-          library_strains (name, flowering_days, photo_url, growing_params)
-        `)
-        .eq('user_id', userData.user.id)
-        .neq('current_stage', 'harvested')
-        .order('start_date', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching plants:', error);
-        return [];
-      }
-
-      // Fetch device names for each plant
-      const plantsWithDevices = await Promise.all(
-        (data || []).map(async (plant) => {
-          if (plant.device_id) {
-            const { data: deviceData } = await supabase
-              .from('devices')
-              .select('id, name')
-              .eq('device_id', plant.device_id)
-              .maybeSingle();
-            return { ...plant, devices: deviceData };
-          }
-          return { ...plant, devices: null };
-        })
-      );
-
-      return plantsWithDevices;
-    },
-    enabled: open,
-  });
-
-  const getStageLabel = (stage: string | null) => {
-    const found = PLANT_STAGES.find((s) => s.value === stage);
-    return found?.label || stage || 'Unknown';
-  };
-
-  // Calculate which stage the plant is in
-  const calculateStageInfo = (startDate: string | null, growingParams: GrowingParams | null) => {
-    if (!startDate || !growingParams?.stages) return null;
-    
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-
-    let cumulativeDays = 0;
-    for (const stage of growingParams.stages) {
-      if (age <= cumulativeDays + stage.days) {
-        const dayInStage = age - cumulativeDays;
-        return {
-          stageName: stage.name,
-          dayInStage,
-          stageDuration: stage.days,
-        };
-      }
-      cumulativeDays += stage.days;
-    }
-
-    const lastStage = growingParams.stages[growingParams.stages.length - 1];
-    return {
-      stageName: lastStage?.name || 'Complete',
-      dayInStage: age - (cumulativeDays - (lastStage?.days || 0)),
-      stageDuration: lastStage?.days || 0,
-    };
-  };
-
-  // Find the next upcoming alert
-  const getNextAlert = (startDate: string | null, growingParams: GrowingParams | null) => {
-    if (!startDate || !growingParams?.timeline_alerts || !growingParams?.stages) return null;
-
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-
-    const stageStartDays: Record<string, number> = {};
-    let cumulativeDays = 0;
-    for (const stage of growingParams.stages) {
-      stageStartDays[stage.name.toLowerCase()] = cumulativeDays;
-      cumulativeDays += stage.days;
-    }
-
-    const alertsWithDays = growingParams.timeline_alerts
-      .map(alert => {
-        const stageKey = alert.trigger_stage?.toLowerCase() || '';
-        const stageStart = stageStartDays[stageKey] ?? 0;
-        const absoluteDay = stageStart + (alert.day_offset || 0);
-        return { ...alert, absoluteDay };
-      })
-      .filter(alert => alert.absoluteDay > age)
-      .sort((a, b) => a.absoluteDay - b.absoluteDay);
-
-    if (alertsWithDays.length === 0) return null;
-
-    const nextAlert = alertsWithDays[0];
-    const daysUntil = nextAlert.absoluteDay - age;
-
-    return {
-      message: nextAlert.message,
-      daysUntil,
-      type: nextAlert.type || 'info',
-    };
-  };
-
-  // Get current stage targets
-  const getStageTargets = (growingParams: GrowingParams | null, currentStage: string | null) => {
-    if (!growingParams?.environment_targets || !currentStage) return null;
-
-    // Handle both array and object formats for environment_targets
-    let targets = growingParams.environment_targets;
-    if (!Array.isArray(targets)) {
-      if (typeof targets === 'object') {
-        targets = Object.values(targets);
-      } else {
-        return null;
-      }
-    }
-
-    const stageTarget = targets.find(
-      (t: any) => t?.stage?.toLowerCase() === currentStage?.toLowerCase()
-    );
-
-    if (!stageTarget) return null;
-
-    return {
-      vpd: stageTarget.vpd_target,
-      humidity: stageTarget.humidity_min !== undefined && stageTarget.humidity_max !== undefined
-        ? Math.round((stageTarget.humidity_min + stageTarget.humidity_max) / 2)
-        : undefined,
-      temp: stageTarget.temp_day,
-    };
-  };
-
-  const calculateProgress = (startDate: string | null, floweringDays: number | null) => {
-    if (!startDate || !floweringDays) return null;
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-    const percentage = Math.min(Math.round((age / floweringDays) * 100), 100);
-    return { percentage, currentDay: age, totalDays: floweringDays };
-  };
+  const { plants, isLoading, setMaster, isSettingMaster } = usePlantsWithStrains();
 
   const handleGoToDevice = (deviceId: string) => {
     setOpen(false);
     navigate(`/device/${deviceId}`);
+  };
+
+  const handleSetAsMaster = (e: React.MouseEvent, plantId: string) => {
+    e.stopPropagation();
+    setMaster(plantId);
   };
 
   return (
@@ -300,22 +121,25 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
                 const stageTextColor = stageColors[stage] || stageColors.seedling;
                 const progressBarColor = stageBgColors[stage] || stageBgColors.seedling;
                 
-                const strainData = plant.library_strains as Plant['library_strains'];
-                const strainName = strainData?.name;
-                const floweringDays = strainData?.flowering_days;
-                const photoUrl = strainData?.photo_url;
-                const growingParams = strainData?.growing_params as GrowingParams | null;
-                
-                const progress = calculateProgress(plant.start_date, floweringDays);
-                const stageInfo = calculateStageInfo(plant.start_date, growingParams);
-                const nextAlert = getNextAlert(plant.start_date, growingParams);
-                const stageTargets = getStageTargets(growingParams, stage);
+                const photoUrl = plant.photo_url || plant.strain_photo_url;
+                const totalDays = getTotalLifecycleDays(plant.growing_params, plant.flowering_days);
+                const progress = calculateProgress(plant.start_date, totalDays);
+                const stageInfo = calculateStageInfo(plant.start_date, plant.growing_params);
+                const nextAlert = getNextAlert(plant.start_date, plant.growing_params);
+                const stageTargets = stageInfo 
+                  ? getEnvironmentTargets(plant.growing_params, stageInfo.stageName)
+                  : null;
+                const isMaster = plant.is_main;
 
                 return (
                   <div
                     key={plant.id}
-                    className="relative rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all cursor-pointer group"
-                    onClick={() => plant.devices?.id && handleGoToDevice(plant.devices.id)}
+                    className={`relative rounded-xl overflow-hidden border transition-all cursor-pointer group ${
+                      isMaster 
+                        ? 'border-2 border-amber-500/40 hover:border-amber-500/60' 
+                        : 'border-border/50 hover:border-primary/50'
+                    }`}
+                    onClick={() => plant.device?.id && handleGoToDevice(plant.device.id)}
                   >
                     {/* Background Image */}
                     <div className="absolute inset-0">
@@ -337,15 +161,20 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
                       {/* Header Row */}
                       <div className="flex items-start justify-between gap-2 md:gap-3">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-base md:text-lg font-bold text-foreground truncate">
-                            {plant.custom_name || 'Unnamed Plant'}
-                          </h4>
-                          {strainName && (
+                          <div className="flex items-center gap-1.5">
+                            {isMaster && (
+                              <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+                            )}
+                            <h4 className="text-base md:text-lg font-bold text-foreground truncate">
+                              {plant.custom_name || 'Unnamed Plant'}
+                            </h4>
+                          </div>
+                          {plant.strain_name && (
                             <Badge 
                               variant="secondary" 
                               className="mt-1 bg-background/60 backdrop-blur-sm text-[10px] md:text-xs"
                             >
-                              {strainName}
+                              {plant.strain_name}
                             </Badge>
                           )}
                         </div>
@@ -364,9 +193,9 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
                           <span className="text-muted-foreground">
                             Day {stageInfo.dayInStage}/{stageInfo.stageDuration}
                           </span>
-                          {plant.devices?.name && (
+                          {plant.device?.name && (
                             <span className="text-[10px] md:text-xs text-muted-foreground ml-auto">
-                              📍 {plant.devices.name}
+                              📍 {plant.device.name}
                             </span>
                           )}
                         </div>
@@ -410,22 +239,30 @@ export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
                           <Target className="h-4 w-4 text-primary shrink-0" />
                           <span className="text-sm text-foreground/80">
                             <span className="font-semibold">Target:</span>{' '}
-                            {stageTargets.vpd && `VPD ${stageTargets.vpd}`}
+                            {stageTargets.vpd && `VPD ${stageTargets.vpd.toFixed(1)}`}
                             {stageTargets.humidity && ` • ${stageTargets.humidity}% RH`}
                             {stageTargets.temp && ` • ${stageTargets.temp}°C`}
                           </span>
                         </div>
-                      ) : (
-                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30">
-                          <span className="text-sm text-muted-foreground italic">
-                            {getStageLabel(stage)}
-                          </span>
-                        </div>
+                      ) : null}
+
+                      {/* Set as Master Button */}
+                      {!isMaster && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full text-xs gap-1.5 h-8 mt-1"
+                          onClick={(e) => handleSetAsMaster(e, plant.id)}
+                          disabled={isSettingMaster}
+                        >
+                          <Crown className="h-3.5 w-3.5" />
+                          Set as Main Plant
+                        </Button>
                       )}
 
                       {/* Hover Overlay */}
-                      {plant.devices?.id && (
-                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      {plant.device?.id && (
+                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center">
                           <Button variant="outline" className="gap-2">
                             <ExternalLink className="h-4 w-4" />
                             Open Dashboard
