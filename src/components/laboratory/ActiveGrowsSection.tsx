@@ -1,46 +1,31 @@
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Sprout, Leaf, Flower2, Droplets, Sun, Droplet, BookOpen, Bell, Clock } from 'lucide-react';
-import { calculatePlantAge, PLANT_STAGES } from '@/hooks/usePlantData';
-import { Json } from '@/integrations/supabase/types';
-
-interface GrowingParams {
-  stages?: Array<{
-    name: string;
-    days: number;
-  }>;
-  timeline_alerts?: Array<{
-    trigger_stage: string;
-    day_offset: number;
-    message: string;
-    type?: string;
-  }>;
-  [key: string]: unknown;
-}
-
-interface Plant {
-  id: string;
-  custom_name: string | null;
-  current_stage: string | null;
-  start_date: string | null;
-  device_id: string | null;
-  strain_id: number | null;
-  library_strains?: {
-    name: string;
-    flowering_days: number | null;
-    photo_url: string | null;
-    growing_params: Json | null;
-  } | null;
-  devices?: {
-    id: string;
-    name: string;
-  } | null;
-}
+import { 
+  Sprout, 
+  Leaf, 
+  Flower2, 
+  Droplets, 
+  Sun, 
+  Droplet, 
+  BookOpen, 
+  Bell, 
+  Clock,
+  Crown,
+  AlertTriangle
+} from 'lucide-react';
+import { calculatePlantAge } from '@/hooks/usePlantData';
+import { 
+  usePlantsWithStrains,
+  calculateStageInfo,
+  getEnvironmentTargets,
+  getNextAlert,
+  calculateProgress,
+  getTotalLifecycleDays,
+  PlantWithStrain
+} from '@/hooks/usePlantsWithStrains';
 
 const stageIcons: Record<string, React.ElementType> = {
   seedling: Sprout,
@@ -68,138 +53,20 @@ const stageBgColors: Record<string, string> = {
 
 export const ActiveGrowsSection = () => {
   const navigate = useNavigate();
+  const { plants, masterPlant, isLoading } = usePlantsWithStrains();
 
-  const { data: plants, isLoading } = useQuery({
-    queryKey: ['active-plants'],
-    queryFn: async (): Promise<Plant[]> => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return [];
+  // Get master plant targets for compatibility check
+  const masterStageInfo = masterPlant 
+    ? calculateStageInfo(masterPlant.start_date, masterPlant.growing_params)
+    : null;
+  const masterTargets = masterStageInfo 
+    ? getEnvironmentTargets(masterPlant?.growing_params || null, masterStageInfo.stageName)
+    : null;
 
-      const { data, error } = await supabase
-        .from('plants')
-        .select(`
-          id,
-          custom_name,
-          current_stage,
-          start_date,
-          device_id,
-          strain_id,
-          library_strains (name, flowering_days, photo_url, growing_params)
-        `)
-        .eq('user_id', userData.user.id)
-        .neq('current_stage', 'harvested')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching plants:', error);
-        return [];
-      }
-
-      // Fetch device names for each plant
-      const plantsWithDevices = await Promise.all(
-        (data || []).map(async (plant) => {
-          if (plant.device_id) {
-            const { data: deviceData } = await supabase
-              .from('devices')
-              .select('id, name')
-              .eq('device_id', plant.device_id)
-              .maybeSingle();
-            return { ...plant, devices: deviceData };
-          }
-          return { ...plant, devices: null };
-        })
-      );
-
-      return plantsWithDevices;
-    },
-  });
-
-  const handlePlantClick = (plant: Plant) => {
-    if (plant.devices?.id) {
-      navigate(`/device/${plant.devices.id}`);
+  const handlePlantClick = (plant: PlantWithStrain) => {
+    if (plant.device?.id) {
+      navigate(`/device/${plant.device.id}`);
     }
-  };
-
-  const getStageLabel = (stage: string | null) => {
-    const found = PLANT_STAGES.find((s) => s.value === stage);
-    return found?.label || stage || 'Unknown';
-  };
-
-  // Calculate which stage the plant is in and how many days into that stage
-  const calculateStageInfo = (startDate: string | null, growingParams: GrowingParams | null) => {
-    if (!startDate || !growingParams?.stages) return null;
-    
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-
-    let cumulativeDays = 0;
-    for (const stage of growingParams.stages) {
-      if (age <= cumulativeDays + stage.days) {
-        const dayInStage = age - cumulativeDays;
-        return {
-          stageName: stage.name,
-          dayInStage,
-          stageDuration: stage.days,
-          stageStartDay: cumulativeDays,
-        };
-      }
-      cumulativeDays += stage.days;
-    }
-
-    // Past all stages
-    const lastStage = growingParams.stages[growingParams.stages.length - 1];
-    return {
-      stageName: lastStage?.name || 'Complete',
-      dayInStage: age - (cumulativeDays - (lastStage?.days || 0)),
-      stageDuration: lastStage?.days || 0,
-      stageStartDay: cumulativeDays - (lastStage?.days || 0),
-    };
-  };
-
-  // Find the next upcoming alert
-  const getNextAlert = (startDate: string | null, growingParams: GrowingParams | null) => {
-    if (!startDate || !growingParams?.timeline_alerts || !growingParams?.stages) return null;
-
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-
-    // Build stage start days map
-    const stageStartDays: Record<string, number> = {};
-    let cumulativeDays = 0;
-    for (const stage of growingParams.stages) {
-      stageStartDays[stage.name.toLowerCase()] = cumulativeDays;
-      cumulativeDays += stage.days;
-    }
-
-    // Find all alerts with their absolute day
-    const alertsWithDays = growingParams.timeline_alerts
-      .map(alert => {
-        const stageKey = alert.trigger_stage?.toLowerCase() || '';
-        const stageStart = stageStartDays[stageKey] ?? 0;
-        const absoluteDay = stageStart + (alert.day_offset || 0);
-        return { ...alert, absoluteDay };
-      })
-      .filter(alert => alert.absoluteDay > age)
-      .sort((a, b) => a.absoluteDay - b.absoluteDay);
-
-    if (alertsWithDays.length === 0) return null;
-
-    const nextAlert = alertsWithDays[0];
-    const daysUntil = nextAlert.absoluteDay - age;
-
-    return {
-      message: nextAlert.message,
-      daysUntil,
-      type: nextAlert.type || 'info',
-    };
-  };
-
-  const calculateProgress = (startDate: string | null, floweringDays: number | null): { percentage: number; currentDay: number; totalDays: number } | null => {
-    if (!startDate || !floweringDays) return null;
-    const age = calculatePlantAge(startDate);
-    if (age === null) return null;
-    const percentage = Math.min(Math.round((age / floweringDays) * 100), 100);
-    return { percentage, currentDay: age, totalDays: floweringDays };
   };
 
   const handleFeedClick = (e: React.MouseEvent, plantId: string) => {
@@ -210,11 +77,26 @@ export const ActiveGrowsSection = () => {
     }
   };
 
-  const handleDiaryClick = (e: React.MouseEvent, plant: Plant) => {
+  const handleDiaryClick = (e: React.MouseEvent, plant: PlantWithStrain) => {
     e.stopPropagation();
-    if (plant.devices?.id) {
-      navigate(`/device/${plant.devices.id}`);
+    if (plant.device?.id) {
+      navigate(`/device/${plant.device.id}`);
     }
+  };
+
+  // Check if a plant has climate conflict with master (>15% deviation)
+  const hasClimateConflict = (plant: PlantWithStrain): boolean => {
+    if (!masterTargets || plant.is_main) return false;
+    
+    const stageInfo = calculateStageInfo(plant.start_date, plant.growing_params);
+    const plantTargets = stageInfo 
+      ? getEnvironmentTargets(plant.growing_params, stageInfo.stageName)
+      : null;
+    
+    if (!plantTargets) return false;
+    
+    const humidityDiff = Math.abs(masterTargets.humidity - plantTargets.humidity);
+    return humidityDiff > 15;
   };
 
   if (isLoading) {
@@ -249,20 +131,24 @@ export const ActiveGrowsSection = () => {
         const stageTextColor = stageColors[stage] || stageColors.seedling;
         const progressBarColor = stageBgColors[stage] || stageBgColors.seedling;
         
-        const strainData = plant.library_strains as Plant['library_strains'];
-        const strainName = strainData?.name;
-        const floweringDays = strainData?.flowering_days;
-        const photoUrl = strainData?.photo_url;
-        const growingParams = strainData?.growing_params as GrowingParams | null;
-        
-        const progress = calculateProgress(plant.start_date, floweringDays);
-        const stageInfo = calculateStageInfo(plant.start_date, growingParams);
-        const nextAlert = getNextAlert(plant.start_date, growingParams);
+        const photoUrl = plant.photo_url || plant.strain_photo_url;
+        const totalDays = getTotalLifecycleDays(plant.growing_params, plant.flowering_days);
+        const progress = calculateProgress(plant.start_date, totalDays);
+        const stageInfo = calculateStageInfo(plant.start_date, plant.growing_params);
+        const nextAlert = getNextAlert(plant.start_date, plant.growing_params);
+        const isConflict = hasClimateConflict(plant);
+        const isMaster = plant.is_main;
 
         return (
           <Card
             key={plant.id}
-            className="group cursor-pointer hover:border-primary/50 transition-all hover:shadow-xl relative overflow-hidden min-h-[180px] md:min-h-[200px]"
+            className={`group cursor-pointer transition-all hover:shadow-xl relative overflow-hidden min-h-[180px] md:min-h-[200px] ${
+              isMaster 
+                ? 'border-2 border-amber-500/40 hover:border-amber-500/60' 
+                : isConflict 
+                  ? 'border-2 border-red-500/40 hover:border-red-500/60'
+                  : 'hover:border-primary/50'
+            }`}
             onClick={() => handlePlantClick(plant)}
           >
             {/* Background Image */}
@@ -284,12 +170,17 @@ export const ActiveGrowsSection = () => {
               {/* Header */}
               <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">
-                    {plant.custom_name || 'Unnamed Plant'}
-                  </h4>
-                  {strainName && (
+                  <div className="flex items-center gap-1.5">
+                    {isMaster && (
+                      <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+                    )}
+                    <h4 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">
+                      {plant.custom_name || 'Unnamed Plant'}
+                    </h4>
+                  </div>
+                  {plant.strain_name && (
                     <Badge variant="secondary" className="mt-1 text-[10px] md:text-xs font-medium bg-background/60 backdrop-blur-sm">
-                      {strainName}
+                      {plant.strain_name}
                     </Badge>
                   )}
                 </div>
@@ -298,7 +189,7 @@ export const ActiveGrowsSection = () => {
                 </div>
               </div>
 
-              {/* Stage Info */}
+              {/* Stage Info with Day Counter */}
               {stageInfo && (
                 <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm mb-2 md:mb-3">
                   <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
@@ -312,20 +203,28 @@ export const ActiveGrowsSection = () => {
               )}
 
               {/* Location */}
-              {plant.devices?.name && (
+              {plant.device?.name && (
                 <p className="text-[10px] md:text-xs text-muted-foreground mb-2 md:mb-3 truncate">
-                  📍 {plant.devices.name}
+                  📍 {plant.device.name}
                 </p>
+              )}
+
+              {/* Climate Conflict Badge */}
+              {isConflict && !isMaster && (
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 mb-2">
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
+                  <span className="text-xs text-red-300">⚠️ Climate Conflict</span>
+                </div>
               )}
 
               {/* Spacer */}
               <div className="flex-1" />
 
-              {/* Progress Bar */}
+              {/* Timeline Progress Bar */}
               {progress && (
                 <div className="space-y-1 md:space-y-1.5 mb-2 md:mb-3">
                   <div className="flex justify-between text-[10px] md:text-xs">
-                    <span className="text-muted-foreground">Progress</span>
+                    <span className="text-muted-foreground">Lifecycle</span>
                     <span className="font-bold text-foreground">
                       Day {progress.currentDay} / {progress.totalDays}
                     </span>
@@ -339,13 +238,15 @@ export const ActiveGrowsSection = () => {
                 </div>
               )}
 
-              {/* Next Alert */}
+              {/* Next Alert - Prominent Display */}
               {nextAlert && (
                 <div className="flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] md:text-xs">
                   <Bell className="h-3 w-3 md:h-3.5 md:w-3.5 text-amber-400 shrink-0" />
                   <span className="text-amber-200 truncate">
                     <span className="font-semibold">
-                      {nextAlert.daysUntil === 1 ? 'Tomorrow' : `In ${nextAlert.daysUntil}d`}:
+                      {nextAlert.daysUntil === 0 ? '🔔 Today' : 
+                       nextAlert.daysUntil === 1 ? '📅 Tomorrow' : 
+                       `⏰ In ${nextAlert.daysUntil}d`}:
                     </span>{' '}
                     {nextAlert.message}
                   </span>
