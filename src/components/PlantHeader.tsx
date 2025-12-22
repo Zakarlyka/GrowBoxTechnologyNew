@@ -62,8 +62,18 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
   const getEnvironmentTargets = useMemo(() => {
     if (!strainData?.environment_targets || !plant?.current_stage) return null;
     
-    const stageTarget = strainData.environment_targets.find(
-      t => t.stage?.toLowerCase() === plant.current_stage?.toLowerCase()
+    // Handle both array and object formats for environment_targets
+    let targets = strainData.environment_targets;
+    if (!Array.isArray(targets)) {
+      if (typeof targets === 'object') {
+        targets = Object.values(targets);
+      } else {
+        return null;
+      }
+    }
+    
+    const stageTarget = targets.find(
+      (t: any) => t?.stage?.toLowerCase() === plant.current_stage?.toLowerCase()
     );
     
     if (!stageTarget) return null;
