@@ -124,7 +124,7 @@ export interface NutrientWeek {
 }
 
 // =============================================================================
-// 🧬 NEW GROWING_PARAMS JSONB Structure (v3.0 - Dynamic Stages)
+// 🧬 NEW GROWING_PARAMS JSONB Structure (v3.0 - Scientific Passport)
 // =============================================================================
 
 /**
@@ -133,8 +133,9 @@ export interface NutrientWeek {
 export interface GrowingStage {
   name: string;             // "Seedling", "Vegetation", "Pre-flowering", "Flowering", "Drying"
   label_ua?: string;        // Ukrainian label e.g. "Розсада"
-  weeks?: string;           // e.g. "1-2" - string duration
-  weeks_duration?: number;  // numeric duration in weeks
+  weeks?: string;           // e.g. "1-2" - string duration (legacy)
+  weeks_duration?: number;  // numeric duration in weeks (legacy)
+  days_duration?: number;   // numeric duration in DAYS (preferred for precision)
   temp: [number, number];   // [night, day] or [min, max] temperature
   humidity: number;         // RH %
   vpd: string;              // e.g. "0.6-0.8" kPa
@@ -175,7 +176,48 @@ export interface PostHarvest {
 }
 
 /**
- * Complete growing_params JSONB structure (v3.0)
+ * Nutrition profile for strain
+ */
+export interface NutritionProfile {
+  feeder_type: 'light' | 'medium' | 'heavy';  // How much nutrients the plant needs
+}
+
+/**
+ * Morphology characteristics
+ */
+export interface Morphology {
+  stretch_ratio?: number;   // e.g. 2.5 (height multiplier during flowering)
+}
+
+/**
+ * Resistance ratings (1-5 scale)
+ */
+export interface ResistanceRating {
+  mold?: number;    // 1-5
+  pests?: number;   // 1-5
+  heat?: number;    // 1-5
+  cold?: number;    // 1-5
+}
+
+/**
+ * Timeline alert for smart notifications
+ */
+export interface TimelineAlert {
+  stage: string;      // Which stage triggers this alert
+  day_offset: number; // Days into the stage
+  message: string;    // The alert message
+}
+
+/**
+ * Wiki data for strain knowledge base
+ */
+export interface WikiData {
+  training?: string;
+  warnings?: string[];
+}
+
+/**
+ * Complete growing_params JSONB structure (v3.0 - Scientific Passport)
  */
 export interface GrowingParams {
   stages: GrowingStage[];
@@ -183,6 +225,12 @@ export interface GrowingParams {
   phenotype?: GrowingPhenotype;
   recommendations?: GrowingRecommendations;
   post_harvest?: PostHarvest;
+  // Scientific Passport v2
+  nutrition_profile?: NutritionProfile;
+  morphology?: Morphology;
+  resistance_rating?: ResistanceRating;
+  timeline_alerts?: TimelineAlert[];
+  wiki?: WikiData;
 }
 
 // Legacy types for backward compatibility

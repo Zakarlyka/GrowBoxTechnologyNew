@@ -20,17 +20,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Thermometer, Droplets, Sun, FlaskConical, Zap, Activity, AlertTriangle, Beaker, Bell, BookOpen, Clock } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { 
+  Loader2, Plus, Trash2, Thermometer, Droplets, Sun, FlaskConical, Zap, 
+  Activity, AlertTriangle, Beaker, Bell, BookOpen, Clock, Dna, Scale, 
+  Shield, Bug, Flame, Snowflake, Utensils, ArrowUpDown, Calendar
+} from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { 
   LibraryStrainFull, GrowingParams, GrowingStage, 
-  GrowingPhenotype, GrowingRecommendations, PostHarvest 
+  GrowingPhenotype, GrowingRecommendations, PostHarvest,
+  NutritionProfile, Morphology, ResistanceRating, TimelineAlert, WikiData
 } from '@/types';
 
 interface LibraryStrainEditorProps {
@@ -42,9 +48,9 @@ interface LibraryStrainEditorProps {
 }
 
 const DEFAULT_STAGES: GrowingStage[] = [
-  { name: 'Seedling', weeks: '1-2', temp: [22, 25], humidity: 70, vpd: '0.6-0.8', ppfd: '150-300', ec: '0.6-0.8' },
-  { name: 'Vegetation', weeks: '3-4', temp: [22, 26], humidity: 60, vpd: '0.8-1.1', ppfd: '300-600', ec: '1.0-1.4' },
-  { name: 'Flowering', weeks: '5-9', temp: [20, 24], humidity: 45, vpd: '1.2-1.5', ppfd: '600-900', ec: '1.5-1.8' },
+  { name: 'Seedling', weeks: '1-2', days_duration: 14, temp: [22, 25], humidity: 70, vpd: '0.6-0.8', ppfd: '150-300', ec: '0.6-0.8' },
+  { name: 'Vegetation', weeks: '3-4', days_duration: 21, temp: [22, 26], humidity: 60, vpd: '0.8-1.1', ppfd: '300-600', ec: '1.0-1.4' },
+  { name: 'Flowering', weeks: '5-9', days_duration: 35, temp: [20, 24], humidity: 45, vpd: '1.2-1.5', ppfd: '600-900', ec: '1.5-1.8' },
 ];
 
 const DEFAULT_PHENOTYPE: GrowingPhenotype = {
@@ -67,23 +73,25 @@ const DEFAULT_POST_HARVEST: PostHarvest = {
   curing_notes: '',
 };
 
-// Wiki structure
-interface WikiData {
-  training: string;
-  warnings: string[];
-}
-
 const DEFAULT_WIKI: WikiData = {
   training: '',
   warnings: [],
 };
 
-// Timeline Alert structure
-interface TimelineAlert {
-  stage: string;
-  day_offset: number;
-  message: string;
-}
+const DEFAULT_NUTRITION_PROFILE: NutritionProfile = {
+  feeder_type: 'medium',
+};
+
+const DEFAULT_MORPHOLOGY: Morphology = {
+  stretch_ratio: 2.0,
+};
+
+const DEFAULT_RESISTANCE: ResistanceRating = {
+  mold: 3,
+  pests: 3,
+  heat: 3,
+  cold: 3,
+};
 
 const STAGE_OPTIONS = [
   'Seedling',
@@ -93,6 +101,23 @@ const STAGE_OPTIONS = [
   'Flushing',
   'Drying',
 ];
+
+// Resistance rating labels
+const getResistanceLabel = (value: number) => {
+  if (value <= 1) return 'Дуже низька';
+  if (value <= 2) return 'Низька';
+  if (value <= 3) return 'Середня';
+  if (value <= 4) return 'Висока';
+  return 'Дуже висока';
+};
+
+const getResistanceColor = (value: number) => {
+  if (value <= 1) return 'text-red-400';
+  if (value <= 2) return 'text-orange-400';
+  if (value <= 3) return 'text-yellow-400';
+  if (value <= 4) return 'text-lime-400';
+  return 'text-green-400';
+};
 
 export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isAdmin = false }: LibraryStrainEditorProps) {
   const { user } = useAuth();
@@ -120,6 +145,11 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
   const [phenotype, setPhenotype] = useState<GrowingPhenotype>(DEFAULT_PHENOTYPE);
   const [recommendations, setRecommendations] = useState<GrowingRecommendations>(DEFAULT_RECOMMENDATIONS);
   const [postHarvest, setPostHarvest] = useState<PostHarvest>(DEFAULT_POST_HARVEST);
+  
+  // Scientific Passport v2
+  const [nutritionProfile, setNutritionProfile] = useState<NutritionProfile>(DEFAULT_NUTRITION_PROFILE);
+  const [morphology, setMorphology] = useState<Morphology>(DEFAULT_MORPHOLOGY);
+  const [resistance, setResistance] = useState<ResistanceRating>(DEFAULT_RESISTANCE);
   
   // Wiki & Alerts state
   const [wiki, setWiki] = useState<WikiData>(DEFAULT_WIKI);
@@ -158,36 +188,24 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       const gp = strain.growing_params as GrowingParams | null;
       if (gp) {
         if (gp.stages?.length > 0) {
-          // Convert weeks_duration (number) to weeks (string) for editing
           const normalizedStages = gp.stages.map(stage => ({
             ...stage,
             weeks: stage.weeks || (stage.weeks_duration ? `${stage.weeks_duration}` : ''),
+            days_duration: stage.days_duration || (stage.weeks_duration ? stage.weeks_duration * 7 : undefined),
           }));
           setStages(normalizedStages);
         }
-        if (gp.risks) {
-          setRisks(gp.risks);
-        }
-        if (gp.phenotype) {
-          setPhenotype({ ...DEFAULT_PHENOTYPE, ...gp.phenotype });
-        }
-        if (gp.recommendations) {
-          setRecommendations({ ...DEFAULT_RECOMMENDATIONS, ...gp.recommendations });
-        }
-        if (gp.post_harvest) {
-          setPostHarvest({ ...DEFAULT_POST_HARVEST, ...gp.post_harvest });
-        }
-        // Load wiki data
-        if ((gp as any).wiki) {
-          setWiki({
-            training: (gp as any).wiki.training || '',
-            warnings: (gp as any).wiki.warnings || [],
-          });
-        }
-        // Load timeline alerts
-        if ((gp as any).timeline_alerts) {
-          setTimelineAlerts((gp as any).timeline_alerts || []);
-        }
+        if (gp.risks) setRisks(gp.risks);
+        if (gp.phenotype) setPhenotype({ ...DEFAULT_PHENOTYPE, ...gp.phenotype });
+        if (gp.recommendations) setRecommendations({ ...DEFAULT_RECOMMENDATIONS, ...gp.recommendations });
+        if (gp.post_harvest) setPostHarvest({ ...DEFAULT_POST_HARVEST, ...gp.post_harvest });
+        
+        // Scientific Passport v2 fields
+        if (gp.nutrition_profile) setNutritionProfile({ ...DEFAULT_NUTRITION_PROFILE, ...gp.nutrition_profile });
+        if (gp.morphology) setMorphology({ ...DEFAULT_MORPHOLOGY, ...gp.morphology });
+        if (gp.resistance_rating) setResistance({ ...DEFAULT_RESISTANCE, ...gp.resistance_rating });
+        if (gp.wiki) setWiki({ ...DEFAULT_WIKI, ...gp.wiki });
+        if (gp.timeline_alerts) setTimelineAlerts(gp.timeline_alerts);
       }
     } else {
       // Reset form for new strain
@@ -208,6 +226,9 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       setPhenotype({ ...DEFAULT_PHENOTYPE });
       setRecommendations({ ...DEFAULT_RECOMMENDATIONS });
       setPostHarvest({ ...DEFAULT_POST_HARVEST });
+      setNutritionProfile({ ...DEFAULT_NUTRITION_PROFILE });
+      setMorphology({ ...DEFAULT_MORPHOLOGY });
+      setResistance({ ...DEFAULT_RESISTANCE });
       setWiki({ ...DEFAULT_WIKI });
       setTimelineAlerts([]);
     }
@@ -236,6 +257,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     setStages(prev => [...prev, {
       name: 'Custom',
       weeks: '',
+      days_duration: 7,
       temp: [20, 24],
       humidity: 50,
       vpd: '1.0-1.2',
@@ -262,14 +284,14 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
 
   // Wiki warnings management
   const addWarning = () => {
-    if (newWarning.trim() && !wiki.warnings.includes(newWarning.trim())) {
-      setWiki(prev => ({ ...prev, warnings: [...prev.warnings, newWarning.trim()] }));
+    if (newWarning.trim() && !wiki.warnings?.includes(newWarning.trim())) {
+      setWiki(prev => ({ ...prev, warnings: [...(prev.warnings || []), newWarning.trim()] }));
       setNewWarning('');
     }
   };
 
   const removeWarning = (warning: string) => {
-    setWiki(prev => ({ ...prev, warnings: prev.warnings.filter(w => w !== warning) }));
+    setWiki(prev => ({ ...prev, warnings: (prev.warnings || []).filter(w => w !== warning) }));
   };
 
   // Timeline alerts management
@@ -299,18 +321,18 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     setLoading(true);
 
     try {
-      // Build growing_params JSONB (v3.0 structure)
-      const growingParams: any = {
+      // Build growing_params JSONB (v3.0 Scientific Passport structure)
+      const growingParams: GrowingParams = {
         stages,
         risks: risks.length > 0 ? risks : undefined,
         phenotype: Object.values(phenotype).some(v => v) ? phenotype : undefined,
         recommendations: Object.values(recommendations).some(v => v) ? recommendations : undefined,
         post_harvest: postHarvest.drying_temp ? postHarvest : undefined,
-        // Wiki & Alerts
-        wiki: (wiki.training || wiki.warnings.length > 0) ? {
-          training: wiki.training || undefined,
-          warnings: wiki.warnings.length > 0 ? wiki.warnings : undefined,
-        } : undefined,
+        // Scientific Passport v2
+        nutrition_profile: nutritionProfile,
+        morphology: morphology.stretch_ratio ? morphology : undefined,
+        resistance_rating: resistance,
+        wiki: (wiki.training || (wiki.warnings && wiki.warnings.length > 0)) ? wiki : undefined,
         timeline_alerts: timelineAlerts.length > 0 ? timelineAlerts : undefined,
       };
 
@@ -383,18 +405,19 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
       <DialogContent className="max-w-4xl max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl">
-            {strain ? '✏️ Редагувати Сорт' : '🌱 Новий Сорт'}
+            {strain ? '✏️ Редагувати Сорт' : '🧬 Науковий Паспорт Сорту'}
           </DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-140px)]">
           <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic" className="text-xs sm:text-sm">📋 Паспорт</TabsTrigger>
+                <TabsTrigger value="genetics" className="text-xs sm:text-sm">🧬 Генетика</TabsTrigger>
                 <TabsTrigger value="environment" className="text-xs sm:text-sm">🌡️ Середовище</TabsTrigger>
                 <TabsTrigger value="nutrients" className="text-xs sm:text-sm">💡 Живлення</TabsTrigger>
-                <TabsTrigger value="wiki" className="text-xs sm:text-sm">📖 Wiki</TabsTrigger>
+                <TabsTrigger value="wiki" className="text-xs sm:text-sm">🔔 Алерти</TabsTrigger>
               </TabsList>
 
               {/* Basic Info / Passport Tab */}
@@ -620,7 +643,200 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                 </Card>
               </TabsContent>
 
-              {/* Environment Tab - Dynamic Stages */}
+              {/* NEW: Genetics & Morphology Tab */}
+              <TabsContent value="genetics" className="mt-4 space-y-4">
+                {/* Nutrition Profile */}
+                <Card className="border-border/50 border-green-500/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-green-400">
+                      <Utensils className="h-4 w-4" />
+                      Профіль живлення
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Визначає базову потребу рослини в поживних речовинах
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Label className="text-xs">Тип фідера</Label>
+                      <Select 
+                        value={nutritionProfile.feeder_type} 
+                        onValueChange={(v: 'light' | 'medium' | 'heavy') => 
+                          setNutritionProfile(prev => ({ ...prev, feeder_type: v }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="light">
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-300">🥗</span>
+                              <span>Light Feeder</span>
+                              <span className="text-xs text-muted-foreground">(Низькі дози)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="medium">
+                            <div className="flex items-center gap-2">
+                              <span className="text-yellow-300">🍽️</span>
+                              <span>Medium Feeder</span>
+                              <span className="text-xs text-muted-foreground">(Стандартні дози)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="heavy">
+                            <div className="flex items-center gap-2">
+                              <span className="text-red-300">🍖</span>
+                              <span>Heavy Feeder</span>
+                              <span className="text-xs text-muted-foreground">(Високі дози)</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Morphology */}
+                <Card className="border-border/50 border-purple-500/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-purple-400">
+                      <ArrowUpDown className="h-4 w-4" />
+                      Морфологія
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Фізичні характеристики росту
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs flex items-center gap-2">
+                            <Scale className="h-3 w-3" />
+                            Stretch Ratio (множник висоти під час цвітіння)
+                          </Label>
+                          <span className="text-lg font-bold text-purple-400">
+                            ×{morphology.stretch_ratio?.toFixed(1) || '2.0'}
+                          </span>
+                        </div>
+                        <Slider
+                          value={[morphology.stretch_ratio || 2.0]}
+                          onValueChange={([v]) => setMorphology(prev => ({ ...prev, stretch_ratio: v }))}
+                          min={1}
+                          max={4}
+                          step={0.1}
+                          className="py-2"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>×1.0 (Компактний)</span>
+                          <span>×2.5 (Стандарт)</span>
+                          <span>×4.0 (Сильний стретч)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Resistance Ratings */}
+                <Card className="border-border/50 border-cyan-500/30">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2 text-cyan-400">
+                      <Shield className="h-4 w-4" />
+                      Стійкість (1-5)
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Оцініть стійкість сорту до різних факторів
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Mold Resistance */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs flex items-center gap-2">
+                          <Droplets className="h-3 w-3 text-blue-400" />
+                          Стійкість до цвілі
+                        </Label>
+                        <Badge variant="outline" className={getResistanceColor(resistance.mold || 3)}>
+                          {resistance.mold}/5 - {getResistanceLabel(resistance.mold || 3)}
+                        </Badge>
+                      </div>
+                      <Slider
+                        value={[resistance.mold || 3]}
+                        onValueChange={([v]) => setResistance(prev => ({ ...prev, mold: v }))}
+                        min={1}
+                        max={5}
+                        step={1}
+                        className="py-2"
+                      />
+                    </div>
+
+                    {/* Pest Resistance */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs flex items-center gap-2">
+                          <Bug className="h-3 w-3 text-amber-400" />
+                          Стійкість до шкідників
+                        </Label>
+                        <Badge variant="outline" className={getResistanceColor(resistance.pests || 3)}>
+                          {resistance.pests}/5 - {getResistanceLabel(resistance.pests || 3)}
+                        </Badge>
+                      </div>
+                      <Slider
+                        value={[resistance.pests || 3]}
+                        onValueChange={([v]) => setResistance(prev => ({ ...prev, pests: v }))}
+                        min={1}
+                        max={5}
+                        step={1}
+                        className="py-2"
+                      />
+                    </div>
+
+                    {/* Heat Resistance */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs flex items-center gap-2">
+                          <Flame className="h-3 w-3 text-red-400" />
+                          Стійкість до спеки
+                        </Label>
+                        <Badge variant="outline" className={getResistanceColor(resistance.heat || 3)}>
+                          {resistance.heat}/5 - {getResistanceLabel(resistance.heat || 3)}
+                        </Badge>
+                      </div>
+                      <Slider
+                        value={[resistance.heat || 3]}
+                        onValueChange={([v]) => setResistance(prev => ({ ...prev, heat: v }))}
+                        min={1}
+                        max={5}
+                        step={1}
+                        className="py-2"
+                      />
+                    </div>
+
+                    {/* Cold Resistance */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs flex items-center gap-2">
+                          <Snowflake className="h-3 w-3 text-cyan-400" />
+                          Стійкість до холоду
+                        </Label>
+                        <Badge variant="outline" className={getResistanceColor(resistance.cold || 3)}>
+                          {resistance.cold}/5 - {getResistanceLabel(resistance.cold || 3)}
+                        </Badge>
+                      </div>
+                      <Slider
+                        value={[resistance.cold || 3]}
+                        onValueChange={([v]) => setResistance(prev => ({ ...prev, cold: v }))}
+                        min={1}
+                        max={5}
+                        step={1}
+                        className="py-2"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Environment Tab - Dynamic Stages with Days */}
               <TabsContent value="environment" className="mt-4 space-y-4">
                 <Card className="border-border/50">
                   <CardHeader className="pb-2">
@@ -628,11 +844,14 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                       <Thermometer className="h-4 w-4 text-primary" />
                       Кліматичний розклад по стадіях
                     </CardTitle>
+                    <CardDescription className="text-xs">
+                      Вкажіть тривалість у днях для точного розрахунку таймлайну
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {stages.map((stage, index) => (
                       <div key={index} className="p-3 rounded-lg bg-muted/50 space-y-3">
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-4 gap-2">
                           <div className="space-y-1">
                             <Label className="text-xs">Назва стадії</Label>
                             <Select 
@@ -654,7 +873,20 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                             </Select>
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Тижні</Label>
+                            <Label className="text-xs flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-primary" /> Днів
+                            </Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={stage.days_duration || ''}
+                              onChange={(e) => updateStage(index, 'days_duration', parseInt(e.target.value) || undefined)}
+                              placeholder="14"
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Тижні (legacy)</Label>
                             <Input
                               value={stage.weeks || ''}
                               onChange={(e) => updateStage(index, 'weeks', e.target.value)}
@@ -722,7 +954,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                           </div>
                           <div className="space-y-1">
                             <Label className="text-xs flex items-center gap-1">
-                              <Sun className="h-3 w-3 text-amber-400" /> Світло
+                              <Sun className="h-3 w-3 text-amber-400" /> Світло h
                             </Label>
                             <Input
                               type="number"
@@ -817,6 +1049,11 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                           {stage.name === 'Flushing' && '💧'}
                           {stage.name === 'Drying' && '🍂'}
                           <span className="ml-1">{stage.name}</span>
+                          {stage.days_duration && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              {stage.days_duration}d
+                            </Badge>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs flex items-center gap-1">
@@ -894,33 +1131,114 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                 </Card>
               </TabsContent>
 
-              {/* Wiki & Alerts Tab */}
+              {/* Wiki & Timeline Alerts Tab */}
               <TabsContent value="wiki" className="mt-4 space-y-4">
-                {/* Phenotype Details */}
-                <Card className="border-border/50">
+                {/* Timeline Alerts Configuration - ГЛАВНЫЙ БЛОК */}
+                <Card className="border-border/50 border-primary/30">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      🧬 Фенотип
+                    <CardTitle className="text-sm flex items-center gap-2 text-primary">
+                      <Bell className="h-4 w-4" />
+                      🔔 Таймлайн Алерти (Smart Notifications)
                     </CardTitle>
+                    <CardDescription className="text-xs">
+                      Налаштуйте автоматичні сповіщення. Приклад: "Pre-flowering День 0: Перевірте висоту лампи"
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">🌿 Аромат</Label>
-                      <Textarea
-                        value={phenotype.aroma || ''}
-                        onChange={(e) => setPhenotype(prev => ({ ...prev, aroma: e.target.value }))}
-                        placeholder="Описуйте аромат: Earthy, Spicy, Citrus, Diesel..."
-                        rows={2}
-                      />
+                    {/* Existing alerts */}
+                    {timelineAlerts.length > 0 && (
+                      <div className="space-y-2">
+                        {timelineAlerts.map((alert, idx) => (
+                          <Alert key={idx} className="bg-primary/10 border-primary/30">
+                            <Bell className="h-4 w-4 text-primary" />
+                            <AlertTitle className="text-sm flex items-center justify-between">
+                              <span className="flex items-center gap-2">
+                                <Badge variant="secondary">{alert.stage}</Badge>
+                                <span className="text-muted-foreground">День +{alert.day_offset}</span>
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => removeTimelineAlert(idx)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </AlertTitle>
+                            <AlertDescription className="text-sm mt-1">
+                              {alert.message}
+                            </AlertDescription>
+                          </Alert>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add new alert */}
+                    <div className="p-4 rounded-lg bg-muted/50 space-y-3 border border-dashed border-primary/30">
+                      <div className="text-xs font-medium text-primary mb-2">➕ Додати новий алерт</div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Стадія-тригер</Label>
+                          <Select 
+                            value={newAlert.stage} 
+                            onValueChange={(v) => setNewAlert(prev => ({ ...prev, stage: v }))}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STAGE_OPTIONS.map(stage => (
+                                <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> День стадії
+                          </Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={newAlert.day_offset}
+                            onChange={(e) => setNewAlert(prev => ({ ...prev, day_offset: parseInt(e.target.value) || 0 }))}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            onClick={addTimelineAlert}
+                            className="w-full h-9 gap-1"
+                            disabled={!newAlert.message.trim()}
+                          >
+                            <Plus className="h-4 w-4" />
+                            Додати
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Повідомлення</Label>
+                        <Input
+                          value={newAlert.message}
+                          onChange={(e) => setNewAlert(prev => ({ ...prev, message: e.target.value }))}
+                          placeholder="Перевірте висоту лампи, Почніть зменшувати N, Стрес тренування..."
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">🌳 Структура рослини</Label>
-                      <Textarea
-                        value={phenotype.structure || ''}
-                        onChange={(e) => setPhenotype(prev => ({ ...prev, structure: e.target.value }))}
-                        placeholder="Bushy, Compact, Tall, Multiple colas..."
-                        rows={2}
-                      />
+
+                    {/* Example alerts */}
+                    <div className="text-xs text-muted-foreground space-y-1 pt-2">
+                      <p className="font-medium">📌 Приклади алертів:</p>
+                      <ul className="list-disc list-inside space-y-1 pl-2">
+                        <li>Pre-flowering День 0: "Перевірте DLI та висоту лампи"</li>
+                        <li>Flowering День 14: "Зменшіть рівень Nitrogen"</li>
+                        <li>Vegetation День 21: "Можна почати LST тренування"</li>
+                      </ul>
                     </div>
                   </CardContent>
                 </Card>
@@ -935,7 +1253,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                   </CardHeader>
                   <CardContent>
                     <Textarea
-                      value={wiki.training}
+                      value={wiki.training || ''}
                       onChange={(e) => setWiki(prev => ({ ...prev, training: e.target.value }))}
                       placeholder="LST (Low Stress Training) рекомендується з 3-го тижня. Topping можна робити після 4-5 вузлів..."
                       rows={4}
@@ -953,7 +1271,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex flex-wrap gap-2">
-                      {wiki.warnings.map((warning, idx) => (
+                      {(wiki.warnings || []).map((warning, idx) => (
                         <Badge 
                           key={idx} 
                           variant="outline" 
@@ -981,105 +1299,6 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
                       <Button type="button" variant="outline" size="sm" onClick={addWarning}>
                         <Plus className="h-4 w-4" />
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Timeline Alerts Configuration */}
-                <Card className="border-border/50 border-amber-500/30">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2 text-amber-400">
-                      <Bell className="h-4 w-4" />
-                      Таймлайн Сповіщення
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-xs text-muted-foreground">
-                      Налаштуйте автоматичні сповіщення для конкретних етапів вирощування
-                    </p>
-                    
-                    {/* Existing alerts */}
-                    {timelineAlerts.length > 0 && (
-                      <div className="space-y-2">
-                        {timelineAlerts.map((alert, idx) => (
-                          <Alert key={idx} className="bg-amber-500/10 border-amber-500/30">
-                            <Bell className="h-4 w-4 text-amber-400" />
-                            <AlertTitle className="text-sm flex items-center justify-between">
-                              <span>
-                                <Badge variant="outline" className="mr-2">{alert.stage}</Badge>
-                                День +{alert.day_offset}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-destructive"
-                                onClick={() => removeTimelineAlert(idx)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </AlertTitle>
-                            <AlertDescription className="text-xs text-muted-foreground">
-                              {alert.message}
-                            </AlertDescription>
-                          </Alert>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Add new alert */}
-                    <div className="p-3 rounded-lg bg-muted/50 space-y-3">
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Стадія</Label>
-                          <Select 
-                            value={newAlert.stage} 
-                            onValueChange={(v) => setNewAlert(prev => ({ ...prev, stage: v }))}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {STAGE_OPTIONS.map(stage => (
-                                <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> День +
-                          </Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            value={newAlert.day_offset}
-                            onChange={(e) => setNewAlert(prev => ({ ...prev, day_offset: parseInt(e.target.value) || 1 }))}
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="flex items-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={addTimelineAlert}
-                            className="w-full h-9 gap-1"
-                          >
-                            <Plus className="h-4 w-4" />
-                            Додати
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Повідомлення</Label>
-                        <Input
-                          value={newAlert.message}
-                          onChange={(e) => setNewAlert(prev => ({ ...prev, message: e.target.value }))}
-                          placeholder="Перевірте висоту лампи та DLI..."
-                          className="h-9"
-                        />
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
