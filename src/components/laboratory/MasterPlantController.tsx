@@ -149,8 +149,19 @@ export const MasterPlantController = () => {
   const getEnvironmentTargets = (growingParams: GrowingParams | null, stageName: string | null): EnvironmentTarget | null => {
     if (!growingParams?.environment_targets || !stageName) return null;
 
-    const stageTarget = growingParams.environment_targets.find(
-      t => t.stage?.toLowerCase() === stageName?.toLowerCase()
+    // Handle both array and object formats for environment_targets
+    let targets = growingParams.environment_targets;
+    if (!Array.isArray(targets)) {
+      // If it's an object, try to convert or extract array
+      if (typeof targets === 'object') {
+        targets = Object.values(targets);
+      } else {
+        return null;
+      }
+    }
+
+    const stageTarget = targets.find(
+      (t: any) => t?.stage?.toLowerCase() === stageName?.toLowerCase()
     );
 
     if (!stageTarget) return null;
