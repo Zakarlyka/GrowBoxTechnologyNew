@@ -61,12 +61,18 @@ const stageBgColors: Record<string, string> = {
 
 interface AllPlantsDrawerProps {
   children?: React.ReactNode;
+  deviceFilter?: string; // Optional: filter plants by device_id
 }
 
-export const AllPlantsDrawer = ({ children }: AllPlantsDrawerProps) => {
+export const AllPlantsDrawer = ({ children, deviceFilter }: AllPlantsDrawerProps) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const { plants, isLoading, setMaster, isSettingMaster } = usePlantsWithStrains();
+  const { plants: allPlants, isLoading, setMaster, isSettingMaster } = usePlantsWithStrains();
+  
+  // Filter plants by device if deviceFilter is provided
+  const plants = deviceFilter 
+    ? allPlants?.filter(p => p.device_id === deviceFilter)
+    : allPlants;
 
   const handleGoToDevice = (deviceId: string) => {
     setOpen(false);

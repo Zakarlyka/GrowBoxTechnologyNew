@@ -14,13 +14,13 @@ import {
 } from '@/components/ui/select';
 import { 
   Wifi, WifiOff, 
-  Pencil, Check, X, QrCode, Trash2, Wind, Cpu, ChevronDown 
+  Pencil, Check, X, QrCode, Trash2, Cpu, ChevronDown 
 } from 'lucide-react';
 import { SensorCardsGrid } from './SensorCardsGrid';
+import { ActivePlantContext } from './ActivePlantContext';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
-import { PlantHeader } from '@/components/PlantHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -248,15 +248,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Plant Header */}
-      <PlantHeader
-        deviceId={selectedDevice.id}
-        deviceUuid={selectedDevice.device_id}
-        currentSettings={settings}
-        onSettingsOptimized={() => fetchDevices()}
-      />
-
-      {/* Device Info Card */}
+      {/* SECTION 1: Sensor Grid (with VPD card included) */}
       <Card className="gradient-card border-border/50">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
@@ -298,31 +290,14 @@ export function Dashboard() {
           {selectedDevice.location && <p className="text-sm text-muted-foreground">{selectedDevice.location}</p>}
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Draggable Sensors Grid */}
+          {/* Draggable Sensors Grid (now includes VPD as 5th card) */}
           <SensorCardsGrid
             temperature={selectedDevice.last_temp}
             humidity={selectedDevice.last_hum}
             soilMoisture={selectedDevice.last_soil_moisture}
             lightMode={lightMode}
+            vpdAnalysis={vpdAnalysis}
           />
-
-          {/* VPD Analysis */}
-          {vpdAnalysis && (
-            <div className={`p-4 rounded-lg border ${vpdAnalysis.borderColor} ${vpdAnalysis.bgColor}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Wind className={`h-5 w-5 ${vpdAnalysis.color}`} />
-                  <span className="font-medium text-foreground">VPD (Дефіцит Тиску Пари)</span>
-                </div>
-                <Badge className={`${vpdAnalysis.bgColor} ${vpdAnalysis.color} border ${vpdAnalysis.borderColor}`}>
-                  {vpdAnalysis.isOffline ? '-- kPa' : `${vpdAnalysis.vpd?.toFixed(2)} kPa`}
-                </Badge>
-              </div>
-              {!vpdAnalysis.isOffline && vpdAnalysis.advice && (
-                <p className={`text-sm ${vpdAnalysis.color}`}>💡 AI Tip: {vpdAnalysis.advice}</p>
-              )}
-            </div>
-          )}
 
           <div className="pt-2 border-t border-border/30">
             <p className="text-xs text-muted-foreground text-center">
@@ -332,7 +307,13 @@ export function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Device Controls */}
+      {/* SECTION 2: Active Plant Context (Master Plant, Alerts, My Plants button) */}
+      <ActivePlantContext 
+        deviceId={selectedDevice.id} 
+        deviceStringId={selectedDevice.device_id} 
+      />
+
+      {/* SECTION 3: Device Controls (Lighting/Climate) */}
       <DeviceControls deviceId={selectedDevice.device_id} />
 
       {/* Delete Dialog */}
