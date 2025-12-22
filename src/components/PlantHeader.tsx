@@ -2,10 +2,9 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Leaf, Sparkles, Check, Plus, Loader2, Pencil, Sprout } from 'lucide-react';
-import { usePlantData, PlantStage, PLANT_STAGES, getPresetsForStage, calculatePlantAge } from '@/hooks/usePlantData';
+import { usePlantData, PLANT_STAGES, getPresetsForStage, calculatePlantAge } from '@/hooks/usePlantData';
 import { usePremiumStatus } from '@/hooks/usePremiumStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -240,25 +239,12 @@ export function PlantHeader({ deviceId, deviceUuid, currentSettings, onSettingsO
               </div>
             </div>
 
-            {/* Middle Section - Stage Control */}
+            {/* Middle Section - Stage Display (Read-Only) */}
             <div className="flex flex-col items-start md:items-center gap-2">
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Поточна стадія</span>
-              <Select
-                value={plant.current_stage || 'seedling'}
-                onValueChange={(value) => updateStage(value as PlantStage)}
-                disabled={isUpdatingStage}
-              >
-                <SelectTrigger className="w-[180px] bg-background/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border">
-                  {PLANT_STAGES.map((stage) => (
-                    <SelectItem key={stage.value} value={stage.value}>
-                      {stage.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Badge variant="outline" className="px-4 py-2 text-base font-medium capitalize">
+                {getStageLabel(plant.current_stage)}
+              </Badge>
             </div>
 
             {/* Right Section - AI Actions + Add More */}

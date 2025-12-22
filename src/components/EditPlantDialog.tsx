@@ -241,15 +241,15 @@ export function EditPlantDialog({
                 Сорт з бібліотеки
               </Label>
               <Select
-                value={form.watch('strainId') || ''}
-                onValueChange={(value) => form.setValue('strainId', value || undefined)}
+                value={form.watch('strainId') || 'none'}
+                onValueChange={(value) => form.setValue('strainId', value === 'none' ? undefined : value)}
               >
                 <SelectTrigger className="bg-background/50">
                   <SelectValue placeholder={isLoadingStrains ? 'Завантаження...' : 'Оберіть сорт'} />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-border max-h-[200px]">
-                  <SelectItem value="">Без сорту</SelectItem>
-                  {strains.map((strain) => (
+                  <SelectItem value="none">Без сорту</SelectItem>
+                  {strains.filter(strain => strain.id).map((strain) => (
                     <SelectItem key={strain.id} value={String(strain.id)}>
                       <div className="flex flex-col">
                         <span>{strain.name}</span>
