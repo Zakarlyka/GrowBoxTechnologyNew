@@ -1,22 +1,20 @@
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import { 
   Sprout, 
   Leaf, 
   Flower2, 
   Droplets, 
   Sun, 
-  Droplet, 
-  BookOpen, 
   Bell, 
   Clock,
   Crown,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from 'lucide-react';
-import { calculatePlantAge } from '@/hooks/usePlantData';
+import { useQuery } from '@tanstack/react-query';
 import { 
   usePlantsWithStrains,
   calculateStageInfo,
@@ -26,6 +24,10 @@ import {
   getTotalLifecycleDays,
   PlantWithStrain
 } from '@/hooks/usePlantsWithStrains';
+import { AddPlantDialog } from '@/components/AddPlantDialog';
+import { StrainDetailsDialog } from '@/components/library/StrainDetailsDialog';
+import { supabase } from '@/integrations/supabase/client';
+import type { LibraryStrainFull } from '@/types';
 
 const stageIcons: Record<string, React.ElementType> = {
   seedling: Sprout,
@@ -52,8 +54,25 @@ const stageBgColors: Record<string, string> = {
 };
 
 export const ActiveGrowsSection = () => {
-  const navigate = useNavigate();
-  const { plants, masterPlant, isLoading } = usePlantsWithStrains();
+  const { plants, masterPlant, isLoading, refetch } = usePlantsWithStrains();
+  const [addPlantOpen, setAddPlantOpen] = useState(false);
+  const [selectedStrainId, setSelectedStrainId] = useState<number | null>(null);
+
+  // Fetch selected strain for dialog
+  const { data: selectedStrain } = useQuery({
+    queryKey: ['strain-detail', selectedStrainId],
+    queryFn: async () => {
+      if (!selectedStrainId) return null;
+      const { data, error } = await supabase
+        .from('library_strains')
+        .select('*')
+        .eq('id', selectedStrainId)
+        .single();
+      if (error) throw error;
+      return data as unknown as LibraryStrainFull;
+    },
+    enabled: !!selectedStrainId,
+  });
 
   // Get master plant targets for compatibility check
   const masterStageInfo = masterPlant 
@@ -64,23 +83,9 @@ export const ActiveGrowsSection = () => {
     : null;
 
   const handlePlantClick = (plant: PlantWithStrain) => {
-    if (plant.device?.id) {
-      navigate(`/device/${plant.device.id}`);
-    }
-  };
-
-  const handleFeedClick = (e: React.MouseEvent, plantId: string) => {
-    e.stopPropagation();
-    const nutrientSection = document.getElementById('nutrient-calculator');
-    if (nutrientSection) {
-      nutrientSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const handleDiaryClick = (e: React.MouseEvent, plant: PlantWithStrain) => {
-    e.stopPropagation();
-    if (plant.device?.id) {
-      navigate(`/device/${plant.device.id}`);
+    // Open the strain details dialog if the plant has a strain_id
+    if (plant.strain_id) {
+      setSelectedStrainId(plant.strain_id);
     }
   };
 
@@ -111,15 +116,25 @@ export const ActiveGrowsSection = () => {
 
   if (!plants || plants.length === 0) {
     return (
-      <Card className="border-dashed border-2 border-muted-foreground/20">
-        <CardContent className="flex flex-col items-center justify-center py-6 md:py-8 text-center">
-          <Sprout className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/50 mb-2 md:mb-3" />
-          <p className="text-sm md:text-base text-muted-foreground">Немає активних рослин</p>
-          <p className="text-xs md:text-sm text-muted-foreground/70">
-            Додайте рослину з Бібліотеки сортів
-          </p>
-        </CardContent>
-      </Card>
+      <>
+        <Card 
+          className="border-dashed border-2 border-muted-foreground/20 cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => setAddPlantOpen(true)}
+        >
+          <CardContent className="flex flex-col items-center justify-center py-6 md:py-8 text-center">
+            <Plus className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/50 mb-2 md:mb-3" />
+            <p className="text-sm md:text-base text-muted-foreground">Немає активних рослин</p>
+            <p className="text-xs md:text-sm text-muted-foreground/70">
+              Натисніть, щоб додати першу рослину
+            </p>
+          </CardContent>
+        </Card>
+        <AddPlantDialog
+          open={addPlantOpen}
+          onOpenChange={setAddPlantOpen}
+          onPlantAdded={refetch}
+        />
+      </>
     );
   }
 
@@ -253,31 +268,40 @@ export const ActiveGrowsSection = () => {
                 </div>
               )}
 
-              {/* Quick Actions Overlay - Hide on touch devices */}
-              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center gap-3">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={(e) => handleFeedClick(e, plant.id)}
-                >
-                  <Droplet className="h-4 w-4 text-blue-500" />
-                  Feed
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={(e) => handleDiaryClick(e, plant)}
-                >
-                  <BookOpen className="h-4 w-4 text-purple-500" />
-                  Diary
-                </Button>
-              </div>
             </CardContent>
           </Card>
         );
       })}
+      
+      {/* Add Plant Card */}
+      <Card
+        className="group cursor-pointer transition-all hover:shadow-xl border-dashed border-2 border-muted-foreground/20 hover:border-primary/50 min-h-[180px] md:min-h-[200px] flex items-center justify-center"
+        onClick={() => setAddPlantOpen(true)}
+      >
+        <CardContent className="flex flex-col items-center justify-center text-center p-4">
+          <div className="p-4 rounded-full bg-primary/10 mb-3">
+            <Plus className="h-8 w-8 text-primary" />
+          </div>
+          <p className="text-sm font-medium text-muted-foreground">Додати рослину</p>
+        </CardContent>
+      </Card>
+      
+      {/* Add Plant Dialog */}
+      <AddPlantDialog
+        open={addPlantOpen}
+        onOpenChange={setAddPlantOpen}
+        onPlantAdded={refetch}
+      />
+      
+      {/* Strain Details Dialog */}
+      {selectedStrainId && selectedStrain && (
+        <StrainDetailsDialog
+          strain={selectedStrain}
+          open={!!selectedStrainId}
+          onOpenChange={(open) => !open && setSelectedStrainId(null)}
+          onGrowThis={() => setSelectedStrainId(null)}
+        />
+      )}
     </div>
   );
 };
