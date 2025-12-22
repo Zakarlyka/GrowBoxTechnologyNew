@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -14,8 +14,18 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Thermometer, Droplets, Sprout, Sun, Moon } from 'lucide-react';
+import { Thermometer, Droplets, Sprout, Sun, Moon, Wind } from 'lucide-react';
 import { DraggableSensorCard } from './DraggableSensorCard';
+
+interface VPDAnalysis {
+  vpd: number | null;
+  status: 'good' | 'too_humid' | 'too_dry' | 'offline';
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  advice: string;
+  isOffline: boolean;
+}
 
 interface SensorCardsGridProps {
   temperature: number | null;
@@ -26,21 +36,22 @@ interface SensorCardsGridProps {
     dayHours: number;
     nightHours: number;
   } | null;
+  vpdAnalysis?: VPDAnalysis | null;
 }
 
-type SensorId = 'temperature' | 'humidity' | 'soil' | 'light';
+type SensorId = 'temperature' | 'humidity' | 'soil' | 'light' | 'vpd';
 
-const DEFAULT_ORDER: SensorId[] = ['temperature', 'humidity', 'soil', 'light'];
-const STORAGE_KEY = 'dashboard-sensor-order';
+const DEFAULT_ORDER: SensorId[] = ['temperature', 'humidity', 'soil', 'light', 'vpd'];
+const STORAGE_KEY = 'dashboard-sensor-order-v2';
 
-export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode }: SensorCardsGridProps) {
+export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode, vpdAnalysis }: SensorCardsGridProps) {
   const [sensorOrder, setSensorOrder] = useState<SensorId[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         // Validate that all sensors are present
-        if (Array.isArray(parsed) && parsed.length === 4 && DEFAULT_ORDER.every(id => parsed.includes(id))) {
+        if (Array.isArray(parsed) && parsed.length === 5 && DEFAULT_ORDER.every(id => parsed.includes(id))) {
           return parsed;
         }
       } catch {
@@ -83,7 +94,7 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
             <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 h-full">
               <div className="flex items-center space-x-2">
                 <Thermometer className="h-4 w-4 text-orange-500" />
-                <span className="text-sm text-muted-foreground">Температура</span>
+                <span className="text-sm text-muted-foreground">Темп</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
                 {temperature ? `${temperature.toFixed(1)}°C` : '-- °C'}
@@ -97,7 +108,7 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
             <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 h-full">
               <div className="flex items-center space-x-2">
                 <Droplets className="h-4 w-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">Вологість</span>
+                <span className="text-sm text-muted-foreground">RH</span>
               </div>
               <span className="text-lg font-semibold text-foreground">
                 {humidity ? `${humidity.toFixed(0)}%` : '-- %'}
@@ -123,25 +134,38 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
       case 'light':
         return (
           <DraggableSensorCard key={id} id={id}>
-            <div className={`flex flex-col gap-1 p-3 rounded-lg border transition-colors h-full ${
-              lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-blue-500/10 border-blue-500/30'
+            <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
+              lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-indigo-500/10 border-indigo-500/30'
             }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
-                  <span className="text-sm text-muted-foreground">Світло</span>
-                </div>
-                {lightMode && (
-                  <span className="text-lg font-semibold text-foreground">
-                    {lightMode.isDay ? '☀️ День' : '🌙 Ніч'}
-                  </span>
-                )}
+              <div className="flex items-center space-x-2">
+                {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-indigo-400" />}
+                <span className="text-sm text-muted-foreground">
+                  {lightMode ? `${lightMode.dayHours}/${lightMode.nightHours}` : '--'}
+                </span>
               </div>
               {lightMode && (
-                <div className="text-xs text-muted-foreground">
-                  День {lightMode.dayHours}год / Ніч {lightMode.nightHours}год
-                </div>
+                <span className="text-lg font-semibold text-foreground">
+                  {lightMode.isDay ? '☀️' : '🌙'}
+                </span>
               )}
+            </div>
+          </DraggableSensorCard>
+        );
+      case 'vpd':
+        return (
+          <DraggableSensorCard key={id} id={id}>
+            <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
+              vpdAnalysis ? `${vpdAnalysis.bgColor} ${vpdAnalysis.borderColor}` : 'bg-muted/20 border-border/30'
+            }`}>
+              <div className="flex items-center space-x-2">
+                <Wind className={`h-4 w-4 ${vpdAnalysis?.color || 'text-muted-foreground'}`} />
+                <span className="text-sm text-muted-foreground">VPD</span>
+              </div>
+              <span className={`text-lg font-semibold ${vpdAnalysis?.color || 'text-foreground'}`}>
+                {vpdAnalysis && !vpdAnalysis.isOffline && vpdAnalysis.vpd !== null
+                  ? `${vpdAnalysis.vpd.toFixed(2)}`
+                  : '-- kPa'}
+              </span>
             </div>
           </DraggableSensorCard>
         );
@@ -155,7 +179,7 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={sensorOrder} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {sensorOrder.map(renderSensorCard)}
         </div>
       </SortableContext>

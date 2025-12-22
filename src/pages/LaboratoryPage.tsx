@@ -8,7 +8,7 @@ import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 import { ActiveGrowsSection } from '@/components/laboratory/ActiveGrowsSection';
-import { AllPlantsDrawer } from '@/components/laboratory/AllPlantsDrawer';
+// AllPlantsDrawer moved to Dashboard
 import { MasterPlantController } from '@/components/laboratory/MasterPlantController';
 interface ToolConfig {
   id: string;
@@ -75,7 +75,7 @@ const LaboratoryPage = () => {
             <p className="text-xs md:text-base text-muted-foreground hidden sm:block">{t('laboratory.subtitle')}</p>
           </div>
         </div>
-        <AllPlantsDrawer />
+        {/* AllPlantsDrawer button removed - now in Dashboard */}
       </div>
 
       {/* Master Plant Controller */}
