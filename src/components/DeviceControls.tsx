@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock, Bot, ShieldAlert } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useAuth } from "@/hooks/useAuth";
+import { useAutoPilot } from "@/hooks/useAutoPilot";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -28,6 +29,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   // GLOBAL AI MODE (Single source of truth)
   const [aiMode, setAiMode] = useState(0);
+  const isAiActive = aiMode === 1;
+
+  // 🤖 Auto-Pilot Hook - calculates and applies strain-based settings
+  useAutoPilot(deviceId, isAiActive, settings);
 
   // 💡 Lighting
   const [lightMode, setLightMode] = useState(1);
@@ -191,7 +196,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
     );
   }
 
-  const isAiActive = aiMode === 1;
 
   return (
     <div className="relative space-y-4 pb-20 lg:pb-4">
