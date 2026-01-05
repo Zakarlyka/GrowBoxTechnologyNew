@@ -5,11 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock, Bot, ShieldAlert } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
-import { usePremiumStatus } from "@/hooks/usePremiumStatus";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -20,7 +21,10 @@ interface DeviceControlsProps {
 export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const { t } = useTranslation();
   const { settings, sensorData, lastSeenAt, loading, isSaving, saveSettings } = useDeviceControls(deviceId);
-  const { isPremium } = usePremiumStatus();
+  const { profile } = useAuth();
+
+  // Admin-controlled AI permission check
+  const isAiAllowed = profile?.is_ai_allowed ?? false;
 
   // GLOBAL AI MODE (Single source of truth)
   const [aiMode, setAiMode] = useState(0);
@@ -121,11 +125,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
     setHasChanges(false);
   };
 
-  // Toggle global AI mode
-  const toggleAiMode = () => {
-    if (!isPremium) return;
-    const newMode = aiMode === 1 ? 0 : 1;
-    setAiMode(newMode);
+  // Toggle global AI mode - requires admin permission
+  const toggleAiMode = (newMode: boolean) => {
+    if (!isAiAllowed) {
+      toast.error("AI доступ заблокований. Зверніться до Адміністратора.");
+      return;
+    }
+    setAiMode(newMode ? 1 : 0);
     setHasChanges(true);
   };
 
@@ -189,8 +195,65 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   return (
     <div className="relative space-y-4 pb-20 lg:pb-4">
-      {/* Header with Status */}
-      <div className="flex items-center justify-between"></div>
+      {/* 🤖 Smart AI Mode Toggle - Main Header */}
+      <Card className={cn(
+        "gradient-card border-2 transition-all",
+        isAiActive ? "border-yellow-500/50 bg-yellow-500/5" : "border-border/50"
+      )}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "p-2 rounded-full transition-all",
+                isAiActive ? "bg-yellow-500/20 text-yellow-500" : "bg-muted text-muted-foreground"
+              )}>
+                <Bot className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-lg">🤖 Smart AI Mode</span>
+                  {isAiActive && (
+                    <Badge className="bg-yellow-500 text-black text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Активний
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {isAiActive 
+                    ? "AI керує налаштуваннями на основі профілю рослини" 
+                    : "Увімкніть для автоматичного керування"}
+                </p>
+              </div>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    {!isAiAllowed && (
+                      <ShieldAlert className="w-5 h-5 text-destructive" />
+                    )}
+                    <Switch
+                      checked={isAiActive}
+                      onCheckedChange={toggleAiMode}
+                      disabled={!isAiAllowed}
+                      className={cn(
+                        "data-[state=checked]:bg-yellow-500",
+                        !isAiAllowed && "opacity-50 cursor-not-allowed"
+                      )}
+                    />
+                  </div>
+                </TooltipTrigger>
+                {!isAiAllowed && (
+                  <TooltipContent side="left">
+                    <p>🔒 Зверніться до Адміністратора для активації AI</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 4-Card Grid - Responsive */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
@@ -203,8 +266,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Button Group: OFF | ON | AI */}
-            <div className="flex gap-2">
+            {/* Button Group: OFF | ON */}
+            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <Button
                 variant={lightMode === 0 ? "destructive" : "outline"}
                 className={cn("flex-1 transition-all min-h-[44px]", lightMode === 0 && "bg-destructive text-destructive-foreground")}
@@ -217,10 +280,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 {t('controls.off')}
               </Button>
               <Button
-                variant={lightMode === 1 && !isAiActive ? "default" : "outline"}
+                variant={lightMode === 1 ? "default" : "outline"}
                 className={cn(
                   "flex-1 transition-all min-h-[44px]",
-                  lightMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                  lightMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
                   setLightMode(1);
@@ -229,19 +292,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={isAiActive}
               >
                 {t('controls.on')}
-              </Button>
-              <Button
-                variant={isAiActive ? "default" : "outline"}
-                className={cn(
-                  "flex-1 transition-all min-h-[44px]",
-                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
-                  !isPremium && "opacity-50 cursor-not-allowed",
-                )}
-                onClick={toggleAiMode}
-                disabled={!isPremium}
-              >
-                {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                {t('controls.ai')}
               </Button>
             </div>
 
@@ -370,8 +420,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Button Group: OFF | ON | AI */}
-            <div className="flex gap-2">
+            {/* Button Group: OFF | ON */}
+            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <Button
                 variant={climateMode === 0 ? "destructive" : "outline"}
                 className={cn(
@@ -387,10 +437,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 {t('controls.off')}
               </Button>
               <Button
-                variant={climateMode === 1 && !isAiActive ? "default" : "outline"}
+                variant={climateMode === 1 ? "default" : "outline"}
                 className={cn(
                   "flex-1 transition-all min-h-[44px]",
-                  climateMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                  climateMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
                   setClimateMode(1);
@@ -399,19 +449,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={isAiActive}
               >
                 {t('controls.on')}
-              </Button>
-              <Button
-                variant={isAiActive ? "default" : "outline"}
-                className={cn(
-                  "flex-1 transition-all min-h-[44px]",
-                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
-                  !isPremium && "opacity-50 cursor-not-allowed",
-                )}
-                onClick={toggleAiMode}
-                disabled={!isPremium}
-              >
-                {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                {t('controls.ai')}
               </Button>
             </div>
 
@@ -558,8 +595,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Button Group: OFF | ON | AI */}
-            <div className="flex gap-2">
+            {/* Button Group: OFF | ON */}
+            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <Button
                 variant={pumpMode === 2 ? "destructive" : "outline"}
                 className={cn("flex-1 transition-all min-h-[44px]", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
@@ -572,10 +609,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 {t('controls.off')}
               </Button>
               <Button
-                variant={pumpMode === 0 && !isAiActive ? "default" : "outline"}
+                variant={pumpMode === 0 ? "default" : "outline"}
                 className={cn(
                   "flex-1 transition-all min-h-[44px]",
-                  pumpMode === 0 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                  pumpMode === 0 && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
                   setPumpMode(0);
@@ -584,19 +621,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={isAiActive || isWatering}
               >
                 {t('controls.on')}
-              </Button>
-              <Button
-                variant={isAiActive ? "default" : "outline"}
-                className={cn(
-                  "flex-1 transition-all min-h-[44px]",
-                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
-                  !isPremium && "opacity-50 cursor-not-allowed",
-                )}
-                onClick={toggleAiMode}
-                disabled={!isPremium || isWatering}
-              >
-                {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                {t('controls.ai')}
               </Button>
             </div>
 
@@ -680,8 +704,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Button Group: OFF | ON | AI */}
-            <div className="flex gap-2">
+            {/* Button Group: OFF | ON */}
+            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <Button
                 variant={ventMode === 0 ? "destructive" : "outline"}
                 className={cn("flex-1 transition-all min-h-[44px]", ventMode === 0 && "bg-destructive text-destructive-foreground")}
@@ -694,10 +718,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 {t('controls.off')}
               </Button>
               <Button
-                variant={ventMode === 1 && !isAiActive ? "default" : "outline"}
+                variant={ventMode === 1 ? "default" : "outline"}
                 className={cn(
                   "flex-1 transition-all min-h-[44px]",
-                  ventMode === 1 && !isAiActive && "bg-green-600 hover:bg-green-700 text-white",
+                  ventMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
                 )}
                 onClick={() => {
                   setVentMode(1);
@@ -706,19 +730,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={isAiActive}
               >
                 {t('controls.on')}
-              </Button>
-              <Button
-                variant={isAiActive ? "default" : "outline"}
-                className={cn(
-                  "flex-1 transition-all min-h-[44px]",
-                  isAiActive && "bg-yellow-500 hover:bg-yellow-600 text-black",
-                  !isPremium && "opacity-50 cursor-not-allowed",
-                )}
-                onClick={toggleAiMode}
-                disabled={!isPremium}
-              >
-                {!isPremium && <Lock className="w-3 h-3 mr-1" />}
-                {t('controls.ai')}
               </Button>
             </div>
 

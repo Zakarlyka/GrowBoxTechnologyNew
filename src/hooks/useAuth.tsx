@@ -8,7 +8,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types'; 
 
 // Визначаємо типи з нашого 'types.ts'
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'] & { is_ai_allowed?: boolean };
 type AppRole = Database['public']['Enums']['app_role'];
 
 // Тип для контексту

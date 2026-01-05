@@ -679,6 +679,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_ai_allowed: boolean
           phone: string | null
           units: Database["public"]["Enums"]["preferred_units"]
           updated_at: string
@@ -692,6 +693,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          is_ai_allowed?: boolean
           phone?: string | null
           units?: Database["public"]["Enums"]["preferred_units"]
           updated_at?: string
@@ -705,6 +707,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_ai_allowed?: boolean
           phone?: string | null
           units?: Database["public"]["Enums"]["preferred_units"]
           updated_at?: string
