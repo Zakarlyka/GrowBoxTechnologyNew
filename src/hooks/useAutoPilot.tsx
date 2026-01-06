@@ -51,8 +51,13 @@ export function useAutoPilot(
       try {
         // Step 1: Get active plant for this device
         const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) return;
+        if (!userData.user) {
+          console.log('AutoPilot: No authenticated user');
+          return;
+        }
 
+        // Query plants with is_main = true AND device_id matching
+        // Note: plants.device_id stores the device's string ID (device_id column from devices table)
         const { data: activePlant, error: plantError } = await supabase
           .from('plants')
           .select(`
@@ -75,7 +80,7 @@ export function useAutoPilot(
         }
 
         if (!activePlant) {
-          console.log('AutoPilot: No active plant for this device');
+          console.log('AutoPilot: No active plant found for device:', deviceId);
           return;
         }
 
@@ -99,7 +104,7 @@ export function useAutoPilot(
         // Step 2: Calculate current stage
         const stageInfo = calculateStageInfo(plant.start_date, plant.growing_params);
         if (!stageInfo) {
-          console.log('AutoPilot: Could not calculate stage info');
+          console.log('AutoPilot: Could not calculate stage info (no start_date or stages)');
           return;
         }
 
@@ -127,6 +132,7 @@ export function useAutoPilot(
         // Create fingerprint to avoid duplicate updates
         const fingerprint = JSON.stringify(autoPilotResult);
         if (fingerprint === lastAppliedRef.current) {
+          console.log('AutoPilot: Settings unchanged, skipping update');
           return; // No changes needed
         }
 
@@ -139,6 +145,7 @@ export function useAutoPilot(
 
         if (!needsUpdate) {
           lastAppliedRef.current = fingerprint;
+          console.log('AutoPilot: Device already has correct settings');
           return;
         }
 
@@ -180,7 +187,7 @@ export function useAutoPilot(
       }
     };
 
-    // Run immediately
+    // Run immediately when AI mode is activated
     calculateAndApply();
 
     // Set up interval to check every 5 minutes (in case plant data changes)
