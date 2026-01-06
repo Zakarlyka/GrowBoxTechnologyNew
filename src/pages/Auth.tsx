@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,9 +21,16 @@ const Auth = () => {
     fullName: '',
   });
   
-  const { signIn, signUp, signInWithGoogle, signInWithGitHub } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithGitHub, session, loading } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Auto-redirect when session is established
+  useEffect(() => {
+    if (!loading && session) {
+      navigate('/', { replace: true });
+    }
+  }, [session, loading, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
