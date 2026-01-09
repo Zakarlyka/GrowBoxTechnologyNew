@@ -51,13 +51,13 @@ interface MasterPlantCardProps {
  */
 export function MasterPlantCard({ deviceId, deviceStringId }: MasterPlantCardProps) {
   const navigate = useNavigate();
-  const { plants, masterPlant, isLoading } = usePlantsWithStrains();
+  const { plants, isLoading } = usePlantsWithStrains();
   
-  // Filter plants for this device
+  // Filter plants for THIS device only
   const devicePlants = plants?.filter(p => p.device_id === deviceStringId) || [];
   
-  // Get the master plant for this device (or the global master)
-  const activePlant = devicePlants.find(p => p.is_main) || masterPlant;
+  // Get the master plant for THIS device specifically (not global master)
+  const activePlant = devicePlants.find(p => p.is_main) || null;
   
   // Calculate stage info
   const stageInfo = activePlant 

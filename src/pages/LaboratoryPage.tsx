@@ -1,13 +1,23 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 import { AllPlantsSection } from '@/components/laboratory/AllPlantsSection';
+import { useDevices } from '@/hooks/useDevices';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ToolConfig {
   id: string;
@@ -22,7 +32,16 @@ interface ToolConfig {
 
 const LaboratoryPage = () => {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
+  
+  const { devices } = useDevices();
+  const selectedDeviceId = searchParams.get('device');
+  const selectedDevice = devices.find(d => d.id === selectedDeviceId);
+
+  const handleDeviceSelect = (deviceId: string) => {
+    setSearchParams({ device: deviceId });
+  };
 
   const tools: ToolConfig[] = [
     {
@@ -63,16 +82,51 @@ const LaboratoryPage = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 p-3 md:p-6 pb-20 md:pb-6">
-      {/* Header */}
-      <div className="flex items-center gap-2 md:gap-3">
-        <div className="p-2 md:p-3 rounded-xl bg-primary/10 border border-primary/30">
-          <FlaskConical className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+      {/* Header with Device Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="p-2 md:p-3 rounded-xl bg-primary/10 border border-primary/30">
+            <FlaskConical className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">{t('laboratory.title')}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">{t('laboratory.subtitle')}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">{t('laboratory.title')}</h1>
-          <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">{t('laboratory.subtitle')}</p>
-        </div>
+        
+        {/* Device Selector */}
+        {devices.length > 0 && (
+          <Select value={selectedDeviceId || ''} onValueChange={handleDeviceSelect}>
+            <SelectTrigger className="w-full sm:w-[240px] min-h-[44px]">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="Select Device" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {devices.map(device => (
+                <SelectItem key={device.id} value={device.id}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      device.last_seen_at && (Date.now() - new Date(device.last_seen_at).getTime()) < 40000
+                        ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    {device.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
+
+      {/* Selected Device Badge */}
+      {selectedDevice && (
+        <Badge variant="outline" className="gap-2">
+          <Cpu className="h-3 w-3" />
+          Viewing: {selectedDevice.name}
+        </Badge>
+      )}
 
       {/* All Plants List */}
       <section>
