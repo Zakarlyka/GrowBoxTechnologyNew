@@ -17,7 +17,11 @@ import {
   ArrowRight,
   Link2,
   Clock,
-  Bell
+  Bell,
+  Sprout,
+  Leaf,
+  Flower2,
+  Sun
 } from 'lucide-react';
 import { calculatePlantAge } from '@/hooks/usePlantData';
 import { 
@@ -27,6 +31,30 @@ import {
   getNextAlert,
   CalculatedTargets
 } from '@/hooks/usePlantsWithStrains';
+
+const stageIcons: Record<string, React.ElementType> = {
+  seedling: Sprout,
+  vegetation: Leaf,
+  flowering: Flower2,
+  flushing: Droplets,
+  drying: Sun,
+};
+
+const stageGradients: Record<string, string> = {
+  seedling: 'from-lime-500/20 to-lime-500/5',
+  vegetation: 'from-emerald-500/20 to-emerald-500/5',
+  flowering: 'from-purple-500/20 to-purple-500/5',
+  flushing: 'from-sky-500/20 to-sky-500/5',
+  drying: 'from-amber-500/20 to-amber-500/5',
+};
+
+const stageTextColors: Record<string, string> = {
+  seedling: 'text-lime-400',
+  vegetation: 'text-emerald-400',
+  flowering: 'text-purple-400',
+  flushing: 'text-sky-400',
+  drying: 'text-amber-400',
+};
 
 interface CompatibilityResult {
   status: 'sync' | 'warning' | 'critical';
@@ -138,68 +166,80 @@ export const MasterPlantController = () => {
 
   const masterAge = masterPlant ? calculatePlantAge(masterPlant.start_date) : null;
   const displayPhoto = masterPlant?.photo_url || masterPlant?.strain_photo_url;
+  
+  const stage = masterStageInfo?.stageName || 'seedling';
+  const StageIcon = stageIcons[stage] || Sprout;
+  const stageGradient = stageGradients[stage] || stageGradients.seedling;
+  const stageColor = stageTextColors[stage] || stageTextColors.seedling;
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      {/* Master Plant Dashboard */}
-      <Card className="relative overflow-hidden border-2 border-amber-500/30">
-        {/* Background Image */}
+      {/* Master Plant Hero Card - DOMINANT */}
+      <Card className={`relative overflow-hidden border-2 border-amber-500/40 bg-gradient-to-br ${stageGradient} shadow-lg shadow-amber-500/10`}>
+        {/* Background Image with Active Glow */}
         {displayPhoto && (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 pointer-events-none">
             <div 
-              className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-30"
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-30"
               style={{ backgroundImage: `url(${displayPhoto})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background/95" />
           </div>
         )}
         
-        <CardContent className="relative p-4 md:p-5 space-y-3 md:space-y-4">
-          {/* Header */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-1.5 md:p-2 rounded-lg bg-amber-500/20 border border-amber-500/40">
-              <Crown className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
+        {/* Active Glow Ring */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 via-transparent to-primary/20 blur-xl opacity-50" />
+        </div>
+        
+        <CardContent className="relative p-4 md:p-6 space-y-4">
+          {/* Header with Crown Badge */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 md:p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 shadow-inner">
+                <Crown className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg md:text-xl text-foreground">🌟 The Master Plant</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">Dictates the environment</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base md:text-lg text-foreground">Master Plant</h3>
-              <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Controls the environment</p>
-            </div>
-            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-xs">
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/40 text-xs md:text-sm px-3 py-1">
               👑 Controller
             </Badge>
           </div>
 
-          {/* Plant Info with Photo */}
+          {/* Plant Identity Card */}
           {masterPlant && (
-            <div className="flex items-center gap-3 p-2.5 md:p-3 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50">
+            <div className="flex items-center gap-4 p-3 md:p-4 rounded-2xl bg-background/70 backdrop-blur-sm border border-border/50 shadow-sm">
               {displayPhoto ? (
                 <div 
-                  className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-cover bg-center border-2 border-amber-500/30 shrink-0"
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-xl bg-cover bg-center border-2 border-amber-500/40 shrink-0 shadow-lg"
                   style={{ backgroundImage: `url(${displayPhoto})` }}
                 />
               ) : (
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
-                  <Star className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />
+                <div className={`w-16 h-16 md:w-20 md:h-20 rounded-xl bg-gradient-to-br ${stageGradient} border border-border/50 flex items-center justify-center shrink-0`}>
+                  <StageIcon className={`h-8 w-8 ${stageColor}`} />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-foreground truncate text-base md:text-lg">
+                <h4 className="font-bold text-lg md:text-xl text-foreground truncate">
                   {masterPlant.custom_name || 'Unnamed Plant'}
                 </h4>
-                <p className="text-xs md:text-sm text-muted-foreground truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   {masterPlant.strain_name || 'Unknown Strain'}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {masterStageInfo && (
-                    <Badge variant="secondary" className="capitalize text-xs">
+                    <Badge variant="secondary" className={`capitalize text-xs ${stageColor} bg-background/50`}>
                       {masterStageInfo.stageName}
                     </Badge>
                   )}
                   {masterAge !== null && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                    <Badge variant="outline" className="text-xs">
+                      <Clock className="h-3 w-3 mr-1" />
                       Day {masterAge}
-                    </span>
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -210,60 +250,61 @@ export const MasterPlantController = () => {
           {masterPlant && !masterPlant.strain_id && (
             <Button 
               variant="outline" 
-              className="w-full gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+              className="w-full gap-2 border-amber-500/40 text-amber-400 hover:bg-amber-500/10 h-12"
               onClick={() => navigate('/library')}
             >
+              <AlertTriangle className="h-4 w-4" />
               <Link2 className="h-4 w-4" />
-              🔗 Link to Strain Library
+              ⚠️ Link Strain to Enable AI
             </Button>
           )}
 
           {/* Next Alert */}
           {masterNextAlert && (
-            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
               <Bell className="h-4 w-4 text-amber-400 shrink-0" />
-              <span className="text-sm text-amber-200 truncate">
+              <span className="text-sm text-amber-200">
                 <span className="font-semibold">
-                  {masterNextAlert.daysUntil === 0 ? 'Today' : 
-                   masterNextAlert.daysUntil === 1 ? 'Tomorrow' : 
-                   `In ${masterNextAlert.daysUntil}d`}:
+                  {masterNextAlert.daysUntil === 0 ? '🔔 Today' : 
+                   masterNextAlert.daysUntil === 1 ? '📅 Tomorrow' : 
+                   `⏰ In ${masterNextAlert.daysUntil} days`}:
                 </span>{' '}
                 {masterNextAlert.message}
               </span>
             </div>
           )}
 
-          {/* Active Targets */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-muted-foreground">
-              <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
+          {/* Active Environment Targets - Prominent Display */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <ArrowRight className="h-4 w-4 text-primary" />
               Active Environment Targets
             </div>
             
             {masterTargets ? (
               <div className="grid grid-cols-3 gap-2 md:gap-3">
-                <div className="p-2.5 md:p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
-                  <Thermometer className="h-4 w-4 md:h-5 md:w-5 text-red-400 mx-auto mb-1 md:mb-2" />
-                  <p className="text-lg md:text-2xl font-bold text-foreground">{masterTargets.temp}°</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">Temp</p>
+                <div className="p-3 md:p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-center shadow-sm">
+                  <Thermometer className="h-5 w-5 text-red-400 mx-auto mb-1" />
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{masterTargets.temp}°</p>
+                  <p className="text-xs text-muted-foreground">Temperature</p>
                 </div>
-                <div className="p-2.5 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
-                  <Droplets className="h-4 w-4 md:h-5 md:w-5 text-blue-400 mx-auto mb-1 md:mb-2" />
-                  <p className="text-lg md:text-2xl font-bold text-foreground">{masterTargets.humidity}%</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">RH</p>
+                <div className="p-3 md:p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-center shadow-sm">
+                  <Droplets className="h-5 w-5 text-blue-400 mx-auto mb-1" />
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{masterTargets.humidity}%</p>
+                  <p className="text-xs text-muted-foreground">Humidity</p>
                 </div>
-                <div className="p-2.5 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
-                  <Wind className="h-4 w-4 md:h-5 md:w-5 text-purple-400 mx-auto mb-1 md:mb-2" />
-                  <p className="text-lg md:text-2xl font-bold text-foreground">{masterTargets.vpd.toFixed(1)}</p>
-                  <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">VPD</p>
+                <div className="p-3 md:p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-center shadow-sm">
+                  <Wind className="h-5 w-5 text-purple-400 mx-auto mb-1" />
+                  <p className="text-2xl md:text-3xl font-bold text-foreground">{masterTargets.vpd.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">VPD kPa</p>
                 </div>
               </div>
             ) : (
-              <div className="p-3 md:p-4 rounded-xl bg-muted/30 text-center">
-                <p className="text-xs md:text-sm text-muted-foreground">
+              <div className="p-4 rounded-xl bg-muted/30 border border-border/50 text-center">
+                <p className="text-sm text-muted-foreground">
                   {masterPlant?.strain_id 
-                    ? 'No environment targets defined in strain passport'
-                    : 'Link a strain to see environment targets'}
+                    ? 'No environment targets defined in strain preset'
+                    : 'Link a strain from the Library to see targets'}
                 </p>
               </div>
             )}
