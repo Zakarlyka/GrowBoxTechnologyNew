@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Crown, Users, Layers } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
-import { MasterPlantController } from '@/components/laboratory/MasterPlantController';
 import { AllPlantsSection } from '@/components/laboratory/AllPlantsSection';
 
 interface ToolConfig {
@@ -75,26 +74,16 @@ const LaboratoryPage = () => {
         </div>
       </div>
 
-      {/* SECTION 1: Master Plant Hero */}
+      {/* All Plants List */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <Crown className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-foreground">🎯 The Master Plant</h2>
-        </div>
-        <MasterPlantController />
-      </section>
-
-      {/* SECTION 2: All Plants Grid */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Layers className="h-5 w-5 text-emerald-500" />
-          <h2 className="text-lg font-semibold text-foreground">🌿 All Plants</h2>
-          <span className="text-xs text-muted-foreground">Manage your crew</span>
+          <span className="text-lg">🌱</span>
+          <h2 className="text-lg font-semibold text-foreground">My Garden</h2>
         </div>
         <AllPlantsSection />
       </section>
 
-      {/* SECTION 3: Tool Cards */}
+      {/* Tools Section */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <Beaker className="h-5 w-5 text-primary" />
