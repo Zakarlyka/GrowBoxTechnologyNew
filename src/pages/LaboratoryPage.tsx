@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout, Crown } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Crown, Users, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
-import { ActiveGrowsSection } from '@/components/laboratory/ActiveGrowsSection';
-// AllPlantsDrawer moved to Dashboard
 import { MasterPlantController } from '@/components/laboratory/MasterPlantController';
+import { AllPlantsSection } from '@/components/laboratory/AllPlantsSection';
+
 interface ToolConfig {
   id: string;
   icon: React.ElementType;
@@ -65,53 +65,42 @@ const LaboratoryPage = () => {
   return (
     <div className="space-y-4 md:space-y-6 p-3 md:p-6 pb-20 md:pb-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 md:gap-3 flex-wrap">
-        <div className="flex items-center gap-2 md:gap-3">
-          <div className="p-2 md:p-3 rounded-xl bg-primary/10 border border-primary/30">
-            <FlaskConical className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground">{t('laboratory.title')}</h1>
-            <p className="text-xs md:text-base text-muted-foreground hidden sm:block">{t('laboratory.subtitle')}</p>
-          </div>
+      <div className="flex items-center gap-2 md:gap-3">
+        <div className="p-2 md:p-3 rounded-xl bg-primary/10 border border-primary/30">
+          <FlaskConical className="h-6 w-6 md:h-8 md:w-8 text-primary" />
         </div>
-        {/* AllPlantsDrawer button removed - now in Dashboard */}
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">{t('laboratory.title')}</h1>
+          <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">{t('laboratory.subtitle')}</p>
+        </div>
       </div>
 
-      {/* Master Plant Controller */}
-      <Card className="border-2 border-amber-500/20 bg-amber-500/5">
-        <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
-          <div className="flex items-center gap-2">
-            <Crown className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
-            <CardTitle className="text-base md:text-lg">🎯 Climate Controller</CardTitle>
-          </div>
-          <CardDescription className="text-xs md:text-sm">Master Plant dictates the environment</CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 md:p-6 pt-0">
-          <MasterPlantController />
-        </CardContent>
-      </Card>
+      {/* SECTION 1: Master Plant Hero */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Crown className="h-5 w-5 text-amber-500" />
+          <h2 className="text-lg font-semibold text-foreground">🎯 The Master Plant</h2>
+        </div>
+        <MasterPlantController />
+      </section>
 
-      {/* Active Grows Section */}
-      <Card className="border-2 border-green-500/20 bg-green-500/5">
-        <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
-          <div className="flex items-center gap-2">
-            <Sprout className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
-            <CardTitle className="text-base md:text-lg">🧪 Експериментальні зразки</CardTitle>
-          </div>
-          <CardDescription className="text-xs md:text-sm">Ваші активні рослини</CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 md:p-6 pt-0">
-          <ActiveGrowsSection />
-        </CardContent>
-      </Card>
+      {/* SECTION 2: All Plants Grid */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Layers className="h-5 w-5 text-emerald-500" />
+          <h2 className="text-lg font-semibold text-foreground">🌿 All Plants</h2>
+          <span className="text-xs text-muted-foreground">Manage your crew</span>
+        </div>
+        <AllPlantsSection />
+      </section>
 
-      {/* Tool Cards */}
-      <div className="space-y-3 md:space-y-4">
-        <h2 className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
-          <Beaker className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-          Інструменти
-        </h2>
+      {/* SECTION 3: Tool Cards */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold text-foreground">🧪 Tools</h2>
+        </div>
+        
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isExpanded = expandedTool === tool.id;
@@ -127,34 +116,34 @@ const LaboratoryPage = () => {
             >
               <CardHeader
                 className={cn(
-                  'cursor-pointer transition-colors p-3 md:p-6',
+                  'cursor-pointer transition-colors p-3 md:p-4',
                   isExpanded ? tool.bgColor : 'hover:bg-muted/50'
                 )}
                 onClick={() => toggleTool(tool.id)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 md:gap-3">
-                    <div className={cn('p-2 md:p-2.5 rounded-lg border', tool.bgColor, tool.borderColor)}>
-                      <Icon className={cn('h-5 w-5 md:h-6 md:w-6', tool.color)} />
+                    <div className={cn('p-2 rounded-lg border', tool.bgColor, tool.borderColor)}>
+                      <Icon className={cn('h-5 w-5', tool.color)} />
                     </div>
                     <div>
-                      <CardTitle className="text-base md:text-lg text-foreground">{t(tool.titleKey)}</CardTitle>
-                      <CardDescription className="text-xs md:text-sm hidden sm:block">{t(tool.descriptionKey)}</CardDescription>
+                      <CardTitle className="text-base text-foreground">{t(tool.titleKey)}</CardTitle>
+                      <CardDescription className="text-xs hidden sm:block">{t(tool.descriptionKey)}</CardDescription>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10">
+                  <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8">
                     {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
               </CardHeader>
 
               {isExpanded && (
-                <CardContent className="p-3 md:p-6 pt-0 md:pt-0 pb-4 md:pb-6">
-                  <div className="pt-3 md:pt-4 border-t border-border/50">
+                <CardContent className="p-3 md:p-4 pt-0">
+                  <div className="pt-3 border-t border-border/50">
                     <ToolComponent />
                   </div>
                 </CardContent>
@@ -162,7 +151,7 @@ const LaboratoryPage = () => {
             </Card>
           );
         })}
-      </div>
+      </section>
     </div>
   );
 };

@@ -17,7 +17,7 @@ import {
   Pencil, Check, X, QrCode, Trash2, Cpu, ChevronDown 
 } from 'lucide-react';
 import { SensorCardsGrid } from './SensorCardsGrid';
-import { ActivePlantContext } from './ActivePlantContext';
+import { MasterPlantCard } from './MasterPlantCard';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
@@ -307,8 +307,8 @@ export function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* SECTION 2: Active Plant Context (Master Plant, Alerts, My Plants button) */}
-      <ActivePlantContext 
+      {/* SECTION 2: Master Plant Card (Compact cockpit-style) */}
+      <MasterPlantCard 
         deviceId={selectedDevice.id} 
         deviceStringId={selectedDevice.device_id} 
       />
