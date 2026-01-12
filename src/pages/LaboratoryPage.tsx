@@ -2,14 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout, Crown } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 import { ActiveGrowsSection } from '@/components/laboratory/ActiveGrowsSection';
-// AllPlantsDrawer moved to Dashboard
-import { MasterPlantController } from '@/components/laboratory/MasterPlantController';
+
 interface ToolConfig {
   id: string;
   icon: React.ElementType;
@@ -75,22 +74,7 @@ const LaboratoryPage = () => {
             <p className="text-xs md:text-base text-muted-foreground hidden sm:block">{t('laboratory.subtitle')}</p>
           </div>
         </div>
-        {/* AllPlantsDrawer button removed - now in Dashboard */}
       </div>
-
-      {/* Master Plant Controller */}
-      <Card className="border-2 border-amber-500/20 bg-amber-500/5">
-        <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
-          <div className="flex items-center gap-2">
-            <Crown className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
-            <CardTitle className="text-base md:text-lg">🎯 Climate Controller</CardTitle>
-          </div>
-          <CardDescription className="text-xs md:text-sm">Master Plant dictates the environment</CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 md:p-6 pt-0">
-          <MasterPlantController />
-        </CardContent>
-      </Card>
 
       {/* Active Grows Section */}
       <Card className="border-2 border-green-500/20 bg-green-500/5">
