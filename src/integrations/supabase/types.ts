@@ -613,53 +613,6 @@ export type Database = {
         }
         Relationships: []
       }
-      plant_journal_events: {
-        Row: {
-          created_at: string
-          day_of_grow: number | null
-          description: string | null
-          event_type: string
-          id: string
-          photo_url: string | null
-          plant_id: string
-          title: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          day_of_grow?: number | null
-          description?: string | null
-          event_type: string
-          id?: string
-          photo_url?: string | null
-          plant_id: string
-          title?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          day_of_grow?: number | null
-          description?: string | null
-          event_type?: string
-          id?: string
-          photo_url?: string | null
-          plant_id?: string
-          title?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "plant_journal_events_plant_id_fkey"
-            columns: ["plant_id"]
-            isOneToOne: false
-            referencedRelation: "plants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       plants: {
         Row: {
           created_at: string | null

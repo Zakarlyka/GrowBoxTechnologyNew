@@ -12,19 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { 
   Wifi, WifiOff, 
   Pencil, Check, X, QrCode, Trash2, Cpu, ChevronDown 
 } from 'lucide-react';
 import { SensorCardsGrid } from './SensorCardsGrid';
-import { MasterPlantCard } from './MasterPlantCard';
-import { InhabitantsSection } from './InhabitantsSection';
+import { ActivePlantContext } from './ActivePlantContext';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
@@ -160,7 +153,7 @@ export function Dashboard() {
     );
   }
 
-  // Empty state - no device selected (CLICKABLE)
+  // Empty state - no device selected
   if (!selectedDevice) {
     return (
       <div className="flex-1 space-y-6 p-4 sm:p-6">
@@ -192,35 +185,16 @@ export function Dashboard() {
           </Select>
         </div>
 
-        {/* Select Device Prompt - CLICKABLE */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Card className="gradient-card border-border/50 cursor-pointer hover:border-primary/50 transition-colors">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <ChevronDown className="h-12 w-12 text-muted-foreground/50 mb-4 animate-bounce" />
-                <h2 className="text-xl font-semibold mb-2">{t('devices.selectDevice')}</h2>
-                <p className="text-muted-foreground text-center max-w-md">
-                  {t('devices.selectDeviceDescription')}
-                </p>
-              </CardContent>
-            </Card>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[280px]">
-            {devices.map(device => (
-              <DropdownMenuItem 
-                key={device.id} 
-                onClick={() => handleDeviceSelect(device.id)}
-                className="flex items-center gap-2"
-              >
-                <div className={`w-2 h-2 rounded-full ${
-                  device.last_seen_at && (Date.now() - new Date(device.last_seen_at).getTime()) < 40000
-                    ? 'bg-success' : 'bg-destructive'
-                }`} />
-                {device.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Select Device Prompt */}
+        <Card className="gradient-card border-border/50">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <ChevronDown className="h-12 w-12 text-muted-foreground/50 mb-4 animate-bounce" />
+            <h2 className="text-xl font-semibold mb-2">{t('devices.selectDevice')}</h2>
+            <p className="text-muted-foreground text-center max-w-md">
+              {t('devices.selectDeviceDescription')}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -333,16 +307,13 @@ export function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* SECTION 2: Master Plant Card (Compact cockpit-style) */}
-      <MasterPlantCard 
+      {/* SECTION 2: Active Plant Context (Master Plant, Alerts, My Plants button) */}
+      <ActivePlantContext 
         deviceId={selectedDevice.id} 
         deviceStringId={selectedDevice.device_id} 
       />
 
-      {/* SECTION 3: Inhabitants (Other plants in this device) */}
-      <InhabitantsSection deviceStringId={selectedDevice.device_id} />
-
-      {/* SECTION 4: Device Controls (Lighting/Climate) */}
+      {/* SECTION 3: Device Controls (Lighting/Climate) */}
       <DeviceControls deviceId={selectedDevice.device_id} />
 
       {/* Delete Dialog */}
