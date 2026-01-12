@@ -94,7 +94,7 @@ export const AllPlantsDrawer = ({ children, deviceFilter }: AllPlantsDrawerProps
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0">
+      <SheetContent side="right" className="w-full sm:max-w-[400px] p-0 overflow-x-hidden">
         <SheetHeader className="p-4 md:p-6 pb-3 md:pb-4 border-b border-border/50">
           <SheetTitle className="flex items-center gap-2 text-base md:text-lg">
             <div className="p-1.5 md:p-2 rounded-lg bg-green-500/10 border border-green-500/30">
@@ -227,9 +227,9 @@ export const AllPlantsDrawer = ({ children, deviceFilter }: AllPlantsDrawerProps
 
                       {/* Bottom Row: Next Alert OR Stage Targets */}
                       {nextAlert ? (
-                        <div className="flex items-center gap-1.5 md:gap-2 p-2 md:p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                          <Bell className="h-4 w-4 text-amber-400 shrink-0" />
-                          <span className="text-sm text-amber-200 truncate">
+                        <div className="flex items-start gap-1.5 md:gap-2 p-2 md:p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 min-w-0 overflow-hidden">
+                          <Bell className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                          <span className="text-sm text-amber-200 min-w-0 break-words whitespace-normal [overflow-wrap:anywhere]">
                             <span className="font-semibold">
                               {nextAlert.daysUntil === 0 
                                 ? 'Today' 
@@ -241,9 +241,9 @@ export const AllPlantsDrawer = ({ children, deviceFilter }: AllPlantsDrawerProps
                           </span>
                         </div>
                       ) : stageTargets ? (
-                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
-                          <Target className="h-4 w-4 text-primary shrink-0" />
-                          <span className="text-sm text-foreground/80">
+                        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20 min-w-0 overflow-hidden">
+                          <Target className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span className="text-sm text-foreground/80 min-w-0 break-words whitespace-normal [overflow-wrap:anywhere]">
                             <span className="font-semibold">Target:</span>{' '}
                             {stageTargets.vpd && `VPD ${stageTargets.vpd.toFixed(1)}`}
                             {stageTargets.humidity && ` • ${stageTargets.humidity}% RH`}
