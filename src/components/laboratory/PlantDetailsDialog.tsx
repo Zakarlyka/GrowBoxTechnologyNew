@@ -1,26 +1,36 @@
-import { useState, useMemo, useEffect } from 'react';
-import { 
-  Leaf, Clock, Thermometer, Droplets, Sun, 
-  TrendingUp, Ruler, Wind, Shield, Target,
-  Calendar, GraduationCap, Gauge, Plus, Droplet,
-  Scissors, FlaskConical, Camera, AlertTriangle, StickyNote,
-  Loader2, X
+import { useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  Calendar,
+  Camera,
+  Clock,
+  FlaskConical,
+  GraduationCap,
+  Leaf,
+  Loader2,
+  Plus,
+  Scissors,
+  Shield,
+  StickyNote,
+  Thermometer,
+  Wind,
+  X,
 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { addDays, differenceInDays, format } from 'date-fns';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -28,18 +38,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import type { PlantWithStrain } from '@/hooks/usePlantsWithStrains';
+
 import {
-  ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
   PolarAngleAxis,
+  PolarGrid,
   PolarRadiusAxis,
   Radar,
+  RadarChart,
+  ResponsiveContainer,
 } from 'recharts';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
-import type { PlantWithStrain } from '@/hooks/usePlantsWithStrains';
 
 interface JournalEvent {
   id: string;
@@ -53,55 +65,284 @@ interface JournalEvent {
   created_at: string;
 }
 
+type StrainRow = {
+  id: number;
+  name: string;
+  photo_url: string | null;
+  description: string | null;
+  genetics: string | null;
+  flowering_days: number | null;
+  presets: unknown | null;
+  growing_params: unknown | null;
+};
+
+type PlantDetailsRow = {
+  id: string;
+  custom_name: string | null;
+  current_stage: string | null;
+  start_date: string | null;
+  is_main: boolean | null;
+  strain_id: number | null;
+  photo_url: string | null;
+  notes: string | null;
+  library_strains: StrainRow | null;
+};
+
 interface PlantDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plant: PlantWithStrain | null;
 }
 
-const eventTypeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  watering: { icon: Droplet, color: 'text-blue-400', label: 'Watering' },
-  defoliation: { icon: Scissors, color: 'text-green-400', label: 'Defoliation' },
-  nutrients: { icon: FlaskConical, color: 'text-purple-400', label: 'Nutrients' },
-  photo: { icon: Camera, color: 'text-pink-400', label: 'Photo' },
-  issue: { icon: AlertTriangle, color: 'text-red-400', label: 'Issue' },
-  note: { icon: StickyNote, color: 'text-yellow-400', label: 'Note' },
-  stage_change: { icon: Leaf, color: 'text-emerald-400', label: 'Stage Change' },
+type ColorToken = 'primary' | 'accent' | 'warning' | 'destructive' | 'muted' | 'success';
+
+const tokenTextClass: Record<ColorToken, string> = {
+  primary: 'text-primary',
+  accent: 'text-accent',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+  muted: 'text-muted-foreground',
+  success: 'text-success',
 };
 
-const IntensityBar = ({ value, max = 10, color = 'primary' }: { value: number; max?: number; color?: string }) => {
-  const percentage = (value / max) * 100;
-  const colorClasses: Record<string, string> = {
-    primary: 'bg-primary',
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    red: 'bg-red-500',
-    purple: 'bg-purple-500',
-    cyan: 'bg-cyan-500',
-  };
-  
+const tokenBgClass: Record<ColorToken, string> = {
+  primary: 'bg-primary',
+  accent: 'bg-accent',
+  warning: 'bg-warning',
+  destructive: 'bg-destructive',
+  muted: 'bg-muted',
+  success: 'bg-success',
+};
+
+const eventTypeConfig: Record<
+  string,
+  { icon: React.ElementType; color: ColorToken; label: string }
+> = {
+  watering: { icon: Leaf, color: 'primary', label: 'Watering' },
+  defoliation: { icon: Scissors, color: 'accent', label: 'Defoliation' },
+  nutrients: { icon: FlaskConical, color: 'success', label: 'Nutrients' },
+  photo: { icon: Camera, color: 'primary', label: 'Photo' },
+  issue: { icon: AlertTriangle, color: 'destructive', label: 'Issue' },
+  note: { icon: StickyNote, color: 'muted', label: 'Note' },
+  stage_change: { icon: Leaf, color: 'accent', label: 'Stage Change' },
+};
+
+function safeJsonObject(value: unknown): Record<string, any> | null {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? (parsed as any) : null;
+    } catch {
+      return null;
+    }
+  }
+  return typeof value === 'object' ? (value as any) : null;
+}
+
+function avgMinMax(v: unknown): number | null {
+  if (typeof v === 'number') return v;
+  const obj = safeJsonObject(v);
+  if (!obj) return null;
+  const min = typeof obj.min === 'number' ? obj.min : null;
+  const max = typeof obj.max === 'number' ? obj.max : null;
+  if (min === null && max === null) return null;
+  if (min !== null && max !== null) return Math.round((min + max) / 2);
+  return min ?? max;
+}
+
+type EnvTarget = {
+  temp_day?: number;
+  temp_night?: number;
+  humidity_min?: number;
+  humidity_max?: number;
+  vpd_target?: number;
+  ppfd_target?: number;
+  light_hours?: number;
+};
+
+function normalizeEnvironmentTargets(
+  raw: unknown,
+  presetsRaw: unknown
+): Record<string, EnvTarget> {
+  const asObj = safeJsonObject(raw);
+  if (asObj) return asObj as Record<string, EnvTarget>;
+
+  // Fallback: presets (veg/bloom/flush)
+  const presets = safeJsonObject(presetsRaw);
+  if (!presets) return {};
+
+  const out: Record<string, EnvTarget> = {};
+  if (presets.veg) {
+    out.vegetation = {
+      temp_day: presets.veg.temp,
+      humidity_min: presets.veg.hum,
+      humidity_max: presets.veg.hum,
+      light_hours: presets.veg.light_h,
+    };
+  }
+  if (presets.bloom) {
+    out.flowering = {
+      temp_day: presets.bloom.temp,
+      humidity_min: presets.bloom.hum,
+      humidity_max: presets.bloom.hum,
+      light_hours: presets.bloom.light_h,
+    };
+  }
+  if (presets.flush) {
+    out.ripening = {
+      temp_day: presets.flush.temp,
+      humidity_min: presets.flush.hum,
+      humidity_max: presets.flush.hum,
+      light_hours: presets.flush.light_h,
+    };
+  }
+  return out;
+}
+
+function fmtTemp(t?: EnvTarget): string {
+  if (!t) return '—';
+  const day = typeof t.temp_day === 'number' ? `${t.temp_day}°C` : '—';
+  const night = typeof t.temp_night === 'number' ? `${t.temp_night}°C` : '—';
+  return night !== '—' ? `${day} / ${night}` : day;
+}
+
+function fmtRh(t?: EnvTarget): string {
+  if (!t) return '—';
+  const min = typeof t.humidity_min === 'number' ? t.humidity_min : null;
+  const max = typeof t.humidity_max === 'number' ? t.humidity_max : null;
+  if (min === null && max === null) return '—';
+  if (min !== null && max !== null) return `${min}–${max}%`;
+  return `${min ?? max}%`;
+}
+
+function fmtVpd(t?: EnvTarget): string {
+  if (!t || typeof t.vpd_target !== 'number') return '—';
+  return `${t.vpd_target} kPa`;
+}
+
+function fmtPpfdOrLight(t?: EnvTarget): string {
+  if (!t) return '—';
+  if (typeof t.ppfd_target === 'number') return `${t.ppfd_target} PPFD`;
+  if (typeof t.light_hours === 'number') return `${t.light_hours}h`;
+  return '—';
+}
+
+type PredStage = {
+  name: string;
+  startDay: number;
+  endDay: number;
+  startDate: Date;
+  endDate: Date;
+};
+
+function buildPredictedTimeline(opts: {
+  startDate: Date;
+  currentDay: number;
+  growingParams: Record<string, any> | null;
+  fallbackFloweringDays?: number | null;
+}): { stages: PredStage[]; estTotalDays: number | null; estHarvestDate: Date | null } {
+  const { startDate, currentDay, growingParams, fallbackFloweringDays } = opts;
+
+  const estTotalDays =
+    avgMinMax(growingParams?.lifecycle_estimates?.seed_to_harvest_days) ??
+    (typeof growingParams?.lifecycle_estimates?.total_days === 'number'
+      ? growingParams.lifecycle_estimates.total_days
+      : null);
+
+  const rawStages = Array.isArray(growingParams?.stages) ? growingParams!.stages : null;
+  const stageDefs: Array<{ name: string; days: number }> = [];
+
+  if (rawStages) {
+    for (const s of rawStages) {
+      const name = typeof s?.name === 'string' ? s.name : null;
+      const days =
+        typeof s?.days_duration === 'number'
+          ? s.days_duration
+          : typeof s?.days === 'number'
+            ? s.days
+            : null;
+      if (name && days) stageDefs.push({ name, days });
+    }
+  }
+
+  if (stageDefs.length === 0) {
+    const flower = fallbackFloweringDays ?? 56;
+    stageDefs.push(
+      { name: 'Seedling', days: 14 },
+      { name: 'Vegetation', days: 21 },
+      { name: 'Flowering', days: flower },
+      { name: 'Ripening', days: 10 }
+    );
+  }
+
+  const sumRaw = stageDefs.reduce((acc, s) => acc + s.days, 0);
+  const targetTotal = estTotalDays ?? sumRaw;
+  const scale = sumRaw > 0 ? targetTotal / sumRaw : 1;
+
+  const scaled = stageDefs.map((s) => ({
+    name: s.name,
+    days: Math.max(1, Math.round(s.days * scale)),
+  }));
+
+  // Fix rounding drift to match targetTotal
+  const sumScaled = scaled.reduce((acc, s) => acc + s.days, 0);
+  const drift = targetTotal - sumScaled;
+  if (scaled.length > 0 && drift !== 0) {
+    scaled[scaled.length - 1].days = Math.max(1, scaled[scaled.length - 1].days + drift);
+  }
+
+  let cursorDay = 0;
+  const stages: PredStage[] = scaled.map((s) => {
+    const startDay = cursorDay;
+    const endDay = cursorDay + s.days;
+    const stage: PredStage = {
+      name: s.name,
+      startDay,
+      endDay,
+      startDate: addDays(startDate, startDay),
+      endDate: addDays(startDate, endDay),
+    };
+    cursorDay = endDay;
+    return stage;
+  });
+
+  const estHarvestDate = targetTotal ? addDays(startDate, targetTotal) : null;
+
+  // If currentDay is beyond computed (happens with missing start date), keep timeline stable.
+  void currentDay;
+
+  return { stages, estTotalDays: targetTotal ?? null, estHarvestDate };
+}
+
+const IntensityBar = ({
+  value,
+  max = 10,
+  color = 'primary',
+}: {
+  value: number;
+  max?: number;
+  color?: ColorToken;
+}) => {
+  const percentage = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-        <div 
-          className={`h-full rounded-full transition-all ${colorClasses[color] || colorClasses.primary}`}
+        <div
+          className={`h-full rounded-full transition-all ${tokenBgClass[color]}`}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      <span className="text-xs font-medium w-6 text-right">{value}/{max}</span>
+      <span className="text-xs font-medium w-12 text-right text-muted-foreground">
+        {value}/{max}
+      </span>
     </div>
   );
 };
 
-export function PlantDetailsDialog({
-  open,
-  onOpenChange,
-  plant,
-}: PlantDetailsDialogProps) {
+export function PlantDetailsDialog({ open, onOpenChange, plant }: PlantDetailsDialogProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('journal');
-  const [journalEvents, setJournalEvents] = useState<JournalEvent[]>([]);
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [activeTab, setActiveTab] = useState<'timeline' | 'resistance' | 'environment' | 'wiki'>('timeline');
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [newEvent, setNewEvent] = useState({
@@ -110,61 +351,133 @@ export function PlantDetailsDialog({
     description: '',
   });
 
-  // Extract growing params from strain
-  const rawParams = plant?.growing_params;
-  const growingParams: any = rawParams 
-    ? (typeof rawParams === 'string' ? JSON.parse(rawParams) : rawParams) 
-    : null;
-  
-  const morphology = growingParams?.morphology || null;
-  const resistanceRating = growingParams?.resistance_rating || null;
-  const environmentTargets = growingParams?.environment_targets || null;
+  const plantId = plant?.id;
 
-  // Calculate day of grow
-  const dayOfGrow = plant?.start_date 
-    ? differenceInDays(new Date(), new Date(plant.start_date)) 
-    : 0;
+  const plantQuery = useQuery({
+    queryKey: ['plant-details', plantId],
+    enabled: open && !!plantId,
+    queryFn: async (): Promise<PlantDetailsRow | null> => {
+      if (!plantId) return null;
+      const { data, error } = await supabase
+        .from('plants')
+        .select(
+          `
+            id,
+            custom_name,
+            current_stage,
+            start_date,
+            is_main,
+            strain_id,
+            photo_url,
+            notes,
+            library_strains (
+              id,
+              name,
+              photo_url,
+              description,
+              genetics,
+              flowering_days,
+              presets,
+              growing_params
+            )
+          `
+        )
+        .eq('id', plantId)
+        .maybeSingle();
 
-  // Build Radar Chart data for resistance
-  const radarData = useMemo(() => {
-    if (!resistanceRating) return [];
-    return [
-      { subject: 'Mold', value: resistanceRating.mold || 0, fullMark: 5 },
-      { subject: 'Pests', value: resistanceRating.pests || 0, fullMark: 5 },
-      { subject: 'Cold', value: resistanceRating.cold || 0, fullMark: 5 },
-      { subject: 'Heat', value: resistanceRating.heat || 0, fullMark: 5 },
-      { subject: 'Drought', value: resistanceRating.drought || 0, fullMark: 5 },
-    ].filter(item => item.value > 0);
-  }, [resistanceRating]);
+      if (error) throw error;
+      return (data as any) ?? null;
+    },
+  });
 
-  // Fetch journal events
-  useEffect(() => {
-    if (open && plant) {
-      fetchJournalEvents();
-    }
-  }, [open, plant]);
-
-  const fetchJournalEvents = async () => {
-    if (!plant) return;
-    setIsLoadingEvents(true);
-    try {
+  const eventsQuery = useQuery({
+    queryKey: ['plant-journal-events', plantId],
+    enabled: open && !!plantId,
+    queryFn: async (): Promise<JournalEvent[]> => {
+      if (!plantId) return [];
       const { data, error } = await supabase
         .from('plant_journal_events')
         .select('*')
-        .eq('plant_id', plant.id)
+        .eq('plant_id', plantId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setJournalEvents((data as JournalEvent[]) || []);
-    } catch (error) {
-      console.error('Error fetching journal events:', error);
-    } finally {
-      setIsLoadingEvents(false);
-    }
-  };
+      return (data as JournalEvent[]) || [];
+    },
+  });
+
+  const effectivePlant = plantQuery.data ?? null;
+
+  if (!plant) return null;
+
+  const customName = effectivePlant?.custom_name ?? plant.custom_name ?? 'Unnamed Plant';
+  const stage = effectivePlant?.current_stage ?? plant.current_stage ?? 'seedling';
+  const startDateStr = effectivePlant?.start_date ?? plant.start_date ?? null;
+  const isMaster = effectivePlant?.is_main ?? plant.is_main ?? false;
+
+  const strain = effectivePlant?.library_strains ?? null;
+  const strainName = strain?.name ?? plant.strain_name ?? 'Unknown Strain';
+  const strainPhotoUrl = strain?.photo_url ?? plant.strain_photo_url ?? null;
+  const flowerDays = strain?.flowering_days ?? plant.flowering_days ?? null;
+
+  const photoUrl = effectivePlant?.photo_url ?? plant.photo_url ?? strainPhotoUrl;
+
+  const dayOfGrow = useMemo(() => {
+    if (!startDateStr) return 0;
+    return Math.max(0, differenceInDays(new Date(), new Date(startDateStr)));
+  }, [startDateStr]);
+
+  const growingParams = useMemo(() => {
+    // Primary source must be library_strains.growing_params
+    return safeJsonObject(strain?.growing_params ?? plant.growing_params) ?? null;
+  }, [strain?.growing_params, plant.growing_params]);
+
+  const morphology = (growingParams?.morphology ?? null) as
+    | { stretch_ratio?: number; bud_density?: string; odor_intensity?: number }
+    | null;
+
+  const resistance = (growingParams?.resistance_rating ?? growingParams?.resistance_data ?? null) as
+    | { mold?: number; pests?: number; cold?: number; heat?: number }
+    | null;
+
+  const envTargetsRecord = useMemo(() => {
+    return normalizeEnvironmentTargets(
+      growingParams?.environment_targets ?? growingParams?.optimal_environments,
+      strain?.presets
+    );
+  }, [growingParams, strain?.presets]);
+
+  const protocol = useMemo(
+    () => [
+      { key: 'seedling', label: 'Seedling', target: envTargetsRecord.seedling },
+      { key: 'vegetation', label: 'Veg', target: envTargetsRecord.vegetation ?? envTargetsRecord.veg },
+      { key: 'flowering', label: 'Bloom', target: envTargetsRecord.flowering ?? envTargetsRecord.bloom },
+    ],
+    [envTargetsRecord]
+  );
+
+  const radarData = useMemo(() => {
+    if (!resistance) return [];
+    return [
+      { subject: 'Mold', value: resistance.mold ?? 0, fullMark: 5 },
+      { subject: 'Pests', value: resistance.pests ?? 0, fullMark: 5 },
+      { subject: 'Cold', value: resistance.cold ?? 0, fullMark: 5 },
+      { subject: 'Heat', value: resistance.heat ?? 0, fullMark: 5 },
+    ];
+  }, [resistance]);
+
+  const predicted = useMemo(() => {
+    const startDate = startDateStr ? new Date(startDateStr) : new Date();
+    return buildPredictedTimeline({
+      startDate,
+      currentDay: dayOfGrow,
+      growingParams,
+      fallbackFloweringDays: flowerDays,
+    });
+  }, [startDateStr, dayOfGrow, growingParams, flowerDays]);
 
   const handleAddEvent = async () => {
-    if (!plant || !newEvent.title.trim()) {
+    if (!plantId || !newEvent.title.trim()) {
       toast({ title: 'Please enter a title', variant: 'destructive' });
       return;
     }
@@ -174,23 +487,21 @@ export function PlantDetailsDialog({
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('plant_journal_events')
-        .insert({
-          plant_id: plant.id,
-          user_id: userData.user.id,
-          event_type: newEvent.event_type,
-          title: newEvent.title,
-          description: newEvent.description || null,
-          day_of_grow: dayOfGrow,
-        });
+      const { error } = await supabase.from('plant_journal_events').insert({
+        plant_id: plantId,
+        user_id: userData.user.id,
+        event_type: newEvent.event_type,
+        title: newEvent.title,
+        description: newEvent.description || null,
+        day_of_grow: dayOfGrow,
+      });
 
       if (error) throw error;
 
       toast({ title: '✅ Event added', description: `Day ${dayOfGrow}` });
       setNewEvent({ event_type: 'note', title: '', description: '' });
       setShowAddEvent(false);
-      fetchJournalEvents();
+      queryClient.invalidateQueries({ queryKey: ['plant-journal-events', plantId] });
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } finally {
@@ -199,6 +510,7 @@ export function PlantDetailsDialog({
   };
 
   const handleDeleteEvent = async (eventId: string) => {
+    if (!plantId) return;
     try {
       const { error } = await supabase
         .from('plant_journal_events')
@@ -206,66 +518,33 @@ export function PlantDetailsDialog({
         .eq('id', eventId);
 
       if (error) throw error;
-      setJournalEvents(prev => prev.filter(e => e.id !== eventId));
       toast({ title: 'Event deleted' });
+      queryClient.invalidateQueries({ queryKey: ['plant-journal-events', plantId] });
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
 
-  if (!plant) return null;
-
-  const photoUrl = plant.photo_url || plant.strain_photo_url;
-
-  const formatTempRange = (temp: any) => {
-    if (!temp) return 'N/A';
-    if (Array.isArray(temp)) return `${temp[0]}°C - ${temp[1]}°C`;
-    if (typeof temp === 'object') {
-      if (temp.day !== undefined && temp.night !== undefined) {
-        return `${temp.night}°C / ${temp.day}°C`;
-      }
-      if (temp.min !== undefined && temp.max !== undefined) {
-        return `${temp.min}°C - ${temp.max}°C`;
-      }
-    }
-    return `${temp}°C`;
-  };
-
-  const formatHumidity = (hum: any) => {
-    if (!hum) return 'N/A';
-    if (Array.isArray(hum)) return `${hum[0]}% - ${hum[1]}%`;
-    if (typeof hum === 'object' && hum.min !== undefined && hum.max !== undefined) {
-      return `${hum.min}% - ${hum.max}%`;
-    }
-    return `${hum}%`;
-  };
-
-  // Normalize environment targets to array
-  const envTargetsArray = useMemo(() => {
-    if (!environmentTargets) return [];
-    if (Array.isArray(environmentTargets)) return environmentTargets;
-    return Object.entries(environmentTargets).map(([key, val]: [string, any]) => ({
-      stage: key,
-      ...val
-    }));
-  }, [environmentTargets]);
+  const wikiDescription = strain?.description ?? null;
+  const wikiGenetics = strain?.genetics ?? null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
         <DialogHeader className="pb-0 sr-only">
-          <DialogTitle>{plant.custom_name || plant.strain_name || 'Plant Details'}</DialogTitle>
+          <DialogTitle>{customName || strainName || 'Plant Details'}</DialogTitle>
         </DialogHeader>
 
-        {/* ========== HERO SECTION ========== */}
+        {/* ========== HERO SECTION / PASSPORT ========== */}
         <div className="flex flex-col sm:flex-row gap-4">
-          {/* Left: Image */}
-          <div className="w-full sm:w-48 h-48 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex-shrink-0">
+          {/* Left: Strain image */}
+          <div className="w-full sm:w-56 h-56 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex-shrink-0">
             {photoUrl ? (
               <img
                 src={photoUrl}
-                alt={plant.custom_name || 'Plant'}
+                alt={`${customName} – ${strainName}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -273,64 +552,66 @@ export function PlantDetailsDialog({
               </div>
             )}
           </div>
-          
-          {/* Right: Info + Morphology */}
+
+          {/* Right: identity + morphology */}
           <div className="flex-1 space-y-3">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">
-                {plant.custom_name || 'Unnamed Plant'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {plant.strain_name || 'Unknown Strain'}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
+              <h2 className="text-2xl font-bold text-foreground">{customName}</h2>
+              <p className="text-sm text-muted-foreground">{strainName}</p>
+
+              <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge variant="outline" className="capitalize">
-                  {plant.current_stage || 'seedling'}
+                  {stage}
                 </Badge>
                 <Badge variant="secondary" className="gap-1">
                   <Clock className="h-3 w-3" />
                   Day {dayOfGrow}
                 </Badge>
-                {plant.is_main && (
-                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                {isMaster && (
+                  <Badge className="bg-warning/20 text-warning border-warning/30">
                     👑 Master
                   </Badge>
                 )}
               </div>
             </div>
 
-            {/* Morphology Cards */}
-            {morphology && (
-              <div className="grid grid-cols-3 gap-2">
-                <div className="p-2 rounded-lg bg-muted/50 border border-border/50">
-                  <div className="flex items-center gap-1 mb-1">
-                    <TrendingUp className="h-3 w-3 text-green-400" />
-                    <span className="text-[10px] text-muted-foreground">Stretch</span>
-                  </div>
-                  <div className="text-lg font-bold text-green-400">
-                    x{morphology.stretch_ratio || 'N/A'}
-                  </div>
+            {/* Morphology cards (always keep layout) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-muted-foreground">Stretch Ratio</span>
                 </div>
-                <div className="p-2 rounded-lg bg-muted/50 border border-border/50">
-                  <div className="flex items-center gap-1 mb-1">
-                    <Target className="h-3 w-3 text-purple-400" />
-                    <span className="text-[10px] text-muted-foreground">Density</span>
-                  </div>
-                  <div className="text-sm font-bold text-purple-400 capitalize">
-                    {morphology.bud_density || 'N/A'}
-                  </div>
+                <div className="text-lg font-semibold text-foreground">
+                  {typeof morphology?.stretch_ratio === 'number' ? `x${morphology.stretch_ratio}` : 'N/A'}
                 </div>
-                <div className="p-2 rounded-lg bg-muted/50 border border-border/50">
-                  <div className="flex items-center gap-1 mb-1">
-                    <Wind className="h-3 w-3 text-pink-400" />
-                    <span className="text-[10px] text-muted-foreground">Odor</span>
-                  </div>
-                  {morphology.odor_intensity !== undefined ? (
-                    <IntensityBar value={morphology.odor_intensity} max={10} color="purple" />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">N/A</span>
-                  )}
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-muted-foreground">Bud Density</span>
                 </div>
+                <div className="text-lg font-semibold text-foreground capitalize">
+                  {morphology?.bud_density ?? 'N/A'}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Wind className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Odor Intensity</span>
+                </div>
+                <IntensityBar
+                  value={typeof morphology?.odor_intensity === 'number' ? morphology.odor_intensity : 0}
+                  max={10}
+                  color="primary"
+                />
+              </div>
+            </div>
+
+            {plantQuery.isLoading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading strain passport…
               </div>
             )}
           </div>
@@ -339,11 +620,11 @@ export function PlantDetailsDialog({
         <Separator className="my-4" />
 
         {/* ========== TABS ========== */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="journal" className="gap-1 text-xs">
+            <TabsTrigger value="timeline" className="gap-1 text-xs">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Journal</span>
+              <span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
             <TabsTrigger value="resistance" className="gap-1 text-xs">
               <Shield className="h-4 w-4" />
@@ -359,176 +640,224 @@ export function PlantDetailsDialog({
             </TabsTrigger>
           </TabsList>
 
-          {/* ============ TAB: JOURNAL ============ */}
-          <TabsContent value="journal" className="mt-4 space-y-4">
-            {/* Add Event Button / Form */}
-            {showAddEvent ? (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="pt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Add Journal Entry</h4>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={() => setShowAddEvent(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Event Type</Label>
-                      <Select
-                        value={newEvent.event_type}
-                        onValueChange={(v) => setNewEvent(prev => ({ ...prev, event_type: v }))}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(eventTypeConfig).map(([key, config]) => (
-                            <SelectItem key={key} value={key}>
-                              <div className="flex items-center gap-2">
-                                <config.icon className={`h-4 w-4 ${config.color}`} />
-                                {config.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Day</Label>
-                      <Input 
-                        value={`Day ${dayOfGrow}`} 
-                        disabled 
-                        className="h-9 bg-muted/50"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Title</Label>
-                    <Input
-                      placeholder="What happened?"
-                      value={newEvent.title}
-                      onChange={(e) => setNewEvent(prev => ({ ...prev, title: e.target.value }))}
-                      className="h-9"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Notes (optional)</Label>
-                    <Textarea
-                      placeholder="Additional details..."
-                      value={newEvent.description}
-                      onChange={(e) => setNewEvent(prev => ({ ...prev, description: e.target.value }))}
-                      rows={2}
-                    />
-                  </div>
-                  <Button 
-                    className="w-full" 
-                    onClick={handleAddEvent}
-                    disabled={isSavingEvent}
-                  >
-                    {isSavingEvent && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    Save Entry
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Button 
-                variant="outline" 
-                className="w-full gap-2"
-                onClick={() => setShowAddEvent(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Add Note / Event
-              </Button>
-            )}
+          {/* ============ TAB: TIMELINE (Predicted + Journal) ============ */}
+          <TabsContent value="timeline" className="mt-4 space-y-4">
+            <Card className="border-border/50">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  🧬 Predicted Timeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-3">
+                  {predicted.estHarvestDate ? (
+                    <span>
+                      Estimated harvest: <span className="text-foreground font-medium">{format(predicted.estHarvestDate, 'PPP')}</span>
+                    </span>
+                  ) : (
+                    <span>Estimated harvest: —</span>
+                  )}
+                  {predicted.estTotalDays ? (
+                    <Badge variant="secondary" className="text-[10px]">~{predicted.estTotalDays} days</Badge>
+                  ) : null}
+                </div>
 
-            {/* Events List */}
-            {isLoadingEvents ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : journalEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No journal entries yet</p>
-                <p className="text-xs">Start documenting your grow!</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                {journalEvents.map((event) => {
-                  const config = eventTypeConfig[event.event_type] || eventTypeConfig.note;
-                  const Icon = config.icon;
-                  return (
-                    <div 
-                      key={event.id}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50 group"
-                    >
-                      <div className={`p-2 rounded-lg bg-background ${config.color}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{event.title}</span>
-                          <Badge variant="secondary" className="text-[10px] px-1.5">
-                            Day {event.day_of_grow ?? '?'}
-                          </Badge>
+                <div className="relative pl-4">
+                  <div className="absolute left-1 top-0 bottom-0 w-px bg-border/60" />
+                  <div className="space-y-3">
+                    {predicted.stages.map((s, idx) => {
+                      const isNow = dayOfGrow >= s.startDay && dayOfGrow < s.endDay;
+                      return (
+                        <div key={idx} className="relative">
+                          <div className="absolute -left-[7px] top-1.5 h-3 w-3 rounded-full bg-background border border-border" />
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{s.name}</span>
+                                {isNow && (
+                                  <Badge className="bg-accent/20 text-accent border-accent/30 text-[10px]">Now</Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {format(s.startDate, 'MMM d')} → {format(s.endDate, 'MMM d')} • Days {s.startDay}–{s.endDay}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        {event.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                            {event.description}
-                          </p>
-                        )}
-                        <p className="text-[10px] text-muted-foreground/60 mt-1">
-                          {format(new Date(event.created_at), 'PPP')}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleDeleteEvent(event.id)}
-                      >
-                        <X className="h-3 w-3" />
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Journal */}
+            <Card className="border-border/50">
+              <CardHeader className="py-3 px-4">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <StickyNote className="h-4 w-4 text-muted-foreground" />
+                  📓 Journal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 pt-0 space-y-3">
+                {showAddEvent ? (
+                  <div className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Add Entry</h4>
+                      <Button size="sm" variant="ghost" onClick={() => setShowAddEvent(false)}>
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Type</Label>
+                        <Select
+                          value={newEvent.event_type}
+                          onValueChange={(v) => setNewEvent((p) => ({ ...p, event_type: v }))}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(eventTypeConfig).map(([key, cfg]) => (
+                              <SelectItem key={key} value={key}>
+                                <div className="flex items-center gap-2">
+                                  <cfg.icon className={`h-4 w-4 ${tokenTextClass[cfg.color]}`} />
+                                  {cfg.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Day</Label>
+                        <Input value={`Day ${dayOfGrow}`} disabled className="h-9 bg-muted/50" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs">Title</Label>
+                      <Input
+                        placeholder="What happened?"
+                        value={newEvent.title}
+                        onChange={(e) => setNewEvent((p) => ({ ...p, title: e.target.value }))}
+                        className="h-9"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs">Notes (optional)</Label>
+                      <Textarea
+                        placeholder="Additional details…"
+                        value={newEvent.description}
+                        onChange={(e) => setNewEvent((p) => ({ ...p, description: e.target.value }))}
+                        rows={2}
+                      />
+                    </div>
+
+                    <Button className="w-full" onClick={handleAddEvent} disabled={isSavingEvent}>
+                      {isSavingEvent && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                      Save Entry
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" className="w-full gap-2" onClick={() => setShowAddEvent(true)}>
+                    <Plus className="h-4 w-4" />
+                    Add Note / Event
+                  </Button>
+                )}
+
+                {eventsQuery.isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (eventsQuery.data?.length ?? 0) === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No journal entries yet</p>
+                    <p className="text-xs">Start documenting your grow!</p>
+                  </div>
+                ) : (
+                  <div className="relative pl-4 max-h-[320px] overflow-y-auto pr-2">
+                    <div className="absolute left-1 top-0 bottom-0 w-px bg-border/60" />
+                    <div className="space-y-3">
+                      {eventsQuery.data!.map((event) => {
+                        const cfg = eventTypeConfig[event.event_type] || eventTypeConfig.note;
+                        const Icon = cfg.icon;
+                        return (
+                          <div key={event.id} className="relative group">
+                            <div className="absolute -left-[7px] top-2 h-3 w-3 rounded-full bg-background border border-border" />
+                            <div className="flex items-start gap-3">
+                              <div className={`mt-0.5 ${tokenTextClass[cfg.color]}`}>
+                                <Icon className="h-4 w-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">{event.title}</span>
+                                  <Badge variant="secondary" className="text-[10px] px-1.5">
+                                    Day {event.day_of_grow ?? '?'}
+                                  </Badge>
+                                </div>
+                                {event.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
+                                    {event.description}
+                                  </p>
+                                )}
+                                <p className="text-[10px] text-muted-foreground/60 mt-1">
+                                  {format(new Date(event.created_at), 'PPP')}
+                                </p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleDeleteEvent(event.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* ============ TAB: RESISTANCE ============ */}
           <TabsContent value="resistance" className="mt-4">
-            <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
               <CardHeader className="py-3 px-4">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-green-400" />
+                  <Shield className="h-4 w-4 text-primary" />
                   🛡️ Resistance Matrix
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
                 {radarData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={260}>
                     <RadarChart data={radarData}>
                       <PolarGrid stroke="hsl(var(--border))" />
-                      <PolarAngleAxis 
-                        dataKey="subject" 
+                      <PolarAngleAxis
+                        dataKey="subject"
                         tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                       />
-                      <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 5]} 
+                      <PolarRadiusAxis
+                        angle={30}
+                        domain={[0, 5]}
                         tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                       />
-                      <Radar 
-                        name="Resistance" 
-                        dataKey="value" 
-                        stroke="hsl(var(--primary))" 
-                        fill="hsl(var(--primary))" 
-                        fillOpacity={0.4} 
+                      <Radar
+                        name="Resistance"
+                        dataKey="value"
+                        stroke="hsl(var(--primary))"
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.35}
                       />
                     </RadarChart>
                   </ResponsiveContainer>
@@ -547,43 +876,37 @@ export function PlantDetailsDialog({
             <Card>
               <CardHeader className="py-3 px-4">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <Thermometer className="h-4 w-4 text-orange-400" />
-                  🌡️ Environment Targets
+                  <Thermometer className="h-4 w-4 text-warning" />
+                  🌡️ Climate Protocol
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
-                {envTargetsArray.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border/50">
-                          <th className="text-left py-2 font-medium text-muted-foreground">Stage</th>
-                          <th className="text-center py-2 font-medium text-muted-foreground">
-                            <Thermometer className="h-3 w-3 inline mr-1" />Temp
-                          </th>
-                          <th className="text-center py-2 font-medium text-muted-foreground">
-                            <Droplets className="h-3 w-3 inline mr-1" />Hum
-                          </th>
-                          <th className="text-center py-2 font-medium text-muted-foreground">
-                            <Sun className="h-3 w-3 inline mr-1" />Light
-                          </th>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-2 font-medium text-muted-foreground">Stage</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">Temp</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">RH</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">VPD</th>
+                        <th className="text-center py-2 font-medium text-muted-foreground">Light</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {protocol.map((row) => (
+                        <tr key={row.key} className="border-b border-border/30">
+                          <td className="py-2 font-medium">{row.label}</td>
+                          <td className="py-2 text-center">{fmtTemp(row.target)}</td>
+                          <td className="py-2 text-center">{fmtRh(row.target)}</td>
+                          <td className="py-2 text-center">{fmtVpd(row.target)}</td>
+                          <td className="py-2 text-center">{fmtPpfdOrLight(row.target)}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {envTargetsArray.map((target: any, idx: number) => (
-                          <tr key={idx} className="border-b border-border/30">
-                            <td className="py-2 capitalize font-medium">{target.stage}</td>
-                            <td className="py-2 text-center">{formatTempRange(target.temp)}</td>
-                            <td className="py-2 text-center">{formatHumidity(target.humidity)}</td>
-                            <td className="py-2 text-center">
-                              {target.ppfd ? `${target.ppfd} PPFD` : target.light_hours ? `${target.light_hours}h` : 'N/A'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {Object.keys(envTargetsRecord).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Thermometer className="h-10 w-10 mx-auto mb-2 opacity-30" />
                     <p className="text-sm">No environment targets available</p>
@@ -599,40 +922,48 @@ export function PlantDetailsDialog({
             <Card>
               <CardHeader className="py-3 px-4">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4 text-blue-400" />
-                  📖 Strain Info
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                  📖 Wiki
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-4 pb-4 pt-0 space-y-3">
-                {plant.notes ? (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {plant.notes}
-                  </p>
-                ) : plant.strain_name ? (
-                  <p className="text-sm text-muted-foreground">
-                    Growing {plant.strain_name}. Check the strain library for detailed info.
-                  </p>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <GraduationCap className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No strain info available</p>
-                    <p className="text-xs">Link a strain from the library</p>
+              <CardContent className="px-4 pb-4 pt-0 space-y-4">
+                {wikiDescription ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Description</p>
+                    <p className="text-sm text-foreground/90 whitespace-pre-wrap">{wikiDescription}</p>
                   </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No description available for this strain.
+                  </p>
                 )}
-                
-                {/* Quick stats */}
-                {plant.flowering_days && (
+
+                {wikiGenetics ? (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Genetics</p>
+                    <p className="text-sm text-foreground/90 whitespace-pre-wrap">{wikiGenetics}</p>
+                  </div>
+                ) : null}
+
+                {effectivePlant?.notes ? (
+                  <div className="pt-3 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground mb-1">Your notes</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{effectivePlant.notes}</p>
+                  </div>
+                ) : null}
+
+                {flowerDays ? (
                   <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/50">
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground">Flowering</p>
-                      <p className="font-bold">{plant.flowering_days} days</p>
+                      <p className="font-semibold">{flowerDays} days</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground">Strain</p>
-                      <p className="font-bold text-sm">{plant.strain_name || 'Unknown'}</p>
+                      <p className="font-semibold text-sm">{strainName}</p>
                     </div>
                   </div>
-                )}
+                ) : null}
               </CardContent>
             </Card>
           </TabsContent>
