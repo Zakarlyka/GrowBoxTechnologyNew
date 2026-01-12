@@ -250,9 +250,9 @@ export function PlantDetailsDialog({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 px-4 pb-4">
+          <ScrollArea className="flex-1 max-h-[calc(90vh-280px)] px-4 pb-4">
             {/* Timeline Tab - Calendar View */}
-            <TabsContent value="timeline" className="mt-4 space-y-4">
+            <TabsContent value="timeline" className="mt-4 space-y-4 data-[state=inactive]:hidden">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Calendar */}
                 <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
@@ -283,7 +283,7 @@ export function PlantDetailsDialog({
             </TabsContent>
 
             {/* Environment Tab */}
-            <TabsContent value="environment" className="mt-4 space-y-4">
+            <TabsContent value="environment" className="mt-4 space-y-4 data-[state=inactive]:hidden">
               <Card className="bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -329,7 +329,7 @@ export function PlantDetailsDialog({
             </TabsContent>
 
             {/* Alerts Tab */}
-            <TabsContent value="alerts" className="mt-4 space-y-4">
+            <TabsContent value="alerts" className="mt-4 space-y-4 data-[state=inactive]:hidden">
               <Card className="bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border-amber-500/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -368,7 +368,7 @@ export function PlantDetailsDialog({
             </TabsContent>
 
             {/* Info Tab */}
-            <TabsContent value="info" className="mt-4 space-y-4">
+            <TabsContent value="info" className="mt-4 space-y-4 data-[state=inactive]:hidden">
               <Card className="bg-card/50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
