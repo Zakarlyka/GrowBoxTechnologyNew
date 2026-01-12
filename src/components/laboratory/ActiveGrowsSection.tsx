@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +16,7 @@ import {
   Plus,
   Layers
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   usePlantsWithStrains,
   calculateStageInfo,
@@ -27,10 +27,9 @@ import {
   PlantWithStrain
 } from '@/hooks/usePlantsWithStrains';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
-import { StrainDetailsDialog } from '@/components/library/StrainDetailsDialog';
+import { PlantDetailsDialog } from '@/components/laboratory/PlantDetailsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevices } from '@/hooks/useDevices';
-import type { LibraryStrainFull } from '@/types';
 import { toast } from 'sonner';
 
 const stageIcons: Record<string, React.ElementType> = {
@@ -59,13 +58,14 @@ const stageBgColors: Record<string, string> = {
 
 export const ActiveGrowsSection = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedDeviceUUID = searchParams.get('device');
   
   const { plants: allPlants, masterPlant: globalMasterPlant, isLoading, refetch } = usePlantsWithStrains();
   const { devices } = useDevices();
   const [addPlantOpen, setAddPlantOpen] = useState(false);
-  const [selectedStrainId, setSelectedStrainId] = useState<number | null>(null);
+  const [selectedPlant, setSelectedPlant] = useState<PlantWithStrain | null>(null);
 
   // Get the device_id (string ID like "demo-123") from the UUID
   const selectedDeviceStringId = useMemo(() => {
@@ -138,22 +138,6 @@ export const ActiveGrowsSection = () => {
     },
   });
 
-  // Fetch selected strain for dialog
-  const { data: selectedStrain } = useQuery({
-    queryKey: ['strain-detail', selectedStrainId],
-    queryFn: async () => {
-      if (!selectedStrainId) return null;
-      const { data, error } = await supabase
-        .from('library_strains')
-        .select('*')
-        .eq('id', selectedStrainId)
-        .single();
-      if (error) throw error;
-      return data as unknown as LibraryStrainFull;
-    },
-    enabled: !!selectedStrainId,
-  });
-
   // Get master plant targets for compatibility check
   const masterStageInfo = masterPlant 
     ? calculateStageInfo(masterPlant.start_date, masterPlant.growing_params)
@@ -163,12 +147,12 @@ export const ActiveGrowsSection = () => {
     : null;
 
   const handlePlantClick = (plant: PlantWithStrain) => {
-    // Open the strain details dialog if the plant has a strain_id
-    if (plant.strain_id) {
-      setSelectedStrainId(plant.strain_id);
-    }
+    setSelectedPlant(plant);
   };
 
+  const handleNavigateToDevice = (deviceId: string) => {
+    navigate(`/device/${deviceId}`);
+  };
   // Check if a plant has climate conflict with master (>15% deviation)
   const hasClimateConflict = (plant: PlantWithStrain): boolean => {
     if (!masterTargets || plant.is_main) return false;
@@ -405,15 +389,13 @@ export const ActiveGrowsSection = () => {
           onPlantAdded={refetch}
         />
         
-        {/* Strain Details Dialog */}
-        {selectedStrainId && selectedStrain && (
-          <StrainDetailsDialog
-            strain={selectedStrain}
-            open={!!selectedStrainId}
-            onOpenChange={(open) => !open && setSelectedStrainId(null)}
-            onGrowThis={() => setSelectedStrainId(null)}
-          />
-        )}
+        {/* Plant Details Dialog */}
+        <PlantDetailsDialog
+          plant={selectedPlant}
+          open={!!selectedPlant}
+          onOpenChange={(open) => !open && setSelectedPlant(null)}
+          onNavigateToDevice={handleNavigateToDevice}
+        />
       </div>
     );
   }
@@ -444,15 +426,13 @@ export const ActiveGrowsSection = () => {
         onPlantAdded={refetch}
       />
       
-      {/* Strain Details Dialog */}
-      {selectedStrainId && selectedStrain && (
-        <StrainDetailsDialog
-          strain={selectedStrain}
-          open={!!selectedStrainId}
-          onOpenChange={(open) => !open && setSelectedStrainId(null)}
-          onGrowThis={() => setSelectedStrainId(null)}
-        />
-      )}
+      {/* Plant Details Dialog */}
+      <PlantDetailsDialog
+        plant={selectedPlant}
+        open={!!selectedPlant}
+        onOpenChange={(open) => !open && setSelectedPlant(null)}
+        onNavigateToDevice={handleNavigateToDevice}
+      />
     </div>
   );
 };
