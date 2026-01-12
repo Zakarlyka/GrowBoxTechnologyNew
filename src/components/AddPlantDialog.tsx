@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Leaf, Loader2, PackageX, Plug, Sparkles } from 'lucide-react';
+import { CalendarIcon, Leaf, Loader2, PackageX, Plug, Sparkles, Cpu } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -79,6 +79,10 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
   const [isLoadingStrains, setIsLoadingStrains] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreatingDemo, setIsCreatingDemo] = useState(false);
+
+  // Check if device is pre-selected from context
+  const isDevicePreSelected = !!initialDeviceId;
+  const preSelectedDeviceName = devices.find(d => d.device_id === initialDeviceId)?.name;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -338,33 +342,43 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
         ) : (
           /* Standard Form - Has Devices */
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-            {/* Device Select */}
-            <div className="space-y-2">
-              <Label>Пристрій</Label>
-              <Select
-                value={form.watch('deviceId') || ''}
-                onValueChange={(value) => form.setValue('deviceId', value)}
-              >
-                <SelectTrigger className="bg-background/50">
-                  <SelectValue placeholder="Оберіть пристрій" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border">
-                  {devices.map((device) => (
-                    <SelectItem key={device.id} value={device.device_id}>
-                      <div className="flex items-center gap-2">
-                        <span>{device.name}</span>
-                        {(device as any).settings?.is_demo && (
-                          <span className="text-xs text-amber-500">(Demo)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.deviceId && (
-                <p className="text-sm text-destructive">{form.formState.errors.deviceId.message}</p>
-              )}
-            </div>
+            {/* Device Select - hidden if pre-selected */}
+            {isDevicePreSelected ? (
+              <div className="space-y-2">
+                <Label>Пристрій</Label>
+                <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/50">
+                  <Cpu className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">{preSelectedDeviceName || 'Selected Device'}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Пристрій</Label>
+                <Select
+                  value={form.watch('deviceId') || ''}
+                  onValueChange={(value) => form.setValue('deviceId', value)}
+                >
+                  <SelectTrigger className="bg-background/50">
+                    <SelectValue placeholder="Оберіть пристрій" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border">
+                    {devices.map((device) => (
+                      <SelectItem key={device.id} value={device.device_id}>
+                        <div className="flex items-center gap-2">
+                          <span>{device.name}</span>
+                          {(device as any).settings?.is_demo && (
+                            <span className="text-xs text-amber-500">(Demo)</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.deviceId && (
+                  <p className="text-sm text-destructive">{form.formState.errors.deviceId.message}</p>
+                )}
+              </div>
+            )}
 
             {/* Name Input */}
             <div className="space-y-2">
