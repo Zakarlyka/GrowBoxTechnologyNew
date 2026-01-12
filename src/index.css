@@ -131,7 +131,12 @@ All colors MUST be HSL. Emphasis on dark tech theme with green/blue accents.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden;
+  }
+
+  /* Global text wrapping fix for mobile */
+  #root {
+    @apply overflow-x-hidden w-full max-w-full;
   }
 }
 

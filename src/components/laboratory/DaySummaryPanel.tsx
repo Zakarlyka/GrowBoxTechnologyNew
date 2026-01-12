@@ -201,22 +201,22 @@ export function DaySummaryPanel({
   };
 
   return (
-    <Card className="bg-card/50 border-border/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            <span>{format(selectedDate, "EEE, dd MMM yyyy", { locale: uk })}</span>
+    <Card className="bg-card/50 border-border/50 max-w-full overflow-hidden">
+      <CardHeader className="pb-3 px-3 sm:px-6">
+        <CardTitle className="flex items-center justify-between text-xs sm:text-sm gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
+            <span className="truncate">{format(selectedDate, "EEE, dd MMM", { locale: uk })}</span>
           </div>
           {growDay >= 0 && (
-            <Badge variant="secondary" className="text-xs font-bold">
+            <Badge variant="secondary" className="text-[10px] sm:text-xs font-bold shrink-0">
               День {growDay}
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-3 sm:px-6 overflow-hidden">
         {/* Stage Info */}
         {isHarvestDay ? (
           <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
@@ -272,10 +272,10 @@ export function DaySummaryPanel({
               {alerts.map((alert, idx) => (
                 <div 
                   key={idx}
-                  className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                  className="flex items-start gap-2 p-2 sm:p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 max-w-full overflow-hidden"
                 >
-                  <span className="text-lg">🏥</span>
-                  <span className="text-sm text-amber-200">{alert.message}</span>
+                  <span className="text-base sm:text-lg shrink-0">🏥</span>
+                  <span className="text-xs sm:text-sm text-amber-200 break-words whitespace-normal">{alert.message}</span>
                 </div>
               ))}
             </div>
