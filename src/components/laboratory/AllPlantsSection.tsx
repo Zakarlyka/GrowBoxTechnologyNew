@@ -272,8 +272,8 @@ export const AllPlantsSection = () => {
               <Card
                 key={plant.id}
                 className={`group relative overflow-hidden transition-all cursor-pointer ${
-                  isMaster 
-                    ? 'border-2 border-amber-500/40 bg-amber-500/5' 
+                  isMaster
+                    ? 'border-2 border-warning/40 bg-warning/5'
                     : isArchived
                     ? 'opacity-60 border-muted'
                     : 'hover:border-primary/50'
@@ -285,7 +285,7 @@ export const AllPlantsSection = () => {
                   <div className="flex items-start gap-2">
                     {/* Photo */}
                     {photoUrl ? (
-                      <div 
+                      <div
                         className="w-10 h-10 rounded-lg bg-cover bg-center border border-border shrink-0"
                         style={{ backgroundImage: `url(${photoUrl})` }}
                       />
@@ -294,11 +294,11 @@ export const AllPlantsSection = () => {
                         <StageIcon className="h-5 w-5" />
                       </div>
                     )}
-                    
+
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        {isMaster && <Crown className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                        {isMaster && <Crown className="h-3.5 w-3.5 text-warning shrink-0" />}
                         <h4 className="font-semibold text-sm text-foreground truncate">
                           {plant.custom_name || 'Unnamed'}
                         </h4>
@@ -325,7 +325,7 @@ export const AllPlantsSection = () => {
                   {/* Progress Bar */}
                   {progress && !isArchived && (
                     <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
-                      <div 
+                      <div
                         className={`h-full transition-all duration-500 ${progressBarColor}`}
                         style={{ width: `${progress.percentage}%` }}
                       />
@@ -334,7 +334,7 @@ export const AllPlantsSection = () => {
 
                   {/* Actions */}
                   {!isArchived && (
-                    <div className="flex items-center gap-1.5 pt-1" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
                       {!isMaster && (
                         <Button
                           size="sm"
@@ -351,7 +351,7 @@ export const AllPlantsSection = () => {
                         </Button>
                       )}
                       {isMaster && (
-                        <Badge className="flex-1 justify-center bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs h-7">
+                        <Badge className="flex-1 justify-center bg-warning/20 text-warning border-warning/30 text-xs h-7">
                           👑 Current Master
                         </Badge>
                       )}
