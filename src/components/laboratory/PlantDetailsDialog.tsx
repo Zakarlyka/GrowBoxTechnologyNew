@@ -252,9 +252,9 @@ export function PlantDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-0">
-          <DialogTitle className="sr-only">{plant.custom_name || plant.strain_name}</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
+        <DialogHeader className="pb-0 sr-only">
+          <DialogTitle>{plant.custom_name || plant.strain_name || 'Plant Details'}</DialogTitle>
         </DialogHeader>
 
         {/* ========== HERO SECTION ========== */}
