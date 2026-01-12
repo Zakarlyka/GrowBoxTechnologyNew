@@ -27,6 +27,7 @@ import {
 } from '@/hooks/usePlantsWithStrains';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { EditPlantDialog } from '@/components/EditPlantDialog';
+import { PlantDetailsDialog } from '@/components/laboratory/PlantDetailsDialog';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevices } from '@/hooks/useDevices';
@@ -76,6 +77,7 @@ export const AllPlantsSection = () => {
   });
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [editPlant, setEditPlant] = useState<PlantWithStrain | null>(null);
+  const [detailsPlant, setDetailsPlant] = useState<PlantWithStrain | null>(null);
   const [archiving, setArchiving] = useState<string | null>(null);
 
   // Filter plants by selected device
@@ -167,7 +169,14 @@ export const AllPlantsSection = () => {
     }
   };
 
+  // Click on card body -> open details
   const handleCardClick = (plant: PlantWithStrain) => {
+    setDetailsPlant(plant);
+  };
+  
+  // Click on pencil icon -> open edit
+  const handleEditClick = (plant: PlantWithStrain, e: React.MouseEvent) => {
+    e.stopPropagation();
     setEditPlant(plant);
   };
 
@@ -350,10 +359,7 @@ export const AllPlantsSection = () => {
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditPlant(plant);
-                        }}
+                        onClick={(e) => handleEditClick(plant, e)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -408,6 +414,14 @@ export const AllPlantsSection = () => {
           onOpenChange={(open) => !open && setEditPlant(null)}
           onPlantUpdated={refetch}
           onPlantDeleted={refetch}
+        />
+      )}
+      
+      {detailsPlant && (
+        <PlantDetailsDialog
+          plant={detailsPlant}
+          open={!!detailsPlant}
+          onOpenChange={(open) => !open && setDetailsPlant(null)}
         />
       )}
     </>
