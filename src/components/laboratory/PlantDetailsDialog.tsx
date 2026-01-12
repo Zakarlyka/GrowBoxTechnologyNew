@@ -140,7 +140,7 @@ export function PlantDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden p-0 flex flex-col">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden p-0 flex flex-col [&>*]:max-w-full">
         <DialogHeader className="sr-only">
           <DialogTitle>{plant.custom_name || 'Plant Details'}</DialogTitle>
         </DialogHeader>
@@ -250,7 +250,7 @@ export function PlantDetailsDialog({
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 pb-4">
             {/* Timeline Tab - Calendar View */}
             <TabsContent value="timeline" className="mt-4 space-y-4 data-[state=inactive]:hidden">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -339,18 +339,18 @@ export function PlantDetailsDialog({
                 </CardHeader>
                 <CardContent>
                   {plant.growing_params?.timeline_alerts && plant.growing_params.timeline_alerts.length > 0 ? (
-                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto overflow-x-hidden pr-1">
                       {plant.growing_params.timeline_alerts.map((alert, idx) => (
                         <div 
                           key={idx}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/30"
+                          className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-background/50 border border-border/30 max-w-full overflow-hidden"
                         >
-                          <div className="p-2 rounded-lg bg-amber-500/20 shrink-0">
-                            <Bell className="h-4 w-4 text-amber-400" />
+                          <div className="p-1.5 sm:p-2 rounded-lg bg-amber-500/20 shrink-0">
+                            <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground">{alert.message}</p>
-                            <p className="text-xs text-muted-foreground">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-xs sm:text-sm font-medium text-foreground break-words whitespace-normal">{alert.message}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground break-words">
                               {alert.trigger_stage} • Day {alert.day_offset}
                             </p>
                           </div>

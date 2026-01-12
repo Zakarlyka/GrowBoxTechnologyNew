@@ -240,18 +240,18 @@ export function GreenhouseDrawer({ deviceId, deviceUuid, onPlantsChanged, childr
             </Button>
           )}
         </DrawerTrigger>
-        <DrawerContent className="max-h-[85vh] flex flex-col">
-          <DrawerHeader className="text-left shrink-0">
-            <DrawerTitle className="flex items-center gap-2">
-              <Sprout className="h-5 w-5 text-accent" />
-              🌿 Мої рослини
+        <DrawerContent className="max-h-[85vh] w-full max-w-full flex flex-col overflow-hidden">
+          <DrawerHeader className="text-left shrink-0 px-4">
+            <DrawerTitle className="flex items-center gap-2 break-words">
+              <Sprout className="h-5 w-5 text-accent shrink-0" />
+              <span className="truncate">🌿 Мої рослини</span>
             </DrawerTitle>
-            <DrawerDescription>
+            <DrawerDescription className="break-words whitespace-normal">
               Керуйте всіма рослинами цього пристрою
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
+          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto overflow-x-hidden">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -397,76 +397,77 @@ function PlantCard({ plant, isMain, onMakeMain, onDelete, onArchive, getStageLab
   const plantAge = calculatePlantAge(plant.start_date);
 
   return (
-    <div className={`p-4 rounded-lg border transition-colors ${
+    <div className={`p-3 sm:p-4 rounded-lg border transition-colors max-w-full overflow-hidden ${
       isMain 
         ? 'bg-accent/10 border-accent/50' 
         : 'bg-card border-border/50 hover:border-border'
     }`}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Avatar */}
-        <Avatar className="h-12 w-12 border-2 border-border/50">
+        <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-border/50 shrink-0">
           <AvatarImage src={plant.photo_url || undefined} alt={plant.custom_name || 'Plant'} />
           <AvatarFallback className="bg-accent/10">
-            <Leaf className="h-5 w-5 text-accent" />
+            <Leaf className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
           </AvatarFallback>
         </Avatar>
 
         {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-foreground truncate">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+            <h4 className="font-medium text-foreground truncate max-w-[120px] sm:max-w-none text-sm sm:text-base">
               {plant.custom_name || 'Безіменна рослина'}
             </h4>
             {isMain && (
-              <Badge variant="outline" className="text-xs text-accent border-accent/50 shrink-0">
-                <Star className="h-3 w-3 mr-1 fill-current" />
-                Основна
+              <Badge variant="outline" className="text-[10px] sm:text-xs text-accent border-accent/50 shrink-0 px-1.5 sm:px-2">
+                <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1 fill-current" />
+                <span className="hidden sm:inline">Основна</span>
+                <span className="sm:hidden">★</span>
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {plant.strain_name && <span>{plant.strain_name}</span>}
+          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+            {plant.strain_name && <span className="truncate max-w-[100px] sm:max-w-none">{plant.strain_name}</span>}
             {plant.strain_name && plantAge !== null && <span>•</span>}
-            {plantAge !== null && <span>День {plantAge}</span>}
+            {plantAge !== null && <span className="whitespace-nowrap">День {plantAge}</span>}
           </div>
-          <Badge variant="secondary" className="text-xs mt-1">
+          <Badge variant="secondary" className="text-[10px] sm:text-xs mt-1">
             {getStageLabel(plant.current_stage)}
           </Badge>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           {!isMain && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+              className="h-7 w-7 sm:h-8 sm:w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
               onClick={onMakeMain}
               disabled={isProcessing}
               title="Зробити основною"
             >
-              <Star className="h-4 w-4" />
+              <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           )}
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+            className="h-7 w-7 sm:h-8 sm:w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10"
             onClick={onArchive}
             disabled={isProcessing}
             title="Зібрати урожай"
           >
-            <Archive className="h-4 w-4" />
+            <Archive className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={onDelete}
             disabled={isProcessing}
             title="Видалити"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
         </div>
       </div>
