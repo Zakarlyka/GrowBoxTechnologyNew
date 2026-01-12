@@ -20,6 +20,7 @@ interface DayData {
   stageColor: string;
   hasEvent: boolean;
   alerts: TimelineAlert[];
+  isHarvestDay?: boolean;
 }
 
 // Stage colors for calendar backgrounds
@@ -54,9 +55,19 @@ function getStageDays(stage: GrowingStage): number {
   return 7;
 }
 
-function getStageForDay(growDay: number, stages: GrowingStage[]): { stageName: string; stageColor: string } {
+function getTotalLifecycleDays(stages: GrowingStage[]): number {
+  if (!stages || stages.length === 0) return 0;
+  return stages.reduce((total, stage) => total + getStageDays(stage), 0);
+}
+
+function getStageForDay(growDay: number, stages: GrowingStage[], totalDays: number): { stageName: string; stageColor: string } | null {
   if (!stages || stages.length === 0) {
     return { stageName: "unknown", stageColor: "bg-muted/20" };
+  }
+  
+  // Past harvest - return null to indicate no stage
+  if (growDay >= totalDays) {
+    return null;
   }
   
   let cumulativeDays = 0;
@@ -72,13 +83,7 @@ function getStageForDay(growDay: number, stages: GrowingStage[]): { stageName: s
     cumulativeDays += stageDays;
   }
   
-  // Past all stages - return last stage
-  const lastStage = stages[stages.length - 1];
-  const name = lastStage.name.toLowerCase();
-  return {
-    stageName: lastStage.name,
-    stageColor: stageColorMap[name] || "bg-muted/20",
-  };
+  return null;
 }
 
 function getAlertsForDay(growDay: number, stages: GrowingStage[], alerts: TimelineAlert[]): TimelineAlert[] {
@@ -110,13 +115,21 @@ export function PlantTimelineCalendar({
   const plantStartDate = plant.start_date ? new Date(plant.start_date) : new Date();
   const stages = plant.growing_params?.stages || [];
   const timelineAlerts = plant.growing_params?.timeline_alerts || [];
+  const totalLifecycleDays = getTotalLifecycleDays(stages);
+  const harvestDay = totalLifecycleDays - 1; // Last day is harvest day (0-indexed)
   
   // Build day data map for visible month
   const getDayData = (date: Date): DayData | null => {
     const growDay = differenceInDays(date, plantStartDate);
     if (growDay < 0) return null; // Before plant started
     
-    const { stageName, stageColor } = getStageForDay(growDay, stages);
+    // After harvest - return null (no stage data)
+    if (growDay > harvestDay) return null;
+    
+    // Check if it's harvest day
+    const isHarvestDay = growDay === harvestDay;
+    
+    const stageData = getStageForDay(growDay, stages, totalLifecycleDays);
     const alerts = getAlertsForDay(growDay, stages, timelineAlerts);
     
     // Check if there's a journal event on this date
@@ -127,10 +140,11 @@ export function PlantTimelineCalendar({
     
     return {
       growDay,
-      stageName,
-      stageColor,
+      stageName: stageData?.stageName || "",
+      stageColor: stageData?.stageColor || "",
       hasEvent,
       alerts,
+      isHarvestDay,
     };
   };
 
@@ -140,6 +154,8 @@ export function PlantTimelineCalendar({
     const dayData = getDayData(date);
     const isSelected = isSameDay(date, selectedDate);
     const isToday = isSameDay(date, new Date());
+    const isAfterHarvest = !dayData && differenceInDays(date, plantStartDate) > harvestDay;
+    const isBeforeStart = differenceInDays(date, plantStartDate) < 0;
     
     return (
       <button
@@ -147,7 +163,10 @@ export function PlantTimelineCalendar({
         onClick={() => onSelectDate(date)}
         className={cn(
           "relative h-12 w-12 flex flex-col items-center justify-center rounded-lg transition-all text-sm p-0 m-0.5",
-          dayData?.stageColor || "bg-muted/10 hover:bg-muted/20",
+          // Harvest day special styling
+          dayData?.isHarvestDay 
+            ? "bg-gradient-to-br from-amber-500/30 to-orange-500/30 hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/30"
+            : dayData?.stageColor || "bg-muted/10 hover:bg-muted/20",
           isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           isToday && !isSelected && "ring-2 ring-accent ring-offset-1 ring-offset-background"
         )}
@@ -160,15 +179,18 @@ export function PlantTimelineCalendar({
           {format(date, 'd')}
         </span>
         
-        {/* Grow Day */}
-        {dayData && dayData.growDay >= 0 && (
+        {/* Harvest Day Icon */}
+        {dayData?.isHarvestDay ? (
+          <span className="text-[10px]">🏁</span>
+        ) : dayData && dayData.growDay >= 0 ? (
+          /* Grow Day (only shown if within lifecycle) */
           <span className={cn(
             "text-[10px] font-bold",
             isSelected ? "text-primary" : "text-foreground/70"
           )}>
             D{dayData.growDay}
           </span>
-        )}
+        ) : null}
         
         {/* Event/Alert Indicators */}
         <div className="absolute bottom-0.5 flex gap-0.5">
@@ -237,6 +259,10 @@ export function PlantTimelineCalendar({
         <div className="flex items-center gap-1">
           <div className="h-3 w-3 rounded bg-sky-500/30" />
           <span className="text-muted-foreground">Flush</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="h-3 w-3 rounded bg-gradient-to-br from-amber-500/40 to-orange-500/40" />
+          <span className="text-muted-foreground">🏁 Harvest</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
