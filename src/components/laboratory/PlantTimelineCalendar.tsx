@@ -162,12 +162,12 @@ export function PlantTimelineCalendar({
         {...dayProps}
         onClick={() => onSelectDate(date)}
         className={cn(
-          "relative h-12 w-12 flex flex-col items-center justify-center rounded-lg transition-all text-sm p-0 m-0.5",
+          "relative h-9 w-9 sm:h-11 sm:w-11 md:h-12 md:w-12 flex flex-col items-center justify-center rounded-md sm:rounded-lg transition-all text-xs sm:text-sm p-0 m-0.5",
           // Harvest day special styling
           dayData?.isHarvestDay 
             ? "bg-gradient-to-br from-amber-500/30 to-orange-500/30 hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/30"
             : dayData?.stageColor || "bg-muted/10 hover:bg-muted/20",
-          isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          isSelected && "ring-2 ring-primary ring-offset-1 sm:ring-offset-2 ring-offset-background",
           isToday && !isSelected && "ring-2 ring-accent ring-offset-1 ring-offset-background"
         )}
       >
@@ -206,29 +206,29 @@ export function PlantTimelineCalendar({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <DayPicker
         mode="single"
         selected={selectedDate}
         onSelect={(date) => date && onSelectDate(date)}
         defaultMonth={selectedDate}
         showOutsideDays={false}
-        className="p-2 w-full"
+        className="p-1 sm:p-2 w-full"
         classNames={{
           months: "flex flex-col w-full",
-          month: "space-y-3 w-full",
+          month: "space-y-2 sm:space-y-3 w-full",
           caption: "flex justify-center pt-1 relative items-center mb-2",
-          caption_label: "text-base font-semibold text-foreground",
+          caption_label: "text-sm sm:text-base font-semibold text-foreground",
           nav: "space-x-1 flex items-center",
           nav_button: cn(
             buttonVariants({ variant: "outline", size: "icon" }),
-            "h-8 w-8 bg-transparent p-0 hover:bg-muted"
+            "h-7 w-7 sm:h-8 sm:w-8 bg-transparent p-0 hover:bg-muted"
           ),
-          nav_button_previous: "absolute left-1",
-          nav_button_next: "absolute right-1",
+          nav_button_previous: "absolute left-0 sm:left-1",
+          nav_button_next: "absolute right-0 sm:right-1",
           table: "w-full border-collapse",
           head_row: "flex w-full justify-around mb-1",
-          head_cell: "text-muted-foreground font-medium text-xs w-12 text-center",
+          head_cell: "text-muted-foreground font-medium text-[10px] sm:text-xs w-8 sm:w-12 text-center",
           row: "flex w-full justify-around",
           cell: "p-0",
           day: "p-0",
@@ -243,26 +243,26 @@ export function PlantTimelineCalendar({
       />
       
       {/* Legend */}
-      <div className="flex flex-wrap gap-2 mt-3 px-2 text-[10px]">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 px-1 sm:px-2 text-[9px] sm:text-[10px]">
         <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-lime-500/30" />
+          <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded bg-lime-500/30" />
           <span className="text-muted-foreground">Seedling</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-emerald-500/30" />
+          <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded bg-emerald-500/30" />
           <span className="text-muted-foreground">Veg</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-purple-500/30" />
+          <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded bg-purple-500/30" />
           <span className="text-muted-foreground">Flower</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-sky-500/30" />
+          <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded bg-sky-500/30" />
           <span className="text-muted-foreground">Flush</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="h-3 w-3 rounded bg-gradient-to-br from-amber-500/40 to-orange-500/40" />
-          <span className="text-muted-foreground">🏁 Harvest</span>
+          <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded bg-gradient-to-br from-amber-500/40 to-orange-500/40" />
+          <span className="text-muted-foreground">🏁</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
