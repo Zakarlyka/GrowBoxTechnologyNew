@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { 
   Leaf, Calendar, Thermometer, Bell, Crown, Clock, 
   Sprout, Flower2, Droplets, Sun, Target, ExternalLink,
-  X, Shield, Cpu, GraduationCap
+  X, Shield, Cpu, GraduationCap, Pencil
 } from 'lucide-react';
 import {
   Dialog,
@@ -35,6 +35,7 @@ interface PlantDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   plant: PlantWithStrain | null;
   onNavigateToDevice?: (deviceId: string) => void;
+  onEditPlant?: (plant: PlantWithStrain) => void;
 }
 
 const stageIcons: Record<string, React.ElementType> = {
@@ -81,6 +82,7 @@ export function PlantDetailsDialog({
   onOpenChange,
   plant,
   onNavigateToDevice,
+  onEditPlant,
 }: PlantDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState('timeline');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -182,8 +184,23 @@ export function PlantDetailsDialog({
                 )}
               </div>
               
-              <div className={`p-3 rounded-xl bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
-                <StageIcon className="h-8 w-8" />
+              <div className="flex items-center gap-2">
+                {/* Edit Button */}
+                {onEditPlant && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-background/60 backdrop-blur-sm border-border/50 gap-1.5"
+                    onClick={() => onEditPlant(plant)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span className="hidden sm:inline">Edit</span>
+                  </Button>
+                )}
+                
+                <div className={`p-3 rounded-xl bg-background/60 backdrop-blur-sm ${stageTextColor}`}>
+                  <StageIcon className="h-8 w-8" />
+                </div>
               </div>
             </div>
           </div>
