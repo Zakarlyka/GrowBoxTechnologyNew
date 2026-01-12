@@ -5,16 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   Wifi, WifiOff, 
-  Pencil, Check, X, QrCode, Trash2, Cpu, ChevronDown 
+  Pencil, Check, X, QrCode, Trash2, Cpu 
 } from 'lucide-react';
 import { SensorCardsGrid } from './SensorCardsGrid';
 import { ActivePlantContext } from './ActivePlantContext';
@@ -153,48 +146,76 @@ export function Dashboard() {
     );
   }
 
-  // Empty state - no device selected
+  // Empty state - no device selected: Quick Access Grid
   if (!selectedDevice) {
     return (
       <div className="flex-1 space-y-6 p-4 sm:p-6">
-        {/* Header with Device Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {t('dashboard.title')}
-            </h1>
-            <p className="text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
-          </div>
-          <Select onValueChange={handleDeviceSelect}>
-            <SelectTrigger className="w-full sm:w-[280px] min-h-[44px]">
-              <SelectValue placeholder={t('devices.selectDevice')} />
-            </SelectTrigger>
-            <SelectContent>
-              {devices.map(device => (
-                <SelectItem key={device.id} value={device.id}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      device.last_seen_at && (Date.now() - new Date(device.last_seen_at).getTime()) < 40000
-                        ? 'bg-success' : 'bg-destructive'
-                    }`} />
-                    {device.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            {t('dashboard.title')}
+          </h1>
+          <p className="text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
         </div>
 
-        {/* Select Device Prompt */}
-        <Card className="gradient-card border-border/50">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <ChevronDown className="h-12 w-12 text-muted-foreground/50 mb-4 animate-bounce" />
-            <h2 className="text-xl font-semibold mb-2">{t('devices.selectDevice')}</h2>
-            <p className="text-muted-foreground text-center max-w-md">
-              {t('devices.selectDeviceDescription')}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Quick Access Grid */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Оберіть пристрій</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {devices.map(device => {
+              const deviceIsOnline = device.last_seen_at && (Date.now() - new Date(device.last_seen_at).getTime()) < 40000;
+              return (
+                <Card 
+                  key={device.id}
+                  className="gradient-card border-border/50 cursor-pointer hover:border-primary/50 transition-all hover:scale-[1.02]"
+                  onClick={() => handleDeviceSelect(device.id)}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Cpu className="h-5 w-5 text-primary" />
+                        <span className="font-semibold">{device.name}</span>
+                      </div>
+                      <Badge variant={deviceIsOnline ? 'default' : 'destructive'} className="text-xs">
+                        {deviceIsOnline ? (
+                          <><Wifi className="h-3 w-3 mr-1" />Online</>
+                        ) : (
+                          <><WifiOff className="h-3 w-3 mr-1" />Offline</>
+                        )}
+                      </Badge>
+                    </div>
+                    
+                    {device.location && (
+                      <p className="text-xs text-muted-foreground">{device.location}</p>
+                    )}
+
+                    {/* Sensor Preview */}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      {device.last_temp !== null && (
+                        <span className="flex items-center gap-1">
+                          🌡️ {device.last_temp?.toFixed(1)}°C
+                        </span>
+                      )}
+                      {device.last_hum !== null && (
+                        <span className="flex items-center gap-1">
+                          💧 {device.last_hum?.toFixed(0)}%
+                        </span>
+                      )}
+                      {device.last_soil_moisture !== null && (
+                        <span className="flex items-center gap-1">
+                          🌱 {device.last_soil_moisture?.toFixed(0)}%
+                        </span>
+                      )}
+                      {device.last_temp === null && device.last_hum === null && (
+                        <span className="text-xs italic">Немає даних</span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   }
@@ -217,26 +238,6 @@ export function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Device Selector */}
-          <Select value={selectedDevice.id} onValueChange={handleDeviceSelect}>
-            <SelectTrigger className="w-[200px] sm:w-[280px] min-h-[44px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {devices.map(device => (
-                <SelectItem key={device.id} value={device.id}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      device.last_seen_at && (Date.now() - new Date(device.last_seen_at).getTime()) < 40000
-                        ? 'bg-success' : 'bg-destructive'
-                    }`} />
-                    {device.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <Button variant="outline" size="sm" onClick={() => setQrDialogOpen(true)} className="min-h-[44px]">
             <QrCode className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">QR</span>
