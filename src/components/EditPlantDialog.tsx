@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Trash2, Loader2, Crown, Link2 } from 'lucide-react';
+import { CalendarIcon, Trash2, Loader2, Crown, Link2, Box } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
@@ -47,6 +47,7 @@ const formSchema = z.object({
   name: z.string().min(1, 'Назва обов\'язкова'),
   startDate: z.date(),
   strainId: z.string().optional(),
+  deviceId: z.string().optional(),
   isMain: z.boolean().default(false),
 });
 
@@ -58,6 +59,12 @@ interface LibraryStrain {
   breeder: string | null;
 }
 
+interface Device {
+  id: string;
+  device_id: string;
+  name: string;
+}
+
 interface EditPlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -66,6 +73,7 @@ interface EditPlantDialogProps {
     custom_name: string | null;
     start_date: string | null;
     strain_id?: number | null;
+    device_id?: string | null;
     is_main?: boolean | null;
   };
   onPlantUpdated: () => void;
@@ -84,7 +92,9 @@ export function EditPlantDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [strains, setStrains] = useState<LibraryStrain[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
   const [isLoadingStrains, setIsLoadingStrains] = useState(false);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -92,14 +102,16 @@ export function EditPlantDialog({
       name: plant.custom_name || '',
       startDate: plant.start_date ? new Date(plant.start_date) : new Date(),
       strainId: plant.strain_id ? String(plant.strain_id) : undefined,
+      deviceId: plant.device_id || undefined,
       isMain: plant.is_main || false,
     },
   });
 
-  // Fetch strains when dialog opens
+  // Fetch strains and devices when dialog opens
   useEffect(() => {
     if (open) {
       fetchStrains();
+      fetchDevices();
     }
   }, [open]);
 
@@ -120,12 +132,34 @@ export function EditPlantDialog({
     }
   };
 
+  const fetchDevices = async () => {
+    setIsLoadingDevices(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data, error } = await supabase
+        .from('devices')
+        .select('id, device_id, name')
+        .eq('user_id', userData.user.id)
+        .order('name');
+
+      if (error) throw error;
+      setDevices((data as Device[]) || []);
+    } catch (error: any) {
+      console.error('Error fetching devices:', error);
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
   // Reset form when plant changes
   useEffect(() => {
     form.reset({
       name: plant.custom_name || '',
       startDate: plant.start_date ? new Date(plant.start_date) : new Date(),
       strainId: plant.strain_id ? String(plant.strain_id) : undefined,
+      deviceId: plant.device_id || undefined,
       isMain: plant.is_main || false,
     });
   }, [plant, form]);
@@ -133,16 +167,17 @@ export function EditPlantDialog({
   const onSubmit = async (data: FormData) => {
     setIsSaving(true);
     try {
-      // If setting as main, first unset other main plants
-      if (data.isMain) {
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData.user) {
-          await supabase
-            .from('plants')
-            .update({ is_main: false })
-            .eq('user_id', userData.user.id)
-            .neq('id', plant.id);
-        }
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not authenticated');
+
+      // If setting as main, first unset other main plants on the same device
+      if (data.isMain && data.deviceId) {
+        await supabase
+          .from('plants')
+          .update({ is_main: false })
+          .eq('user_id', userData.user.id)
+          .eq('device_id', data.deviceId)
+          .neq('id', plant.id);
       }
 
       const { error } = await supabase
@@ -151,6 +186,7 @@ export function EditPlantDialog({
           custom_name: data.name,
           start_date: format(data.startDate, 'yyyy-MM-dd'),
           strain_id: data.strainId ? parseInt(data.strainId) : null,
+          device_id: data.deviceId === 'none' ? null : data.deviceId,
           is_main: data.isMain,
         })
         .eq('id', plant.id);
@@ -214,7 +250,7 @@ export function EditPlantDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px] bg-background border-border">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto bg-background border-border">
           <DialogHeader>
             <DialogTitle className="text-foreground">Редагувати рослину</DialogTitle>
           </DialogHeader>
@@ -261,6 +297,36 @@ export function EditPlantDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Device Select - CRITICAL: Move plant to different GrowBox */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Box className="h-4 w-4" />
+                GrowBox (пристрій)
+              </Label>
+              <Select
+                value={form.watch('deviceId') || 'none'}
+                onValueChange={(value) => form.setValue('deviceId', value === 'none' ? undefined : value)}
+              >
+                <SelectTrigger className="bg-background/50">
+                  <SelectValue placeholder={isLoadingDevices ? 'Завантаження...' : 'Оберіть пристрій'} />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border max-h-[200px]">
+                  <SelectItem value="none">Без пристрою</SelectItem>
+                  {devices.map((device) => (
+                    <SelectItem key={device.id} value={device.device_id}>
+                      <div className="flex items-center gap-2">
+                        <Box className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>{device.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Виберіть гроубокс, в якому росте рослина
+              </p>
             </div>
 
             {/* Date Picker */}

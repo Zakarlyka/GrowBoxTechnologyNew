@@ -14,7 +14,8 @@ import {
   Crown,
   AlertTriangle,
   Plus,
-  Layers
+  Layers,
+  Pencil
 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -28,6 +29,7 @@ import {
 } from '@/hooks/usePlantsWithStrains';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { PlantDetailsDialog } from '@/components/laboratory/PlantDetailsDialog';
+import { EditPlantDialog } from '@/components/EditPlantDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevices } from '@/hooks/useDevices';
 import { toast } from 'sonner';
@@ -66,6 +68,7 @@ export const ActiveGrowsSection = () => {
   const { devices } = useDevices();
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState<PlantWithStrain | null>(null);
+  const [editingPlant, setEditingPlant] = useState<PlantWithStrain | null>(null);
 
   // Get the device_id (string ID like "demo-123") from the UUID
   const selectedDeviceStringId = useMemo(() => {
@@ -298,19 +301,34 @@ export const ActiveGrowsSection = () => {
             </div>
           )}
 
-          {/* Set as Master button - only if not already master */}
-          {!isMaster && !isAllDevices && (
+          {/* Action Buttons - Top Right Corner */}
+          <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Edit Button - ALWAYS visible on hover */}
             <button
-              className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/20 border border-border/50"
+              className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-primary/20 border border-border/50"
               onClick={(e) => {
                 e.stopPropagation();
-                setMasterMutation.mutate(plant.id);
+                setEditingPlant(plant);
               }}
-              title="Set as Master Plant"
+              title="Edit Plant"
             >
-              <Crown className="h-3.5 w-3.5 text-amber-500" />
+              <Pencil className="h-3.5 w-3.5 text-primary" />
             </button>
-          )}
+            
+            {/* Set as Master button - only if not already master */}
+            {!isMaster && !isAllDevices && (
+              <button
+                className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm hover:bg-amber-500/20 border border-border/50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMasterMutation.mutate(plant.id);
+                }}
+                title="Set as Master Plant"
+              >
+                <Crown className="h-3.5 w-3.5 text-amber-500" />
+              </button>
+            )}
+          </div>
 
           {/* Spacer */}
           <div className="flex-1" />
@@ -395,7 +413,35 @@ export const ActiveGrowsSection = () => {
           open={!!selectedPlant}
           onOpenChange={(open) => !open && setSelectedPlant(null)}
           onNavigateToDevice={handleNavigateToDevice}
+          onEditPlant={(plant) => {
+            setSelectedPlant(null);
+            setEditingPlant(plant);
+          }}
         />
+        
+        {/* Edit Plant Dialog */}
+        {editingPlant && (
+          <EditPlantDialog
+            open={!!editingPlant}
+            onOpenChange={(open) => !open && setEditingPlant(null)}
+            plant={{
+              id: editingPlant.id,
+              custom_name: editingPlant.custom_name,
+              start_date: editingPlant.start_date,
+              strain_id: editingPlant.strain_id,
+              device_id: editingPlant.device_id,
+              is_main: editingPlant.is_main,
+            }}
+            onPlantUpdated={() => {
+              refetch();
+              setEditingPlant(null);
+            }}
+            onPlantDeleted={() => {
+              refetch();
+              setEditingPlant(null);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -432,7 +478,35 @@ export const ActiveGrowsSection = () => {
         open={!!selectedPlant}
         onOpenChange={(open) => !open && setSelectedPlant(null)}
         onNavigateToDevice={handleNavigateToDevice}
+        onEditPlant={(plant) => {
+          setSelectedPlant(null);
+          setEditingPlant(plant);
+        }}
       />
+      
+      {/* Edit Plant Dialog */}
+      {editingPlant && (
+        <EditPlantDialog
+          open={!!editingPlant}
+          onOpenChange={(open) => !open && setEditingPlant(null)}
+          plant={{
+            id: editingPlant.id,
+            custom_name: editingPlant.custom_name,
+            start_date: editingPlant.start_date,
+            strain_id: editingPlant.strain_id,
+            device_id: editingPlant.device_id,
+            is_main: editingPlant.is_main,
+          }}
+          onPlantUpdated={() => {
+            refetch();
+            setEditingPlant(null);
+          }}
+          onPlantDeleted={() => {
+            refetch();
+            setEditingPlant(null);
+          }}
+        />
+      )}
     </div>
   );
 };
