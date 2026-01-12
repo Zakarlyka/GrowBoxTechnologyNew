@@ -84,8 +84,16 @@ function getStageDays(stage: GrowingStage): number {
   return 7;
 }
 
-function getStageForDay(growDay: number, stages: GrowingStage[]): { stageName: string; dayInStage: number; stageDuration: number } | null {
+function getTotalLifecycleDays(stages: GrowingStage[]): number {
+  if (!stages || stages.length === 0) return 0;
+  return stages.reduce((total, stage) => total + getStageDays(stage), 0);
+}
+
+function getStageForDay(growDay: number, stages: GrowingStage[], totalDays: number): { stageName: string; dayInStage: number; stageDuration: number } | null {
   if (!stages || stages.length === 0) return null;
+  
+  // Past harvest - return null
+  if (growDay >= totalDays) return null;
   
   let cumulativeDays = 0;
   for (const stage of stages) {
@@ -100,14 +108,7 @@ function getStageForDay(growDay: number, stages: GrowingStage[]): { stageName: s
     cumulativeDays += stageDays;
   }
   
-  // Past all stages - return last stage
-  const lastStage = stages[stages.length - 1];
-  const lastStageDays = getStageDays(lastStage);
-  return {
-    stageName: lastStage.name,
-    dayInStage: growDay - (cumulativeDays - lastStageDays),
-    stageDuration: lastStageDays,
-  };
+  return null;
 }
 
 function getAlertsForDay(growDay: number, stages: GrowingStage[], alerts: TimelineAlert[]): TimelineAlert[] {
@@ -145,9 +146,13 @@ export function DaySummaryPanel({
   const growDay = differenceInDays(selectedDate, plantStartDate);
   const stages = plant.growing_params?.stages || [];
   const timelineAlerts = plant.growing_params?.timeline_alerts || [];
+  const totalLifecycleDays = getTotalLifecycleDays(stages);
+  const harvestDay = totalLifecycleDays - 1;
+  const isHarvestDay = growDay === harvestDay;
+  const isAfterHarvest = growDay > harvestDay;
   
-  const stageInfo = growDay >= 0 ? getStageForDay(growDay, stages) : null;
-  const alerts = growDay >= 0 ? getAlertsForDay(growDay, stages, timelineAlerts) : [];
+  const stageInfo = growDay >= 0 && !isAfterHarvest ? getStageForDay(growDay, stages, totalLifecycleDays) : null;
+  const alerts = growDay >= 0 && !isAfterHarvest ? getAlertsForDay(growDay, stages, timelineAlerts) : [];
   
   // Filter journal events for the selected date
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -213,7 +218,27 @@ export function DaySummaryPanel({
       
       <CardContent className="space-y-4">
         {/* Stage Info */}
-        {stageInfo && growDay >= 0 ? (
+        {isHarvestDay ? (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+            <div className="p-2 rounded-lg bg-background/60 text-amber-400">
+              <span className="text-2xl">🏁</span>
+            </div>
+            <div>
+              <p className="font-semibold text-amber-400">
+                Harvest Day!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Day {growDay} - Lifecycle Complete
+              </p>
+            </div>
+          </div>
+        ) : isAfterHarvest ? (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            <span className="text-3xl mb-2 block">✂️</span>
+            <p>After Harvest</p>
+            <p className="text-xs">{growDay - harvestDay} days after harvest</p>
+          </div>
+        ) : stageInfo && growDay >= 0 ? (
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/30">
             <div className={`p-2 rounded-lg bg-background/60 ${stageColor}`}>
               <StageIcon className="h-5 w-5" />
