@@ -240,8 +240,8 @@ export function GreenhouseDrawer({ deviceId, deviceUuid, onPlantsChanged, childr
             </Button>
           )}
         </DrawerTrigger>
-        <DrawerContent className="max-h-[85vh]">
-          <DrawerHeader className="text-left">
+        <DrawerContent className="max-h-[85vh] flex flex-col">
+          <DrawerHeader className="text-left shrink-0">
             <DrawerTitle className="flex items-center gap-2">
               <Sprout className="h-5 w-5 text-accent" />
               🌿 Мої рослини
@@ -251,7 +251,7 @@ export function GreenhouseDrawer({ deviceId, deviceUuid, onPlantsChanged, childr
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="px-4 pb-4 overflow-y-auto max-h-[60vh]">
+          <div className="flex-1 min-h-0 px-4 pb-4 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

@@ -140,7 +140,7 @@ export function PlantDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[85vh] overflow-hidden p-0 flex flex-col">
         <DialogHeader className="sr-only">
           <DialogTitle>{plant.custom_name || 'Plant Details'}</DialogTitle>
         </DialogHeader>
@@ -230,8 +230,8 @@ export function PlantDetailsDialog({
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-4 mt-2 grid grid-cols-4 w-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TabsList className="mx-4 mt-2 grid grid-cols-4 w-auto shrink-0">
             <TabsTrigger value="timeline" className="gap-1.5 text-xs">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Timeline</span>
@@ -250,19 +250,19 @@ export function PlantDetailsDialog({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 max-h-[calc(90vh-280px)] px-4 pb-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
             {/* Timeline Tab - Calendar View */}
             <TabsContent value="timeline" className="mt-4 space-y-4 data-[state=inactive]:hidden">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Calendar */}
-                <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
+                <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20 overflow-hidden">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-violet-400" />
                       📅 Grow Calendar
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 overflow-x-auto">
                     <PlantTimelineCalendar
                       plant={plant}
                       selectedDate={selectedDate}
@@ -339,16 +339,16 @@ export function PlantDetailsDialog({
                 </CardHeader>
                 <CardContent>
                   {plant.growing_params?.timeline_alerts && plant.growing_params.timeline_alerts.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
                       {plant.growing_params.timeline_alerts.map((alert, idx) => (
                         <div 
                           key={idx}
                           className="flex items-start gap-3 p-3 rounded-lg bg-background/50 border border-border/30"
                         >
-                          <div className="p-2 rounded-lg bg-amber-500/20">
+                          <div className="p-2 rounded-lg bg-amber-500/20 shrink-0">
                             <Bell className="h-4 w-4 text-amber-400" />
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground">{alert.message}</p>
                             <p className="text-xs text-muted-foreground">
                               {alert.trigger_stage} • Day {alert.day_offset}
@@ -429,7 +429,7 @@ export function PlantDetailsDialog({
                 </Button>
               )}
             </TabsContent>
-          </ScrollArea>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
