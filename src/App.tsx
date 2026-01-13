@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import './i18n';
@@ -37,33 +37,44 @@ const queryClient = new QueryClient({
 
 // Global auth state listener for navigation and cache management
 const AuthStateListener = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const queryClientInstance = useQueryClient();
-  const hasRedirected = useRef(false);
+
+  // Keep latest pathname available to the auth callback without re-subscribing
+  const pathnameRef = useRef(location.pathname);
+  const redirectingRef = useRef(false);
 
   useEffect(() => {
+    pathnameRef.current = location.pathname;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const hardRedirect = (to: string) => {
+      // Prevent duplicate redirects when Supabase emits multiple events in quick succession
+      if (redirectingRef.current) return;
+      redirectingRef.current = true;
+      window.location.replace(to);
+    };
+
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, !!session);
-      
-      if (event === 'SIGNED_IN' && session) {
-        // Only redirect if on auth page and haven't already redirected
-        if (location.pathname === '/auth' && !hasRedirected.current) {
-          hasRedirected.current = true;
-          navigate('/devices', { replace: true });
-          // Reset after navigation
-          setTimeout(() => {
-            hasRedirected.current = false;
-          }, 1000);
-        }
-      }
-      
-      if (event === 'SIGNED_OUT') {
+      const pathname = pathnameRef.current;
+      console.log("Auth state changed:", event, !!session, "path:", pathname);
+
+      if (event === "SIGNED_OUT") {
         // Clear all cached data immediately
         queryClientInstance.clear();
-        // Redirect to auth page
-        if (location.pathname !== '/auth') {
-          navigate('/auth', { replace: true });
+
+        // Hard redirect to fully reset in-memory app state
+        if (pathname !== "/auth") {
+          hardRedirect("/auth");
+        }
+        return;
+      }
+
+      // If the user is authenticated and still on /auth, hard redirect out
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
+        if (pathname === "/auth" || pathname === "/") {
+          hardRedirect("/dashboard");
         }
       }
     });
@@ -71,33 +82,85 @@ const AuthStateListener = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate, location.pathname, queryClientInstance]);
+  }, [queryClientInstance]);
 
   return null;
 };
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
+  // Use realtime Supabase session as the source of truth (AuthContext can lag)
+  const { user: contextUser } = useAuth();
+  const [sessionUser, setSessionUser] = useState<typeof contextUser>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setSessionUser(session?.user ?? null);
+      setSessionLoading(false);
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setSessionUser(data.session?.user ?? null);
+      setSessionLoading(false);
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const user = sessionUser ?? contextUser;
+
+  if (sessionLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 const AppRoutes = () => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
+  const { user: contextUser } = useAuth();
+  const [sessionUser, setSessionUser] = useState<typeof contextUser>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setSessionUser(session?.user ?? null);
+      setSessionLoading(false);
+    });
+
+    // Get initial session AFTER listener is attached (prevents missing fast transitions)
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      setSessionUser(data.session?.user ?? null);
+      setSessionLoading(false);
+    });
+
+    return () => {
+      active = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const user = sessionUser ?? contextUser;
+
+  if (sessionLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -109,7 +172,7 @@ const AppRoutes = () => {
     <Routes>
       <Route 
         path="/auth" 
-        element={user ? <Navigate to="/devices" replace /> : <Auth />} 
+        element={user ? <Navigate to="/dashboard" replace /> : <Auth />} 
       />
       <Route
         path="/"
