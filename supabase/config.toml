@@ -1,4 +1,7 @@
-project_id = "udghyklebmwpsaxeaian"
+project_id = "ychnmaaximnoxvwnzrgs"
 
 [functions.generate-article]
+verify_jwt = false
+
+[functions.parse-strain-text]
 verify_jwt = false
