@@ -308,36 +308,128 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     setTimelineAlerts(prev => prev.filter((_, i) => i !== index));
   };
 
-  // AI Import handler - populates all form fields from parsed data
+  // AI Import handler - populates ALL form fields from parsed data
   const handleAiDataParsed = (data: any) => {
-    // Basic info
+    console.log('[LibraryStrainEditor] AI data received:', data);
+    
+    // === TAB 1: PASSPORT (Basic Info) ===
     if (data.name) setName(data.name);
     if (data.breeder) setBreeder(data.breeder);
-    if (data.type) setType(data.type);
+    if (data.type) setType(data.type.toLowerCase());
     if (data.genotype) setGenotype(data.genotype);
     if (data.genetics) setGenetics(data.genetics);
-    if (data.thc_percent) setThcPercent(data.thc_percent.toString());
-    if (data.flowering_days) setFloweringDays(data.flowering_days.toString());
-    if (data.difficulty) setDifficulty(data.difficulty);
+    if (data.thc_percent != null) setThcPercent(data.thc_percent.toString());
+    if (data.flowering_days != null) setFloweringDays(data.flowering_days.toString());
+    if (data.difficulty) setDifficulty(data.difficulty.toLowerCase());
     if (data.yield_indoor) setYieldIndoor(data.yield_indoor);
     if (data.description) setDescription(data.description);
 
-    // Growing params
+    // === GROWING PARAMS ===
     const gp = data.growing_params;
     if (gp) {
+      // === TAB 3: ENVIRONMENT (Stages) ===
       if (gp.stages?.length > 0) {
-        setStages(gp.stages);
+        // Normalize stages to ensure proper format
+        const normalizedStages = gp.stages.map((stage: any) => ({
+          name: stage.name,
+          days_duration: stage.days_duration,
+          temp: stage.temp || [20, 24],
+          humidity: stage.humidity || 50,
+          vpd: stage.vpd || '1.0-1.2',
+          ppfd: stage.ppfd || '400-600',
+          ec: stage.ec || '1.0-1.4',
+          light_hours: stage.light_hours,
+        }));
+        setStages(normalizedStages);
       }
-      if (gp.risks) setRisks(gp.risks);
-      if (gp.phenotype) setPhenotype(prev => ({ ...prev, ...gp.phenotype }));
-      if (gp.recommendations) setRecommendations(prev => ({ ...prev, ...gp.recommendations }));
-      if (gp.post_harvest) setPostHarvest(prev => ({ ...prev, ...gp.post_harvest }));
-      if (gp.nutrition_profile) setNutritionProfile(prev => ({ ...prev, ...gp.nutrition_profile }));
-      if (gp.morphology) setMorphology(prev => ({ ...prev, ...gp.morphology }));
-      if (gp.resistance_rating) setResistance(prev => ({ ...prev, ...gp.resistance_rating }));
-      if (gp.wiki) setWiki(prev => ({ ...prev, ...gp.wiki }));
-      if (gp.timeline_alerts) setTimelineAlerts(gp.timeline_alerts);
+      
+      // Post harvest (drying/curing)
+      if (gp.post_harvest) {
+        setPostHarvest(prev => ({
+          ...prev,
+          drying_temp: gp.post_harvest.drying_temp ?? prev.drying_temp,
+          drying_humidity: gp.post_harvest.drying_humidity ?? prev.drying_humidity,
+          drying_days: gp.post_harvest.drying_days ?? prev.drying_days,
+          curing_notes: gp.post_harvest.curing_notes ?? prev.curing_notes,
+        }));
+      }
+
+      // === TAB 2: GENETICS & MORPHOLOGY ===
+      if (gp.risks && Array.isArray(gp.risks)) {
+        setRisks(gp.risks);
+      }
+      
+      if (gp.morphology) {
+        setMorphology(prev => ({
+          ...prev,
+          stretch_ratio: gp.morphology.stretch_ratio ?? prev.stretch_ratio,
+        }));
+      }
+      
+      if (gp.resistance_rating) {
+        setResistance(prev => ({
+          ...prev,
+          mold: gp.resistance_rating.mold ?? prev.mold,
+          pests: gp.resistance_rating.pests ?? prev.pests,
+          heat: gp.resistance_rating.heat ?? prev.heat,
+          cold: gp.resistance_rating.cold ?? prev.cold,
+        }));
+      }
+      
+      if (gp.nutrition_profile) {
+        setNutritionProfile(prev => ({
+          ...prev,
+          feeder_type: gp.nutrition_profile.feeder_type ?? prev.feeder_type,
+        }));
+      }
+      
+      if (gp.phenotype) {
+        setPhenotype(prev => ({
+          ...prev,
+          height_indoor: gp.phenotype.height_indoor ?? prev.height_indoor,
+          aroma: gp.phenotype.aroma ?? prev.aroma,
+          structure: gp.phenotype.structure ?? prev.structure,
+        }));
+      }
+
+      // === TAB 4: NUTRITION & RECOMMENDATIONS ===
+      if (gp.recommendations) {
+        setRecommendations(prev => ({
+          ...prev,
+          ph_soil: gp.recommendations.ph_soil ?? prev.ph_soil,
+          ph_hydro: gp.recommendations.ph_hydro ?? prev.ph_hydro,
+          training: gp.recommendations.training ?? prev.training,
+          notes: gp.recommendations.notes ?? prev.notes,
+        }));
+      }
+
+      // === TAB 5: WIKI & ALERTS ===
+      if (gp.wiki) {
+        setWiki(prev => ({
+          ...prev,
+          training: gp.wiki.training ?? prev.training,
+          warnings: gp.wiki.warnings ?? prev.warnings,
+        }));
+      }
+      
+      if (gp.timeline_alerts && Array.isArray(gp.timeline_alerts)) {
+        // Normalize alert structure
+        const normalizedAlerts = gp.timeline_alerts.map((alert: any) => ({
+          stage: alert.stage || 'Flowering',
+          day_offset: alert.day_offset || 1,
+          message: alert.message || '',
+        }));
+        setTimelineAlerts(normalizedAlerts);
+      }
     }
+
+    // Switch to first tab to show populated data
+    setActiveTab('basic');
+    
+    toast({
+      title: '✅ Дані імпортовано',
+      description: `Заповнено: ${data.name || 'Сорт'}. Перевірте всі вкладки.`,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

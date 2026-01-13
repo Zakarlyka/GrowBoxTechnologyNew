@@ -26,23 +26,51 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a cannabis strain data extraction expert. Your task is to parse raw text data about a cannabis strain and extract structured information.
+const systemPrompt = `You are a cannabis strain data extraction expert. Your task is to parse raw text data about a cannabis strain and extract structured information for a scientific passport database.
 
 CRITICAL: You MUST respond with ONLY a valid JSON object matching this exact structure. No markdown, no code blocks, just pure JSON.
 
-Output structure:
+=== OUTPUT SCHEMA (ALL FIELDS) ===
+
 {
-  "name": "string - strain name",
-  "breeder": "string or null - seed bank / breeder name",
-  "type": "indica | sativa | hybrid",
+  // --- TAB 1: PASSPORT (Basic Info) ---
+  "name": "string - strain name, e.g. 'Auto AK-47 Feminised'",
+  "breeder": "string or null - seed bank / breeder name, e.g. 'FastBuds'",
   "genotype": "string - e.g. 'Indica-dominant Hybrid' or 'Sativa 60% / Indica 30% / Ruderalis 10%'",
-  "genetics": "string - parent strains, e.g. 'Colombian × Mexican × Thai'",
-  "thc_percent": "number or null - THC percentage as number, e.g. 20",
-  "flowering_days": "number or null - total flowering days",
+  "genetics": "string - parent strains, e.g. 'Colombian × Mexican × Thai × Afghan'",
+  "type": "indica | sativa | hybrid",
   "difficulty": "easy | medium | hard",
+  "flowering_days": "number - total cycle days for Autos, or flowering period for Photos",
+  "thc_percent": "number - THC percentage as number, e.g. 22",
   "yield_indoor": "string - e.g. '400-500 g/m²'",
-  "description": "string - brief description",
+  "description": "string - full description of the strain",
+
+  // --- TAB 2: GENETICS & MORPHOLOGY ---
   "growing_params": {
+    "nutrition_profile": {
+      "feeder_type": "light | medium | heavy"
+    },
+    "morphology": {
+      "stretch_ratio": 2.0
+    },
+    "phenotype": {
+      "height_indoor": "string - e.g. '60-100 cm'",
+      "aroma": "string - e.g. 'Spicy, Earthy, Skunky'",
+      "structure": "string - e.g. 'Bushy, Compact'"
+    },
+    "resistance_rating": {
+      "mold": 3,
+      "pests": 3,
+      "heat": 3,
+      "cold": 3
+    },
+    "risks": ["string array - e.g. 'Mold', 'Odor', 'Heat Stress'"],
+    "wiki": {
+      "training": "string - recommended training methods, e.g. 'LST, SCROG, Topping'",
+      "warnings": ["string array - important warnings"]
+    },
+
+    // --- TAB 3: ENVIRONMENT (Controller Brain) ---
     "stages": [
       {
         "name": "Seedling",
@@ -51,7 +79,8 @@ Output structure:
         "humidity": 70,
         "vpd": "0.6-0.8",
         "ppfd": "150-300",
-        "ec": "0.6-0.8"
+        "ec": "0.6-0.8",
+        "light_hours": 18
       },
       {
         "name": "Vegetation",
@@ -60,7 +89,8 @@ Output structure:
         "humidity": 60,
         "vpd": "0.8-1.1",
         "ppfd": "300-600",
-        "ec": "1.0-1.4"
+        "ec": "1.0-1.4",
+        "light_hours": 18
       },
       {
         "name": "Flowering",
@@ -69,52 +99,93 @@ Output structure:
         "humidity": 45,
         "vpd": "1.2-1.5",
         "ppfd": "600-900",
-        "ec": "1.5-1.8"
+        "ec": "1.5-1.8",
+        "light_hours": 12
       }
     ],
-    "risks": ["array of risk strings, e.g. 'Mold susceptibility in high humidity'"],
-    "morphology": {
-      "stretch_ratio": 2.0,
-      "bud_density": "dense | medium | airy",
-      "odor_intensity": 0.8
+    "post_harvest": {
+      "drying_temp": 18,
+      "drying_humidity": 55,
+      "drying_days": "7-14",
+      "curing_notes": "string - optional curing instructions"
     },
-    "resistance_rating": {
-      "mold": 3,
-      "pests": 3,
-      "heat": 3,
-      "cold": 3
-    },
-    "nutrition_profile": {
-      "feeder_type": "light | medium | heavy"
-    },
-    "phenotype": {
-      "height_indoor": "80-120cm",
-      "aroma": "earthy, woody, skunky",
-      "structure": "bushy / compact"
-    },
+
+    // --- TAB 4: NUTRITION & PPFD (already in stages above) ---
     "recommendations": {
       "ph_soil": "6.0-7.0",
       "ph_hydro": "5.5-6.5",
       "training": "LST, SCROG recommended",
-      "notes": "any additional notes"
-    }
+      "notes": "any additional growing notes"
+    },
+
+    // --- TAB 5: ALERTS (Smart Notifications) ---
+    "timeline_alerts": [
+      {
+        "stage": "Vegetation",
+        "day_offset": 10,
+        "message": "Start LST training now"
+      },
+      {
+        "stage": "Flowering",
+        "day_offset": 1,
+        "message": "Stretch warning! Monitor height and raise lights if needed"
+      }
+    ]
   }
 }
 
-Parsing rules:
-1. Extract temperature values in Celsius. If you see "24C" or "24°C", extract 24.
-2. Parse humidity as RH percentage (0-100).
-3. For resistance ratings, use 1-5 scale: 1=very low, 2=low, 3=medium, 4=high, 5=very high.
-   - "Low mold resistance" = mold: 2
-   - "High mold risk" = mold: 1 or 2
-   - "Mold resistant" = mold: 4 or 5
-4. For stretch_ratio, estimate from height descriptions (2.0 = doubles in flower, 3.0 = triples).
-5. For odor_intensity, use 0-1 scale (0.3=low, 0.5=medium, 0.8=high, 1.0=very strong).
-6. For feeder_type, infer from nutrient mentions.
-7. If specific climate data per stage is provided, update the stages array.
-8. If data is missing, use reasonable defaults or null.
+=== PARSING RULES ===
 
-IMPORTANT: Parse ALL available data. If the text mentions specific temperatures, humidity, or VPD for different stages (Seedling, Veg, Flower), update the stages array accordingly.`;
+1. TEMPERATURE: Extract values in Celsius. "24C" or "24°C" = 24. 
+   - temp array format: [night_temp, day_temp] or [min_temp, max_temp]
+   - If only one temp given, use it for day and subtract 2-4°C for night.
+
+2. HUMIDITY: Parse RH percentage (0-100). "70% RH" or "RH 70%" = 70.
+
+3. RESISTANCE RATINGS (1-5 scale):
+   - 1 = Very Low / Very Susceptible / High Risk
+   - 2 = Low / Susceptible
+   - 3 = Medium / Average
+   - 4 = High / Resistant
+   - 5 = Very High / Very Resistant
+   Examples:
+   - "Low mold resistance" or "High mold risk" = mold: 2
+   - "Mold resistant" or "Good mold resistance" = mold: 4
+   - "Very mold resistant" = mold: 5
+
+4. STRETCH RATIO: Estimate from height descriptions or explicit mentions.
+   - 1.0-1.5 = Compact, little stretch
+   - 2.0 = Doubles in height during flowering
+   - 2.5-3.0 = Significant stretch
+   - 3.0+ = Very tall/stretchy
+
+5. FEEDER TYPE: Infer from nutrient mentions.
+   - "light feeder", "low nutrients", "sensitive to overfeeding" = "light"
+   - "medium feeder", "average nutrients" = "medium"
+   - "heavy feeder", "high nutrients", "hungry plant" = "heavy"
+
+6. VPD: Convert or estimate based on temp/humidity.
+   - Seedling: 0.4-0.8 kPa
+   - Vegetation: 0.8-1.2 kPa
+   - Flowering: 1.0-1.6 kPa
+
+7. FLOWERING DAYS: 
+   - For Autoflowers: use total seed-to-harvest time
+   - For Photoperiod: use flowering period only (after flip)
+
+8. TIMELINE ALERTS: Generate helpful alerts based on strain characteristics.
+   - If high stretch, add alert on day 1 of Flowering about height management
+   - If mold susceptible, add alert about defoliation and airflow
+   - If heavy feeder, add nutrition increase reminders
+
+9. RISKS: Extract any mentioned risks like Mold, Odor, Pests, Heat Stress, etc.
+
+10. If data is missing, use reasonable defaults based on strain type:
+    - Indica: shorter, bushier, faster flowering
+    - Sativa: taller, stretchier, longer flowering
+    - Hybrid: balanced defaults
+
+IMPORTANT: Parse ALL available data from the input text. Be thorough and extract every piece of relevant information into the correct JSON field.`;
 
     const userPrompt = `Parse the following strain datasheet and extract all available data:
 

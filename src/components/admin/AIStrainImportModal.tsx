@@ -15,6 +15,7 @@ import { Loader2, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ParsedStrainData {
+  // TAB 1: PASSPORT
   name?: string;
   breeder?: string;
   type?: string;
@@ -25,7 +26,10 @@ interface ParsedStrainData {
   difficulty?: string;
   yield_indoor?: string;
   description?: string;
+  
+  // All growing params
   growing_params?: {
+    // TAB 3: ENVIRONMENT
     stages?: Array<{
       name: string;
       days_duration?: number;
@@ -34,12 +38,19 @@ interface ParsedStrainData {
       vpd?: string;
       ppfd?: string;
       ec?: string;
+      light_hours?: number;
     }>;
+    post_harvest?: {
+      drying_temp?: number;
+      drying_humidity?: number;
+      drying_days?: string;
+      curing_notes?: string;
+    };
+    
+    // TAB 2: GENETICS & MORPHOLOGY
     risks?: string[];
     morphology?: {
       stretch_ratio?: number;
-      bud_density?: string;
-      odor_intensity?: number;
     };
     resistance_rating?: {
       mold?: number;
@@ -55,12 +66,25 @@ interface ParsedStrainData {
       aroma?: string;
       structure?: string;
     };
+    
+    // TAB 4: NUTRITION & RECOMMENDATIONS
     recommendations?: {
       ph_soil?: string;
       ph_hydro?: string;
       training?: string;
       notes?: string;
     };
+    
+    // TAB 5: WIKI & ALERTS
+    wiki?: {
+      training?: string;
+      warnings?: string[];
+    };
+    timeline_alerts?: Array<{
+      stage: string;
+      day_offset: number;
+      message: string;
+    }>;
   };
 }
 
@@ -247,6 +271,30 @@ Recommendations: LST and SCROG training recommended. Watch for calcium deficienc
                     <span>Спека: {parsedPreview.growing_params.resistance_rating.heat}</span>
                     <span>Холод: {parsedPreview.growing_params.resistance_rating.cold}</span>
                   </div>
+                </div>
+              )}
+
+              {parsedPreview.growing_params?.timeline_alerts && parsedPreview.growing_params.timeline_alerts.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground mb-1">Алерти ({parsedPreview.growing_params.timeline_alerts.length}):</div>
+                  <div className="flex flex-wrap gap-1">
+                    {parsedPreview.growing_params.timeline_alerts.map((alert, i) => (
+                      <span key={i} className="text-xs bg-yellow-500/10 text-yellow-600 px-2 py-1 rounded">
+                        {alert.stage} D{alert.day_offset}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {parsedPreview.growing_params?.post_harvest && (
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground mb-1">Сушка:</div>
+                  <span className="text-xs">
+                    {parsedPreview.growing_params.post_harvest.drying_temp}°C, 
+                    {parsedPreview.growing_params.post_harvest.drying_humidity}% RH, 
+                    {parsedPreview.growing_params.post_harvest.drying_days} днів
+                  </span>
                 </div>
               )}
             </div>
