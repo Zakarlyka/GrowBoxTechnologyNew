@@ -27,8 +27,9 @@ import { Slider } from '@/components/ui/slider';
 import { 
   Loader2, Plus, Trash2, Thermometer, Droplets, Sun, FlaskConical, Zap, 
   Activity, AlertTriangle, Beaker, Bell, BookOpen, Clock, Dna, Scale, 
-  Shield, Bug, Flame, Snowflake, Utensils, ArrowUpDown, Calendar
+  Shield, Bug, Flame, Snowflake, Utensils, ArrowUpDown, Calendar, Sparkles
 } from 'lucide-react';
+import { AIStrainImportModal } from './AIStrainImportModal';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -123,6 +124,7 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+  const [aiImportOpen, setAiImportOpen] = useState(false);
 
   // Basic info state
   const [name, setName] = useState('');
@@ -306,6 +308,38 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     setTimelineAlerts(prev => prev.filter((_, i) => i !== index));
   };
 
+  // AI Import handler - populates all form fields from parsed data
+  const handleAiDataParsed = (data: any) => {
+    // Basic info
+    if (data.name) setName(data.name);
+    if (data.breeder) setBreeder(data.breeder);
+    if (data.type) setType(data.type);
+    if (data.genotype) setGenotype(data.genotype);
+    if (data.genetics) setGenetics(data.genetics);
+    if (data.thc_percent) setThcPercent(data.thc_percent.toString());
+    if (data.flowering_days) setFloweringDays(data.flowering_days.toString());
+    if (data.difficulty) setDifficulty(data.difficulty);
+    if (data.yield_indoor) setYieldIndoor(data.yield_indoor);
+    if (data.description) setDescription(data.description);
+
+    // Growing params
+    const gp = data.growing_params;
+    if (gp) {
+      if (gp.stages?.length > 0) {
+        setStages(gp.stages);
+      }
+      if (gp.risks) setRisks(gp.risks);
+      if (gp.phenotype) setPhenotype(prev => ({ ...prev, ...gp.phenotype }));
+      if (gp.recommendations) setRecommendations(prev => ({ ...prev, ...gp.recommendations }));
+      if (gp.post_harvest) setPostHarvest(prev => ({ ...prev, ...gp.post_harvest }));
+      if (gp.nutrition_profile) setNutritionProfile(prev => ({ ...prev, ...gp.nutrition_profile }));
+      if (gp.morphology) setMorphology(prev => ({ ...prev, ...gp.morphology }));
+      if (gp.resistance_rating) setResistance(prev => ({ ...prev, ...gp.resistance_rating }));
+      if (gp.wiki) setWiki(prev => ({ ...prev, ...gp.wiki }));
+      if (gp.timeline_alerts) setTimelineAlerts(gp.timeline_alerts);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -404,10 +438,30 @@ export function LibraryStrainEditor({ open, onOpenChange, strain, onSuccess, isA
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-xl">
-            {strain ? '✏️ Редагувати Сорт' : '🧬 Науковий Паспорт Сорту'}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl">
+              {strain ? '✏️ Редагувати Сорт' : '🧬 Науковий Паспорт Сорту'}
+            </DialogTitle>
+            {!strain && isAdmin && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => setAiImportOpen(true)}
+                className="gap-2 text-primary border-primary/30 hover:bg-primary/10"
+              >
+                <Sparkles className="h-4 w-4" />
+                AI Імпорт
+              </Button>
+            )}
+          </div>
         </DialogHeader>
+
+        <AIStrainImportModal
+          open={aiImportOpen}
+          onOpenChange={setAiImportOpen}
+          onDataParsed={handleAiDataParsed}
+        />
 
         <ScrollArea className="max-h-[calc(90vh-140px)]">
           <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6">
