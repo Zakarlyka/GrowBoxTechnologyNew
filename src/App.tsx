@@ -1,9 +1,11 @@
+import { useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import './i18n';
 import { Layout } from "./components/Layout";
 import DevicesPage from "./pages/DevicesPage";
@@ -32,6 +34,47 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Global auth state listener for navigation and cache management
+const AuthStateListener = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClientInstance = useQueryClient();
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, !!session);
+      
+      if (event === 'SIGNED_IN' && session) {
+        // Only redirect if on auth page and haven't already redirected
+        if (location.pathname === '/auth' && !hasRedirected.current) {
+          hasRedirected.current = true;
+          navigate('/devices', { replace: true });
+          // Reset after navigation
+          setTimeout(() => {
+            hasRedirected.current = false;
+          }, 1000);
+        }
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        // Clear all cached data immediately
+        queryClientInstance.clear();
+        // Redirect to auth page
+        if (location.pathname !== '/auth') {
+          navigate('/auth', { replace: true });
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, location.pathname, queryClientInstance]);
+
+  return null;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -190,6 +233,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AuthStateListener />
           <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
