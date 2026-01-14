@@ -68,14 +68,40 @@ function normalizeStage(stage: string | null | undefined): string {
   if (!stage) return '';
   const s = stage.toLowerCase().trim();
   
-  // Handle common variations
+  // Handle common variations - comprehensive mapping
   const stageMap: Record<string, string> = {
+    // Vegetation variations
     'veg': 'vegetation',
     'vegetative': 'vegetation',
+    'vegetative_stage': 'vegetation',
+    'veg_stage': 'vegetation',
+    'growth': 'vegetation',
+    // Flowering variations
     'bloom': 'flowering',
     'flower': 'flowering',
+    'flowering_stage': 'flowering',
+    'bloom_stage': 'flowering',
+    'pre-flower': 'pre-flowering',
+    'preflower': 'pre-flowering',
+    'pre_flower': 'pre-flowering',
+    'preflowering': 'pre-flowering',
+    'pre_flowering': 'pre-flowering',
+    // Seedling variations
     'seed': 'seedling',
     'germination': 'seedling',
+    'sprout': 'seedling',
+    'seedling_stage': 'seedling',
+    // Late stage variations
+    'ripen': 'ripening',
+    'ripe': 'ripening',
+    'late_flowering': 'ripening',
+    'late_bloom': 'ripening',
+    'flush': 'ripening',
+    'flushing': 'ripening',
+    // Harvest
+    'harvest': 'harvested',
+    'harvesting': 'harvested',
+    'done': 'harvested',
   };
   
   return stageMap[s] || s;
@@ -93,22 +119,52 @@ function extractStageTargets(
   
   const normalizedStage = normalizeStage(stageName);
   
+  console.log('AutoPilot: Looking for stage:', {
+    original: stageName,
+    normalized: normalizedStage,
+    hasGrowingParams: !!growingParams,
+    paramsKeys: growingParams ? Object.keys(growingParams) : [],
+  });
+  
   // If we have growing params, try to find explicit targets
   if (growingParams) {
     // Priority 1: Check optimal_environments (new schema from AI import)
     if (growingParams.optimal_environments) {
       const envs = growingParams.optimal_environments;
+      const envKeys = Object.keys(envs);
+      console.log('AutoPilot: optimal_environments keys:', envKeys);
       
-      // Direct match
-      if (envs[normalizedStage]) return envs[normalizedStage];
-      if (envs[stageName]) return envs[stageName];
+      // Direct match with normalized stage
+      if (envs[normalizedStage]) {
+        console.log('AutoPilot: Found direct match (normalized):', normalizedStage, envs[normalizedStage]);
+        return envs[normalizedStage];
+      }
       
-      // Fuzzy match
+      // Direct match with original (lowercase)
+      const lowerStage = stageName.toLowerCase().trim();
+      if (envs[lowerStage]) {
+        console.log('AutoPilot: Found direct match (lowercase):', lowerStage, envs[lowerStage]);
+        return envs[lowerStage];
+      }
+      
+      // Direct match with original (as-is)
+      if (envs[stageName]) {
+        console.log('AutoPilot: Found direct match (original):', stageName, envs[stageName]);
+        return envs[stageName];
+      }
+      
+      // Fuzzy match - try all variations
       for (const [key, value] of Object.entries(envs)) {
         const normalizedKey = normalizeStage(key);
+        const lowerKey = key.toLowerCase().trim();
+        
         if (normalizedKey === normalizedStage || 
+            lowerKey === lowerStage ||
             normalizedKey.includes(normalizedStage) || 
-            normalizedStage.includes(normalizedKey)) {
+            normalizedStage.includes(normalizedKey) ||
+            lowerKey.includes(lowerStage) ||
+            lowerStage.includes(lowerKey)) {
+          console.log('AutoPilot: Found fuzzy match:', { key, normalizedKey, lowerKey }, value);
           return value;
         }
       }
@@ -117,29 +173,56 @@ function extractStageTargets(
     // Priority 2: Check environment_targets (older schema)
     if (growingParams.environment_targets) {
       const targets = growingParams.environment_targets;
+      console.log('AutoPilot: Checking environment_targets, isArray:', Array.isArray(targets));
       
       // Array format
       if (Array.isArray(targets)) {
         const match = targets.find(t => {
           const targetStage = normalizeStage(t?.stage);
+          const lowerTargetStage = (t?.stage || '').toLowerCase().trim();
+          const lowerStage = stageName.toLowerCase().trim();
           return targetStage === normalizedStage || 
+                 lowerTargetStage === lowerStage ||
                  targetStage.includes(normalizedStage) || 
                  normalizedStage.includes(targetStage);
         });
-        if (match) return match;
+        if (match) {
+          console.log('AutoPilot: Found array match:', match);
+          return match;
+        }
       }
       
       // Object format
       if (typeof targets === 'object' && !Array.isArray(targets)) {
         const objTargets = targets as Record<string, EnvironmentTarget>;
-        if (objTargets[normalizedStage]) return objTargets[normalizedStage];
-        if (objTargets[stageName]) return objTargets[stageName];
+        const targetKeys = Object.keys(objTargets);
+        console.log('AutoPilot: environment_targets (object) keys:', targetKeys);
         
+        const lowerStage = stageName.toLowerCase().trim();
+        
+        // Direct matches
+        if (objTargets[normalizedStage]) {
+          console.log('AutoPilot: Found object match (normalized):', normalizedStage);
+          return objTargets[normalizedStage];
+        }
+        if (objTargets[lowerStage]) {
+          console.log('AutoPilot: Found object match (lowercase):', lowerStage);
+          return objTargets[lowerStage];
+        }
+        if (objTargets[stageName]) {
+          console.log('AutoPilot: Found object match (original):', stageName);
+          return objTargets[stageName];
+        }
+        
+        // Fuzzy match
         for (const [key, value] of Object.entries(objTargets)) {
           const normalizedKey = normalizeStage(key);
+          const lowerKey = key.toLowerCase().trim();
           if (normalizedKey === normalizedStage || 
+              lowerKey === lowerStage ||
               normalizedKey.includes(normalizedStage) || 
               normalizedStage.includes(normalizedKey)) {
+            console.log('AutoPilot: Found object fuzzy match:', key, value);
             return value;
           }
         }
