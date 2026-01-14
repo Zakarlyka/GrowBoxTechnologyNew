@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { DeviceSettings } from '@/types';
@@ -28,15 +28,13 @@ interface GrowingParams {
   [key: string]: unknown;
 }
 
-interface MasterPlantData {
-  id: string;
-  current_stage: string | null;
-  device_id: string | null;
-  strain_name: string | null;
-  growing_params: GrowingParams | null;
+interface MasterPlantInfo {
+  plantId: string;
+  strainName: string;
+  currentStage: string;
 }
 
-interface AutoPilotTargets {
+export interface AutoPilotTargets {
   targetTemp: number;
   targetHum: number;
   lightHours: number;
@@ -44,6 +42,19 @@ interface AutoPilotTargets {
   lightEndH: number;
   stageName: string;
   vpdTarget: number | null;
+}
+
+export interface UseAutoPilotResult {
+  /** Calculated targets from strain data, null if no master plant */
+  targets: AutoPilotTargets | null;
+  /** Info about the master plant being used */
+  masterPlant: MasterPlantInfo | null;
+  /** Whether targets are being fetched */
+  isLoading: boolean;
+  /** Manual trigger to recalculate targets */
+  recalculate: () => Promise<void>;
+  /** Apply targets to device settings */
+  applyTargets: () => Promise<boolean>;
 }
 
 // =============================================================================
@@ -78,51 +89,22 @@ function extractStageTargets(
   growingParams: GrowingParams | null,
   stageName: string | null
 ): EnvironmentTarget | null {
-  if (!growingParams || !stageName) return null;
+  if (!stageName) return null;
   
   const normalizedStage = normalizeStage(stageName);
   
-  // Priority 1: Check optimal_environments (new schema from AI import)
-  if (growingParams.optimal_environments) {
-    const envs = growingParams.optimal_environments;
-    
-    // Direct match
-    if (envs[normalizedStage]) return envs[normalizedStage];
-    if (envs[stageName]) return envs[stageName];
-    
-    // Fuzzy match
-    for (const [key, value] of Object.entries(envs)) {
-      const normalizedKey = normalizeStage(key);
-      if (normalizedKey === normalizedStage || 
-          normalizedKey.includes(normalizedStage) || 
-          normalizedStage.includes(normalizedKey)) {
-        return value;
-      }
-    }
-  }
-  
-  // Priority 2: Check environment_targets (older schema)
-  if (growingParams.environment_targets) {
-    const targets = growingParams.environment_targets;
-    
-    // Array format
-    if (Array.isArray(targets)) {
-      const match = targets.find(t => {
-        const targetStage = normalizeStage(t?.stage);
-        return targetStage === normalizedStage || 
-               targetStage.includes(normalizedStage) || 
-               normalizedStage.includes(targetStage);
-      });
-      if (match) return match;
-    }
-    
-    // Object format
-    if (typeof targets === 'object' && !Array.isArray(targets)) {
-      const objTargets = targets as Record<string, EnvironmentTarget>;
-      if (objTargets[normalizedStage]) return objTargets[normalizedStage];
-      if (objTargets[stageName]) return objTargets[stageName];
+  // If we have growing params, try to find explicit targets
+  if (growingParams) {
+    // Priority 1: Check optimal_environments (new schema from AI import)
+    if (growingParams.optimal_environments) {
+      const envs = growingParams.optimal_environments;
       
-      for (const [key, value] of Object.entries(objTargets)) {
+      // Direct match
+      if (envs[normalizedStage]) return envs[normalizedStage];
+      if (envs[stageName]) return envs[stageName];
+      
+      // Fuzzy match
+      for (const [key, value] of Object.entries(envs)) {
         const normalizedKey = normalizeStage(key);
         if (normalizedKey === normalizedStage || 
             normalizedKey.includes(normalizedStage) || 
@@ -131,9 +113,103 @@ function extractStageTargets(
         }
       }
     }
+    
+    // Priority 2: Check environment_targets (older schema)
+    if (growingParams.environment_targets) {
+      const targets = growingParams.environment_targets;
+      
+      // Array format
+      if (Array.isArray(targets)) {
+        const match = targets.find(t => {
+          const targetStage = normalizeStage(t?.stage);
+          return targetStage === normalizedStage || 
+                 targetStage.includes(normalizedStage) || 
+                 normalizedStage.includes(targetStage);
+        });
+        if (match) return match;
+      }
+      
+      // Object format
+      if (typeof targets === 'object' && !Array.isArray(targets)) {
+        const objTargets = targets as Record<string, EnvironmentTarget>;
+        if (objTargets[normalizedStage]) return objTargets[normalizedStage];
+        if (objTargets[stageName]) return objTargets[stageName];
+        
+        for (const [key, value] of Object.entries(objTargets)) {
+          const normalizedKey = normalizeStage(key);
+          if (normalizedKey === normalizedStage || 
+              normalizedKey.includes(normalizedStage) || 
+              normalizedStage.includes(normalizedKey)) {
+            return value;
+          }
+        }
+      }
+    }
   }
   
-  return null;
+  // Priority 3: Return stage-based defaults if no explicit targets found
+  // These are research-based optimal values for cannabis growing
+  const stageDefaults: Record<string, EnvironmentTarget> = {
+    'germination': {
+      temp_day: 25,
+      temp_night: 22,
+      rh: 75,
+      vpd_target: 0.5,
+      light_hours: 18,
+    },
+    'seedling': {
+      temp_day: 25,
+      temp_night: 22,
+      rh: 70,
+      vpd_target: 0.7,
+      light_hours: 18,
+    },
+    'vegetation': {
+      temp_day: 26,
+      temp_night: 22,
+      rh: 60,
+      vpd_target: 1.0,
+      light_hours: 18,
+    },
+    'pre-flowering': {
+      temp_day: 25,
+      temp_night: 21,
+      rh: 55,
+      vpd_target: 1.1,
+      light_hours: 12,
+    },
+    'flowering': {
+      temp_day: 24,
+      temp_night: 20,
+      rh: 45,
+      vpd_target: 1.3,
+      light_hours: 12,
+    },
+    'ripening': {
+      temp_day: 22,
+      temp_night: 18,
+      rh: 40,
+      vpd_target: 1.4,
+      light_hours: 12,
+    },
+  };
+  
+  // Try to match stage to defaults
+  const defaultKey = Object.keys(stageDefaults).find(key => {
+    const normalizedKey = normalizeStage(key);
+    return normalizedKey === normalizedStage ||
+           normalizedKey.includes(normalizedStage) ||
+           normalizedStage.includes(normalizedKey);
+  });
+  
+  if (defaultKey) {
+    console.log(`AutoPilot: Using default targets for stage "${stageName}" (matched: ${defaultKey})`);
+    return stageDefaults[defaultKey];
+  }
+  
+  // Fallback to vegetation defaults for unknown stages
+  console.log(`AutoPilot: Unknown stage "${stageName}", using vegetation defaults`);
+  return stageDefaults['vegetation'];
 }
 
 /**
@@ -211,49 +287,53 @@ function calculateAutoPilotTargets(
 /**
  * Auto-Pilot Hook - The "Brain" of AI Mode
  * 
- * When ai_mode === 1, this hook:
+ * When ai_mode is enabled, this hook:
  * 1. Fetches the Master Plant (is_main = true) for the current device
  * 2. Uses the plant's current_stage (NOT calculated from start_date)
  * 3. Extracts environment targets from strain's growing_params
- * 4. Updates device settings when targets change
+ * 4. Returns calculated targets for UI to display and apply
  * 5. Subscribes to real-time changes in plants table
  */
 export function useAutoPilot(
   deviceId: string | null,
   isAiActive: boolean,
   currentSettings: DeviceSettings | null
-) {
-  const lastAppliedRef = useRef<string>('');
+): UseAutoPilotResult {
+  const [targets, setTargets] = useState<AutoPilotTargets | null>(null);
+  const [masterPlant, setMasterPlant] = useState<MasterPlantInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const lastFingerprintRef = useRef<string>('');
   const isApplyingRef = useRef<boolean>(false);
+  const currentSettingsRef = useRef(currentSettings);
+
+  // Keep settings ref up to date
+  useEffect(() => {
+    currentSettingsRef.current = currentSettings;
+  }, [currentSettings]);
 
   /**
-   * Core function: Fetch master plant and apply settings
+   * Fetch master plant and calculate targets
    */
-  const calculateAndApply = useCallback(async (triggerSource: string) => {
-    if (!deviceId || !isAiActive) {
-      console.log('AutoPilot: Skipping - AI inactive or no device');
-      return;
-    }
-
-    if (isApplyingRef.current) {
-      console.log('AutoPilot: Skipping - already applying');
-      return;
+  const fetchAndCalculate = useCallback(async (triggerSource: string): Promise<AutoPilotTargets | null> => {
+    if (!deviceId) {
+      console.log('AutoPilot: No device ID');
+      return null;
     }
 
     try {
-      isApplyingRef.current = true;
-      console.log(`AutoPilot: Triggered by ${triggerSource}`);
+      setIsLoading(true);
+      console.log(`AutoPilot: Fetching targets (${triggerSource})`);
 
       // Step 1: Get authenticated user
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
         console.log('AutoPilot: No authenticated user');
-        return;
+        return null;
       }
 
       // Step 2: Fetch Master Plant for this device
-      // plants.device_id stores the device_id string (not UUID)
-      const { data: masterPlant, error: plantError } = await supabase
+      const { data: masterPlantData, error: plantError } = await supabase
         .from('plants')
         .select(`
           id,
@@ -271,33 +351,51 @@ export function useAutoPilot(
 
       if (plantError) {
         console.error('AutoPilot: Error fetching master plant:', plantError);
-        return;
+        return null;
       }
 
-      if (!masterPlant) {
+      if (!masterPlantData) {
         console.log('AutoPilot: No master plant found for device:', deviceId);
-        // Could apply defaults here, but for now just return
-        return;
+        setMasterPlant(null);
+        setTargets(null);
+        return null;
       }
 
       // Step 3: Extract strain data
-      const strainData = masterPlant.library_strains as {
+      const strainData = masterPlantData.library_strains as {
         name: string;
         growing_params: Json | null;
       } | null;
 
       if (!strainData?.growing_params) {
         console.log('AutoPilot: No growing_params in strain data');
-        return;
+        setMasterPlant({
+          plantId: masterPlantData.id,
+          strainName: strainData?.name || 'Unknown',
+          currentStage: masterPlantData.current_stage || 'unknown',
+        });
+        return null;
       }
 
       const growingParams = strainData.growing_params as GrowingParams;
-      const currentStage = masterPlant.current_stage;
+      const currentStage = masterPlantData.current_stage;
 
       if (!currentStage) {
         console.log('AutoPilot: Plant has no current_stage set');
-        return;
+        setMasterPlant({
+          plantId: masterPlantData.id,
+          strainName: strainData.name,
+          currentStage: 'not set',
+        });
+        return null;
       }
+
+      // Update master plant info
+      setMasterPlant({
+        plantId: masterPlantData.id,
+        strainName: strainData.name,
+        currentStage: currentStage,
+      });
 
       // Step 4: Extract environment targets for current stage
       const stageTarget = extractStageTargets(growingParams, currentStage);
@@ -305,19 +403,47 @@ export function useAutoPilot(
       if (!stageTarget) {
         console.log('AutoPilot: No targets found for stage:', currentStage);
         console.log('AutoPilot: Available data:', JSON.stringify(growingParams, null, 2).slice(0, 500));
-        return;
+        return null;
       }
 
       // Step 5: Calculate autopilot settings
-      const targets = calculateAutoPilotTargets(stageTarget, currentStage);
+      const calculatedTargets = calculateAutoPilotTargets(stageTarget, currentStage);
 
       console.log('AutoPilot: Calculated targets:', {
         strain: strainData.name,
         stage: currentStage,
-        ...targets,
+        ...calculatedTargets,
       });
 
-      // Step 6: Create fingerprint to avoid duplicate updates
+      setTargets(calculatedTargets);
+      return calculatedTargets;
+
+    } catch (error) {
+      console.error('AutoPilot: Unexpected error:', error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [deviceId]);
+
+  /**
+   * Apply calculated targets to device settings
+   */
+  const applyTargets = useCallback(async (): Promise<boolean> => {
+    if (!deviceId || !targets) {
+      console.log('AutoPilot: Cannot apply - no device or no targets');
+      return false;
+    }
+
+    if (isApplyingRef.current) {
+      console.log('AutoPilot: Already applying');
+      return false;
+    }
+
+    try {
+      isApplyingRef.current = true;
+
+      // Create fingerprint to avoid duplicate updates
       const fingerprint = JSON.stringify({
         temp: targets.targetTemp,
         hum: targets.targetHum,
@@ -326,38 +452,38 @@ export function useAutoPilot(
         stage: targets.stageName,
       });
 
-      if (fingerprint === lastAppliedRef.current) {
-        console.log('AutoPilot: Settings unchanged, skipping update');
-        return;
+      if (fingerprint === lastFingerprintRef.current) {
+        console.log('AutoPilot: Settings unchanged, skipping');
+        return true;
       }
 
-      // Step 7: Check if device settings need updating
+      // Check if update is needed
+      const settings = currentSettingsRef.current;
       const needsUpdate =
-        currentSettings?.target_temp !== targets.targetTemp ||
-        currentSettings?.target_hum !== targets.targetHum ||
-        currentSettings?.light_start_h !== targets.lightStartH ||
-        currentSettings?.light_end_h !== targets.lightEndH;
+        settings?.target_temp !== targets.targetTemp ||
+        settings?.target_hum !== targets.targetHum ||
+        settings?.light_start_h !== targets.lightStartH ||
+        settings?.light_end_h !== targets.lightEndH;
 
       if (!needsUpdate) {
-        lastAppliedRef.current = fingerprint;
+        lastFingerprintRef.current = fingerprint;
         console.log('AutoPilot: Device already has correct settings');
-        return;
+        return true;
       }
 
-      // Step 8: Apply settings to device
-      console.log('AutoPilot: Applying new settings for stage:', currentStage);
+      console.log('AutoPilot: Applying settings for stage:', targets.stageName);
 
       const { error: updateError } = await supabase
         .from('devices')
         .update({
           settings: {
-            ...currentSettings,
+            ...settings,
             // Climate targets
             target_temp: targets.targetTemp,
             target_hum: targets.targetHum,
-            climate_mode: 1, // Ensure climate is ON
+            climate_mode: 1,
             // Light schedule
-            light_mode: 1, // Ensure light is ON
+            light_mode: 1,
             light_start_h: targets.lightStartH,
             light_start_m: 0,
             light_end_h: targets.lightEndH,
@@ -371,42 +497,67 @@ export function useAutoPilot(
       if (updateError) {
         console.error('AutoPilot: Error updating settings:', updateError);
         toast.error('AI Pilot: Помилка оновлення налаштувань');
-        return;
+        return false;
       }
 
-      lastAppliedRef.current = fingerprint;
-      
-      toast.success(
-        `🤖 AI Pilot: ${strainData.name} → ${currentStage} — ${targets.targetTemp}°C, ${targets.targetHum}% RH, ${targets.lightHours}h світла`,
-        { duration: 5000 }
-      );
+      lastFingerprintRef.current = fingerprint;
 
+      if (masterPlant) {
+        toast.success(
+          `🤖 AI Pilot: ${masterPlant.strainName} → ${targets.stageName} — ${targets.targetTemp}°C, ${targets.targetHum}% RH, ${targets.lightHours}h світла`,
+          { duration: 5000 }
+        );
+      }
+
+      return true;
     } catch (error) {
       console.error('AutoPilot: Unexpected error:', error);
+      return false;
     } finally {
       isApplyingRef.current = false;
     }
-  }, [deviceId, isAiActive, currentSettings]);
+  }, [deviceId, targets, masterPlant]);
+
+  /**
+   * Manual recalculate function
+   */
+  const recalculate = useCallback(async () => {
+    await fetchAndCalculate('manual');
+  }, [fetchAndCalculate]);
 
   // ==========================================================================
-  // EFFECT: Initial calculation + interval
+  // EFFECT: Initial fetch when AI mode is activated
   // ==========================================================================
   useEffect(() => {
-    if (!deviceId || !isAiActive) {
-      lastAppliedRef.current = '';
-      return;
+    if (!deviceId) return;
+
+    if (isAiActive) {
+      // Fetch targets when AI mode is turned on
+      fetchAndCalculate('ai-activated').then((newTargets) => {
+        if (!newTargets) {
+          // No master plant or no targets - warn user
+          toast.warning('AI Mode: Не знайдено Master Plant для цього пристрою', {
+            description: 'Призначте рослину як "Master" у Лабораторії',
+            duration: 5000,
+          });
+        }
+      });
+    } else {
+      // Clear targets when AI mode is off
+      setTargets(null);
+      setMasterPlant(null);
+      lastFingerprintRef.current = '';
     }
+  }, [deviceId, isAiActive, fetchAndCalculate]);
 
-    // Run immediately when AI mode is activated
-    calculateAndApply('initial');
-
-    // Set up interval to check every 5 minutes
-    const interval = setInterval(() => {
-      calculateAndApply('interval');
-    }, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [deviceId, isAiActive, calculateAndApply]);
+  // ==========================================================================
+  // EFFECT: Auto-apply when targets change and AI is active
+  // ==========================================================================
+  useEffect(() => {
+    if (isAiActive && targets) {
+      applyTargets();
+    }
+  }, [isAiActive, targets, applyTargets]);
 
   // ==========================================================================
   // EFFECT: Real-time subscription to plants table changes
@@ -418,13 +569,12 @@ export function useAutoPilot(
 
     console.log('AutoPilot: Setting up real-time subscription for device:', deviceId);
 
-    // Subscribe to changes in plants table
     const channel = supabase
       .channel(`autopilot-plants-${deviceId}`)
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'plants',
           filter: `device_id=eq.${deviceId}`,
@@ -432,30 +582,25 @@ export function useAutoPilot(
         (payload) => {
           console.log('AutoPilot: Plants table changed:', payload.eventType);
           
-          // Check if relevant fields changed
           if (payload.eventType === 'UPDATE') {
             const newRecord = payload.new as { 
               current_stage?: string; 
               is_main?: boolean;
-              device_id?: string;
             };
             const oldRecord = payload.old as { 
               current_stage?: string; 
               is_main?: boolean;
-              device_id?: string;
             };
             
-            // Trigger update if stage or master flag changed
             if (
               newRecord.current_stage !== oldRecord.current_stage ||
               newRecord.is_main !== oldRecord.is_main
             ) {
               console.log('AutoPilot: Relevant change detected - recalculating');
-              calculateAndApply('realtime-update');
+              fetchAndCalculate('realtime-update');
             }
           } else if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
-            // New plant added or plant removed - recalculate
-            calculateAndApply(`realtime-${payload.eventType.toLowerCase()}`);
+            fetchAndCalculate(`realtime-${payload.eventType.toLowerCase()}`);
           }
         }
       )
@@ -467,5 +612,26 @@ export function useAutoPilot(
       console.log('AutoPilot: Cleaning up subscription');
       supabase.removeChannel(channel);
     };
-  }, [deviceId, isAiActive, calculateAndApply]);
+  }, [deviceId, isAiActive, fetchAndCalculate]);
+
+  // ==========================================================================
+  // EFFECT: Periodic refresh every 5 minutes
+  // ==========================================================================
+  useEffect(() => {
+    if (!deviceId || !isAiActive) return;
+
+    const interval = setInterval(() => {
+      fetchAndCalculate('interval');
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [deviceId, isAiActive, fetchAndCalculate]);
+
+  return {
+    targets,
+    masterPlant,
+    isLoading,
+    recalculate,
+    applyTargets,
+  };
 }

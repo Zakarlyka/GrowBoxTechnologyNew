@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Lock, Bot, ShieldAlert } from "lucide-react";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoPilot } from "@/hooks/useAutoPilot";
@@ -21,7 +21,7 @@ interface DeviceControlsProps {
 
 export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const { t } = useTranslation();
-  const { settings, sensorData, lastSeenAt, loading, isSaving, saveSettings } = useDeviceControls(deviceId);
+  const { settings, sensorData, lastSeenAt, loading, isSaving, saveSettings, refetch } = useDeviceControls(deviceId);
   const { profile } = useAuth();
 
   // Admin-controlled AI permission check
@@ -31,8 +31,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [aiMode, setAiMode] = useState(0);
   const isAiActive = aiMode === 1;
 
-  // 🤖 Auto-Pilot Hook - calculates and applies strain-based settings
-  useAutoPilot(deviceId, isAiActive, settings);
+  // 🤖 Auto-Pilot Hook - returns calculated targets from Master Plant
+  const { targets: aiTargets, masterPlant, isLoading: aiLoading } = useAutoPilot(deviceId, isAiActive, settings);
 
   // 💡 Lighting
   const [lightMode, setLightMode] = useState(1);
@@ -67,6 +67,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   // Modified state tracking
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Load settings from database
   useEffect(() => {
     if (settings) {
       // Global AI
@@ -99,6 +100,27 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setHasChanges(false);
     }
   }, [settings]);
+
+  // 🤖 AI Mode Auto-Fill: When AI mode is ON and targets are calculated, populate fields
+  useEffect(() => {
+    if (isAiActive && aiTargets) {
+      console.log('DeviceControls: Populating fields from AI targets:', aiTargets);
+      
+      // Populate climate fields
+      setTargetTemp(aiTargets.targetTemp);
+      setTargetHum(aiTargets.targetHum);
+      
+      // Populate light schedule
+      setLightStartH(aiTargets.lightStartH);
+      setLightStartM(0);
+      setLightEndH(aiTargets.lightEndH);
+      setLightEndM(0);
+      
+      // Ensure modes are ON when AI is active
+      setClimateMode(1);
+      setLightMode(1);
+    }
+  }, [isAiActive, aiTargets]);
 
   const handleSave = async () => {
     const patch = {
@@ -213,8 +235,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               )}>
                 <Bot className="w-6 h-6" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-lg">🤖 Smart AI Mode</span>
                   {isAiActive && (
                     <Badge className="bg-yellow-500 text-black text-xs">
@@ -223,11 +245,29 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {isAiActive 
-                    ? "AI керує налаштуваннями на основі профілю рослини" 
-                    : "Увімкніть для автоматичного керування"}
-                </p>
+                {isAiActive && masterPlant ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <Leaf className="w-3 h-3 text-green-500" />
+                    <span className="text-green-500 font-medium">{masterPlant.strainName}</span>
+                    <span>→</span>
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {masterPlant.currentStage}
+                    </Badge>
+                    {aiTargets && (
+                      <span className="text-xs">
+                        ({aiTargets.targetTemp}°C / {aiTargets.targetHum}% RH)
+                      </span>
+                    )}
+                  </div>
+                ) : isAiActive && aiLoading ? (
+                  <p className="text-sm text-muted-foreground">Завантаження профілю рослини...</p>
+                ) : isAiActive && !masterPlant ? (
+                  <p className="text-sm text-amber-500">⚠️ Не знайдено Master Plant для AI</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Увімкніть для автоматичного керування
+                  </p>
+                )}
               </div>
             </div>
             <TooltipProvider>
