@@ -67,12 +67,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   // Modified state tracking
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Load settings from database (only when AI is OFF)
+  // Load settings from database on initial load
   useEffect(() => {
-    if (settings && !isAiActive) {
-      console.log('DeviceControls: Loading settings from DB (AI OFF):', settings);
+    if (settings) {
+      console.log('DeviceControls: Loading settings from DB:', settings);
       // Global AI
-      setAiMode((settings as any).ai_mode ?? 0);
+      const dbAiMode = (settings as any).ai_mode ?? 0;
+      setAiMode(dbAiMode);
 
       // Lighting
       setLightMode(settings.light_mode ?? 1);
@@ -100,12 +101,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setVentIntervalSec(settings.vent_interval_sec ?? 300);
       setHasChanges(false);
     }
-  }, [settings, isAiActive]);
+  }, [settings]);
 
-  // 🤖 AI Mode Auto-Fill: When AI mode is ON and targets are calculated, populate fields
+  // 🤖 AI Mode Auto-Fill: One-way sync - display AI values when active
   useEffect(() => {
     if (isAiActive && aiTargets) {
-      console.log('DeviceControls: AI Mode ON - Populating fields from AI targets:', aiTargets);
+      console.log('DeviceControls: AI Mode ON - Displaying AI targets:', aiTargets);
       
       // Populate climate fields with AI-calculated values
       setTargetTemp(aiTargets.targetTemp);
@@ -120,14 +121,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       // Ensure modes are ON when AI is active
       setClimateMode(1);
       setLightMode(1);
-      
-      // Mark as changed to enable save button (in case user wants to toggle AI off and keep values)
-      setHasChanges(true);
-    } else if (isAiActive && !aiTargets && !aiLoading) {
-      // AI is ON but no targets available - show fallback values
-      console.log('DeviceControls: AI Mode ON but no targets - using defaults');
     }
-  }, [isAiActive, aiTargets, aiLoading]);
+  }, [isAiActive, aiTargets]);
 
   const handleSave = async () => {
     // Ensure all values are numbers before saving
@@ -545,21 +540,14 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       <Input
                         type="number"
                         step="0.1"
-                        value={targetTemp === '' ? '' : targetTemp}
+                        value={targetTemp ?? ''}
                         onChange={(e) => {
                           const val = e.target.value;
-                          // Allow empty string for typing, convert to number on blur
                           setTargetTemp(val === '' ? '' : Number(val));
                           setHasChanges(true);
                         }}
-                        onBlur={(e) => {
-                          // Ensure we have a valid number
-                          if (e.target.value === '' || isNaN(Number(e.target.value))) {
-                            setTargetTemp(25);
-                          }
-                        }}
-                        disabled={isAiActive || loading}
-                        className={cn("pr-12 h-10", (isAiActive || loading) && "opacity-50 cursor-not-allowed")}
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
                         placeholder="25"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -577,19 +565,14 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       <Input
                         type="number"
                         step="0.1"
-                        value={tempHyst === '' ? '' : tempHyst}
+                        value={tempHyst ?? ''}
                         onChange={(e) => {
                           const val = e.target.value;
                           setTempHyst(val === '' ? '' : Number(val));
                           setHasChanges(true);
                         }}
-                        onBlur={(e) => {
-                          if (e.target.value === '' || isNaN(Number(e.target.value))) {
-                            setTempHyst(2);
-                          }
-                        }}
-                        disabled={isAiActive || loading}
-                        className={cn("pr-12 h-10", (isAiActive || loading) && "opacity-50 cursor-not-allowed")}
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
                         placeholder="2"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -608,21 +591,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={targetHum === '' ? '' : targetHum}
+                        value={targetHum ?? ''}
                         onChange={(e) => {
                           const val = e.target.value;
                           setTargetHum(val === '' ? '' : Number(val));
                           setHasChanges(true);
                         }}
-                        onBlur={(e) => {
-                          if (e.target.value === '' || isNaN(Number(e.target.value))) {
-                            setTargetHum(60);
-                          }
-                        }}
                         min="0"
                         max="100"
-                        disabled={isAiActive || loading}
-                        className={cn("pr-12 h-10", (isAiActive || loading) && "opacity-50 cursor-not-allowed")}
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
                         placeholder="60"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -639,21 +617,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={humHyst === '' ? '' : humHyst}
+                        value={humHyst ?? ''}
                         onChange={(e) => {
                           const val = e.target.value;
                           setHumHyst(val === '' ? '' : Number(val));
                           setHasChanges(true);
                         }}
-                        onBlur={(e) => {
-                          if (e.target.value === '' || isNaN(Number(e.target.value))) {
-                            setHumHyst(5);
-                          }
-                        }}
                         min="0"
                         max="50"
-                        disabled={isAiActive || loading}
-                        className={cn("pr-12 h-10", (isAiActive || loading) && "opacity-50 cursor-not-allowed")}
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
                         placeholder="5"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
