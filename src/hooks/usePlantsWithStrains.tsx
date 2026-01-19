@@ -297,7 +297,10 @@ export function usePlantsWithStrains(options?: { excludeHarvested?: boolean }) {
         .order('created_at', { ascending: false });
 
       if (excludeHarvested) {
-        queryBuilder = queryBuilder.neq('current_stage', 'harvested');
+        // Exclude both 'harvested' and 'archived' from active view
+        queryBuilder = queryBuilder
+          .not('current_stage', 'eq', 'harvested')
+          .not('current_stage', 'eq', 'archived');
       }
 
       const { data, error } = await queryBuilder;

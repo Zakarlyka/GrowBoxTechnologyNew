@@ -224,6 +224,9 @@ export const ActiveGrowsSection = () => {
 
   // Render plant card helper
   const renderPlantCard = (plant: PlantWithStrain) => {
+    // Check for missing critical data
+    const hasMissingData = !plant.start_date || !plant.strain_id;
+    
     // USE SMART LIFECYCLE CALCULATION instead of raw DB data
     const smartStageInfo = getStageDisplayInfo(
       plant.start_date,
@@ -317,8 +320,16 @@ export const ActiveGrowsSection = () => {
             </p>
           )}
 
+          {/* Missing Data Badge */}
+          {hasMissingData && (
+            <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 mb-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
+              <span className="text-xs text-yellow-300">⚠️ {!plant.strain_id ? 'Немає сорту' : 'Дані відсутні'}</span>
+            </div>
+          )}
+
           {/* Climate Conflict Badge */}
-          {isConflict && !isMaster && (
+          {isConflict && !isMaster && !hasMissingData && (
             <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 mb-2">
               <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
               <span className="text-xs text-red-300">⚠️ Climate Conflict</span>
