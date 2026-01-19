@@ -143,6 +143,9 @@ export function buildStageDefinitions(growingParams: GrowingParams | null): Stag
 /**
  * Calculate the current stage based on plant age and strain timeline
  * This is the CORE function that determines what stage a plant should be in
+ * 
+ * CRITICAL: When a plant exceeds a stage's duration, it MUST roll over
+ * to the next stage. "Flowering Day 53/47" should become "Flushing Day 6".
  */
 export function calculateStageFromAge(
   startDate: string | null,
@@ -158,10 +161,15 @@ export function calculateStageFromAge(
   
   const stages = buildStageDefinitions(growingParams);
   
-  // Find which stage we're in
-  for (const stage of stages) {
+  console.log(`[calculateStageFromAge] Plant age: ${totalAge} days, checking ${stages.length} stages`);
+  
+  // Find which stage we're in based on cumulative days
+  for (let i = 0; i < stages.length; i++) {
+    const stage = stages[i];
+    
+    // Check if current day falls within this stage's range
     if (totalAge >= stage.startDay && totalAge < stage.endDay) {
-      return {
+      const result = {
         stageName: stage.name,
         normalizedName: normalizeStageNameForDB(stage.name),
         dayInStage: totalAge - stage.startDay + 1, // Day 1 is first day
@@ -169,22 +177,33 @@ export function calculateStageFromAge(
         totalAge,
         isOverdue: false,
       };
+      console.log(`[calculateStageFromAge] In stage "${stage.name}": Day ${result.dayInStage}/${stage.durationDays}`);
+      return result;
     }
   }
   
-  // Past all stages - return last stage as "overdue"
+  // Past ALL stages - plant has completed its lifecycle
+  // Return the last stage as "overdue" or could be "harvested"
   const lastStage = stages[stages.length - 1];
-  if (lastStage) {
+  if (lastStage && totalAge >= lastStage.endDay) {
+    // Calculate how many days past the lifecycle
+    const daysOverdue = totalAge - lastStage.endDay + 1;
+    
+    console.log(`[calculateStageFromAge] OVERDUE: Past all stages by ${daysOverdue} days. Total lifecycle was ${lastStage.endDay} days.`);
+    
+    // If significantly overdue, suggest harvest
     return {
-      stageName: lastStage.name,
-      normalizedName: normalizeStageNameForDB(lastStage.name),
-      dayInStage: totalAge - lastStage.startDay + 1,
-      stageDuration: lastStage.durationDays,
+      stageName: 'Harvested',
+      normalizedName: 'harvested',
+      dayInStage: daysOverdue,
+      stageDuration: 1, // No expected duration for harvest
       totalAge,
-      isOverdue: true, // Past expected duration
+      isOverdue: true,
     };
   }
   
+  // Fallback
+  console.log(`[calculateStageFromAge] Could not determine stage for age ${totalAge}`);
   return null;
 }
 

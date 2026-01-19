@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Plus,
   Layers,
-  Pencil
+  Pencil,
+  CheckCircle
 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -27,7 +28,12 @@ import {
   getTotalLifecycleDays,
   PlantWithStrain
 } from '@/hooks/usePlantsWithStrains';
-import { useAutoStageTransition, getStageDisplayInfo } from '@/hooks/usePlantLifecycle';
+import { 
+  useAutoStageTransition, 
+  getStageDisplayInfo, 
+  calculateStageFromAge,
+  normalizeStageNameForDB 
+} from '@/hooks/usePlantLifecycle';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { PlantDetailsDialog } from '@/components/laboratory/PlantDetailsDialog';
 import { EditPlantDialog } from '@/components/EditPlantDialog';
@@ -41,6 +47,7 @@ const stageIcons: Record<string, React.ElementType> = {
   flowering: Flower2,
   flushing: Droplets,
   drying: Sun,
+  harvested: CheckCircle,
 };
 
 const stageColors: Record<string, string> = {
@@ -49,6 +56,7 @@ const stageColors: Record<string, string> = {
   flowering: 'text-purple-400',
   flushing: 'text-sky-400',
   drying: 'text-amber-400',
+  harvested: 'text-green-500',
 };
 
 const stageBgColors: Record<string, string> = {
@@ -57,6 +65,7 @@ const stageBgColors: Record<string, string> = {
   flowering: 'bg-purple-500',
   flushing: 'bg-sky-500',
   drying: 'bg-amber-500',
+  harvested: 'bg-green-600',
 };
 
 export const ActiveGrowsSection = () => {
@@ -215,15 +224,22 @@ export const ActiveGrowsSection = () => {
 
   // Render plant card helper
   const renderPlantCard = (plant: PlantWithStrain) => {
-    const stage = plant.current_stage || 'seedling';
-    const StageIcon = stageIcons[stage] || Sprout;
-    const stageTextColor = stageColors[stage] || stageColors.seedling;
-    const progressBarColor = stageBgColors[stage] || stageBgColors.seedling;
+    // USE SMART LIFECYCLE CALCULATION instead of raw DB data
+    const smartStageInfo = getStageDisplayInfo(
+      plant.start_date,
+      plant.current_stage,
+      plant.growing_params
+    );
+    
+    // Use calculated stage (not raw DB) for icon/color lookups
+    const displayStageName = normalizeStageNameForDB(smartStageInfo.stageName);
+    const StageIcon = stageIcons[displayStageName] || Sprout;
+    const stageTextColor = stageColors[displayStageName] || stageColors.seedling;
+    const progressBarColor = stageBgColors[displayStageName] || stageBgColors.seedling;
     
     const photoUrl = plant.photo_url || plant.strain_photo_url;
     const totalDays = getTotalLifecycleDays(plant.growing_params, plant.flowering_days);
     const progress = calculateProgress(plant.start_date, totalDays);
-    const stageInfo = calculateStageInfo(plant.start_date, plant.growing_params);
     const nextAlert = getNextAlert(plant.start_date, plant.growing_params);
     const isConflict = hasClimateConflict(plant);
     const isMaster = plant.is_main;
@@ -278,18 +294,21 @@ export const ActiveGrowsSection = () => {
             </div>
           </div>
 
-          {/* Stage Info with Day Counter */}
-          {stageInfo && (
-            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm mb-2 md:mb-3">
-              <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
-              <span className={`font-semibold capitalize ${stageTextColor}`}>
-                {stageInfo.stageName}
-              </span>
-              <span className="text-muted-foreground">
-                Day {stageInfo.dayInStage}/{stageInfo.stageDuration}
-              </span>
-            </div>
-          )}
+          {/* Stage Info with Day Counter - USES SMART CALCULATION */}
+          <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm mb-2 md:mb-3">
+            <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
+            <span className={`font-semibold capitalize ${stageTextColor}`}>
+              {smartStageInfo.stageName}
+            </span>
+            <span className="text-muted-foreground">
+              {smartStageInfo.dayLabel}
+            </span>
+            {smartStageInfo.isOverdue && (
+              <Badge variant="destructive" className="text-[9px] px-1 py-0">
+                Overdue
+              </Badge>
+            )}
+          </div>
 
           {/* Location - only show in All Devices mode */}
           {isAllDevices && plant.device?.name && (
@@ -338,19 +357,20 @@ export const ActiveGrowsSection = () => {
           {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Timeline Progress Bar */}
+          {/* Timeline Progress Bar - CAPPED AT 100% */}
           {progress && (
             <div className="space-y-1 md:space-y-1.5 mb-2 md:mb-3">
               <div className="flex justify-between text-[10px] md:text-xs">
                 <span className="text-muted-foreground">Lifecycle</span>
                 <span className="font-bold text-foreground">
-                  Day {progress.currentDay} / {progress.totalDays}
+                  Day {Math.min(progress.currentDay, progress.totalDays)} / {progress.totalDays}
+                  {progress.currentDay > progress.totalDays && ' ✓'}
                 </span>
               </div>
               <div className="relative h-2 md:h-2.5 w-full overflow-hidden rounded-full bg-muted/60 backdrop-blur-sm">
                 <div 
                   className={`h-full transition-all duration-500 ${progressBarColor}`}
-                  style={{ width: `${progress.percentage}%` }}
+                  style={{ width: `${Math.min(progress.percentage, 100)}%` }}
                 />
               </div>
             </div>
