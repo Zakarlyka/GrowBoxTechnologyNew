@@ -3,8 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Leaf, Loader2, PackageX, Plug, Sparkles, Cpu } from 'lucide-react';
+import { CalendarIcon, Leaf, Loader2, PackageX, Plug, Sparkles, Cpu, Zap } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { GrowingParams } from '@/hooks/usePlantsWithStrains';
+import { calculateInitialStage, getStageDisplayInfo } from '@/hooks/usePlantLifecycle';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
@@ -36,12 +38,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDevices } from '@/hooks/useDevices';
 import { toast } from '@/hooks/use-toast';
-import { PLANT_STAGES } from '@/hooks/usePlantData';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Назва обов\'язкова'),
   strainId: z.string().optional(),
-  stage: z.string().default('seedling'),
   startDate: z.date().default(() => new Date()),
   isMain: z.boolean().default(true),
   deviceId: z.string().min(1, 'Оберіть пристрій'),
@@ -54,6 +54,7 @@ interface LibraryStrain {
   id: number;
   name: string;
   breeder: string | null;
+  growing_params: GrowingParams | null;
 }
 
 interface PreSelectedStrain {
@@ -89,7 +90,6 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
     defaultValues: {
       name: preSelectedStrain?.name || '',
       strainId: preSelectedStrain ? String(preSelectedStrain.id) : undefined,
-      stage: 'seedling',
       startDate: new Date(),
       isMain: true,
       deviceId: initialDeviceId || '',
@@ -126,7 +126,7 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
     try {
       const { data, error } = await supabase
         .from('library_strains')
-        .select('id, name, breeder')
+        .select('id, name, breeder, growing_params')
         .order('name');
 
       if (error) throw error;
@@ -242,13 +242,22 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
           .eq('is_main', true);
       }
 
+      // Auto-calculate initial stage based on start date and strain timeline
+      const selectedStrain = strains.find(s => String(s.id) === data.strainId);
+      const calculatedStage = calculateInitialStage(
+        data.startDate,
+        selectedStrain?.growing_params || null
+      );
+      
+      console.log('[AddPlantDialog] Auto-calculated stage:', calculatedStage, 'for date:', data.startDate);
+
       // Insert the new plant with explicit photo_url
       const insertPayload = {
         device_id: data.deviceId,
         user_id: user.id,
         custom_name: data.name,
         strain_id: data.strainId ? parseInt(data.strainId) : null,
-        current_stage: data.stage,
+        current_stage: calculatedStage,
         start_date: format(data.startDate, 'yyyy-MM-dd'),
         is_main: data.isMain,
         photo_url: finalPhotoUrl,
@@ -419,25 +428,44 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
               </Select>
             </div>
 
-            {/* Stage Select */}
-            <div className="space-y-2">
-              <Label>Стадія росту</Label>
-              <Select
-                value={form.watch('stage')}
-                onValueChange={(value) => form.setValue('stage', value)}
-              >
-                <SelectTrigger className="bg-background/50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border">
-                  {PLANT_STAGES.map((stage) => (
-                    <SelectItem key={stage.value} value={stage.value}>
-                      {stage.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Smart Stage Preview - shows what stage will be calculated */}
+            {form.watch('startDate') && (
+              <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="h-4 w-4 text-accent" />
+                  <Label className="text-sm font-medium text-accent">Авто-розрахунок стадії</Label>
+                </div>
+                {(() => {
+                  const selectedStrain = strains.find(s => String(s.id) === form.watch('strainId'));
+                  const calculatedStage = calculateInitialStage(
+                    form.watch('startDate'),
+                    selectedStrain?.growing_params || null
+                  );
+                  const stageInfo = getStageDisplayInfo(
+                    format(form.watch('startDate'), 'yyyy-MM-dd'),
+                    calculatedStage,
+                    selectedStrain?.growing_params || null
+                  );
+                  return (
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground capitalize">{stageInfo.stageName}</span>
+                      <span className="mx-2">•</span>
+                      <span>{stageInfo.dayLabel}</span>
+                      {selectedStrain && (
+                        <p className="text-xs mt-1 text-muted-foreground/70">
+                          На основі таймлайну сорту "{selectedStrain.name}"
+                        </p>
+                      )}
+                      {!selectedStrain && (
+                        <p className="text-xs mt-1 text-muted-foreground/70">
+                          Стандартний таймлайн (сорт не обрано)
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
             {/* Date Picker */}
             <div className="space-y-2">

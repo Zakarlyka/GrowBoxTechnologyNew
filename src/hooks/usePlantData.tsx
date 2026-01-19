@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { GrowingParams } from './usePlantsWithStrains';
+import { calculateStartDateForStage, normalizeStageNameForDB } from './usePlantLifecycle';
 
 export interface PlantData {
   id: string;
@@ -21,6 +23,7 @@ export interface PlantData {
       seedling?: { temp?: number; hum?: number; light_h?: number };
       drying?: { temp?: number; hum?: number; light_h?: number };
     } | null;
+    growing_params?: GrowingParams | null;
   } | null;
 }
 
@@ -65,7 +68,8 @@ export function usePlantData(deviceId: string | null) {
           library_strains (
             id,
             name,
-            presets
+            presets,
+            growing_params
           )
         `)
         .eq('device_id', deviceData.device_id)
@@ -91,26 +95,49 @@ export function usePlantData(deviceId: string | null) {
           id: (data.library_strains as any).id,
           name: (data.library_strains as any).name,
           presets: (data.library_strains as any).presets,
+          growing_params: (data.library_strains as any).growing_params,
         } : null,
       };
     },
     enabled: !!deviceId,
   });
 
+  /**
+   * SMART STAGE OVERRIDE MUTATION
+   * When user manually changes stage, we recalculate the start_date
+   * so that the timeline math aligns with the new stage
+   */
   const updateStageMutation = useMutation({
     mutationFn: async ({ plantId, stage }: { plantId: string; stage: PlantStage }) => {
+      // Get plant's strain growing_params for date recalculation
+      const growingParams = plant?.strain?.growing_params || null;
+      
+      const normalizedStage = normalizeStageNameForDB(stage);
+      
+      // Calculate new start_date that aligns with this stage being Day 1
+      const newStartDate = calculateStartDateForStage(stage, 1, growingParams);
+      
+      console.log(
+        `[usePlantData] Smart stage override: "${stage}" -> recalculating start_date to ${format(newStartDate, 'yyyy-MM-dd')}`
+      );
+      
       const { error } = await supabase
         .from('plants')
-        .update({ current_stage: stage })
+        .update({ 
+          current_stage: normalizedStage,
+          start_date: format(newStartDate, 'yyyy-MM-dd'),
+        })
         .eq('id', plantId);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['main-plant', deviceId] });
+      queryClient.invalidateQueries({ queryKey: ['plants-with-strains'] });
+      queryClient.invalidateQueries({ queryKey: ['active-plants'] });
       toast({
-        title: 'Успіх',
-        description: 'Стадію рослини оновлено',
+        title: '✨ Стадію оновлено',
+        description: 'Таймлайн рослини перераховано автоматично',
       });
     },
     onError: (error: any) => {

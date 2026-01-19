@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ import {
   getTotalLifecycleDays,
   PlantWithStrain
 } from '@/hooks/usePlantsWithStrains';
+import { useAutoStageTransition, getStageDisplayInfo } from '@/hooks/usePlantLifecycle';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { PlantDetailsDialog } from '@/components/laboratory/PlantDetailsDialog';
 import { EditPlantDialog } from '@/components/EditPlantDialog';
@@ -69,6 +70,10 @@ export const ActiveGrowsSection = () => {
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState<PlantWithStrain | null>(null);
   const [editingPlant, setEditingPlant] = useState<PlantWithStrain | null>(null);
+
+  // AUTO-TRANSITION: Check and update plant stages on mount
+  // This ensures stages are always synchronized with the timeline
+  useAutoStageTransition(allPlants);
 
   // Get the device_id (string ID like "demo-123") from the UUID
   const selectedDeviceStringId = useMemo(() => {
