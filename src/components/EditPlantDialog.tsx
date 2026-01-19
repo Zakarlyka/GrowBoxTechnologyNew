@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Trash2, Loader2, Crown, Link2, Box } from 'lucide-react';
+import { CalendarIcon, Trash2, Loader2, Crown, Link2, Box, Archive } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
@@ -90,7 +90,9 @@ export function EditPlantDialog({
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [strains, setStrains] = useState<LibraryStrain[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [isLoadingStrains, setIsLoadingStrains] = useState(false);
@@ -247,6 +249,38 @@ export function EditPlantDialog({
     }
   };
 
+  const handleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      const { error } = await supabase
+        .from('plants')
+        .update({ current_stage: 'harvested', is_main: false })
+        .eq('id', plant.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Заархівовано',
+        description: 'Рослину переміщено до архіву',
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['plants-with-strains'] });
+      queryClient.invalidateQueries({ queryKey: ['archived-plants'] });
+
+      setShowArchiveConfirm(false);
+      onOpenChange(false);
+      onPlantUpdated();
+    } catch (error: any) {
+      toast({
+        title: 'Помилка',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -379,8 +413,17 @@ export function EditPlantDialog({
               />
             </div>
 
-            {/* Delete Section */}
-            <div className="pt-4 border-t border-border/50">
+            {/* Archive & Delete Section */}
+            <div className="pt-4 border-t border-border/50 space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2 border-amber-500/50 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500"
+                onClick={() => setShowArchiveConfirm(true)}
+              >
+                <Archive className="h-4 w-4" />
+                Завершити та архівувати
+              </Button>
               <Button
                 type="button"
                 variant="destructive"
@@ -409,6 +452,30 @@ export function EditPlantDialog({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={showArchiveConfirm} onOpenChange={setShowArchiveConfirm}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Архівувати рослину?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ви впевнені, що хочете перемістити "{plant.custom_name || 'цю рослину'}" до архіву? 
+              Рослина буде позначена як завершена і зникне з активного списку.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isArchiving}>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchive}
+              disabled={isArchiving}
+              className="bg-amber-500 text-white hover:bg-amber-600"
+            >
+              {isArchiving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Архівувати
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

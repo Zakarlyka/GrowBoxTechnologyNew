@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout } from 'lucide-react';
+import { FlaskConical, Beaker, Thermometer, Droplets, ChevronDown, ChevronUp, Sprout, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
@@ -22,6 +23,7 @@ interface ToolConfig {
 
 const LaboratoryPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
 
   const tools: ToolConfig[] = [
@@ -79,9 +81,20 @@ const LaboratoryPage = () => {
       {/* Active Grows Section */}
       <Card className="border-2 border-green-500/20 bg-green-500/5">
         <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
-          <div className="flex items-center gap-2">
-            <Sprout className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
-            <CardTitle className="text-base md:text-lg">🧪 Експериментальні зразки</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sprout className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
+              <CardTitle className="text-base md:text-lg">🧪 Експериментальні зразки</CardTitle>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 text-xs"
+              onClick={() => navigate('/grow-history')}
+            >
+              <History className="h-3.5 w-3.5" />
+              Історія
+            </Button>
           </div>
           <CardDescription className="text-xs md:text-sm">Ваші активні рослини</CardDescription>
         </CardHeader>

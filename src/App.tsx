@@ -20,6 +20,7 @@ import { Settings } from "./pages/Settings";
 import AdminPage from "./pages/AdminPage";
 import LibraryPage from "./pages/LibraryPage";
 import ArticleDetailPage from "./pages/ArticleDetailPage";
+import GrowHistoryPage from "./pages/GrowHistoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -281,6 +282,14 @@ const AppRoutes = () => {
             <Layout>
               <ArticleDetailPage />
             </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/grow-history"
+        element={
+          <ProtectedRoute>
+            <GrowHistoryPage />
           </ProtectedRoute>
         }
       />
