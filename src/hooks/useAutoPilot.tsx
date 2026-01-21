@@ -102,6 +102,13 @@ function normalizeStage(stage: string | null | undefined): string {
     'harvest': 'harvested',
     'harvesting': 'harvested',
     'done': 'harvested',
+    // Drying/Curing variations - CRITICAL: always dark
+    'drying': 'drying',
+    'dried': 'drying',
+    'dry': 'drying',
+    'cure': 'drying',
+    'curing': 'drying',
+    'cured': 'drying',
   };
   
   return stageMap[s] || s;
@@ -275,6 +282,14 @@ function extractStageTargets(
       vpd_target: 1.4,
       light_hours: 12,
     },
+    // CRITICAL: Drying requires complete darkness and low temps
+    'drying': {
+      temp_day: 18,
+      temp_night: 18,
+      rh: 50,
+      vpd_target: 0.8,
+      light_hours: 0, // Always dark for drying
+    },
   };
   
   // Try to match stage to defaults
@@ -297,10 +312,14 @@ function extractStageTargets(
 
 /**
  * Convert environment target to autopilot settings
+ * @param stageTarget - Environment targets from strain data
+ * @param stageName - Current stage name
+ * @param currentSettings - Current device settings (to preserve user-defined light start)
  */
 function calculateAutoPilotTargets(
   stageTarget: EnvironmentTarget,
-  stageName: string
+  stageName: string,
+  currentSettings?: DeviceSettings | null
 ): AutoPilotTargets {
   // Temperature: prefer temp_day, fallback to average of day/night
   const tempDay = stageTarget.temp_day ?? 24;
@@ -319,6 +338,7 @@ function calculateAutoPilotTargets(
       seedling: 70,
       vegetation: 60,
       flowering: 45,
+      drying: 50,
     };
     targetHum = humDefaults[normalizeStage(stageName)] ?? 55;
   }
@@ -332,12 +352,13 @@ function calculateAutoPilotTargets(
       seedling: 18,
       vegetation: 18,
       flowering: 12,
+      drying: 0, // CRITICAL: Always dark for drying
     };
     lightHours = lightDefaults[normalizeStage(stageName)] ?? 18;
   }
   
-  // Calculate light schedule (6 AM start)
-  const lightStartH = 6;
+  // Calculate light schedule - RESPECT user-defined start time, AI only controls duration
+  const lightStartH = currentSettings?.light_start_h ?? 6;
   const lightEndH = (lightStartH + lightHours) % 24;
   
   // VPD target
@@ -387,6 +408,7 @@ export function useAutoPilot(
   const [isLoading, setIsLoading] = useState(false);
   
   const lastFingerprintRef = useRef<string>('');
+  const lastAppliedStageRef = useRef<string>(''); // Track last applied stage for toast spam prevention
   const isApplyingRef = useRef<boolean>(false);
   const currentSettingsRef = useRef(currentSettings);
 
@@ -489,8 +511,8 @@ export function useAutoPilot(
         return null;
       }
 
-      // Step 5: Calculate autopilot settings
-      const calculatedTargets = calculateAutoPilotTargets(stageTarget, currentStage);
+      // Step 5: Calculate autopilot settings (pass currentSettings to preserve user light start)
+      const calculatedTargets = calculateAutoPilotTargets(stageTarget, currentStage, currentSettingsRef.current);
 
       console.log('AutoPilot: Calculated targets:', {
         strain: strainData.name,
@@ -585,7 +607,12 @@ export function useAutoPilot(
 
       lastFingerprintRef.current = fingerprint;
 
-      if (masterPlant) {
+      // Only show toast if stage changed or first application (prevent spam)
+      const isFirstApplication = lastAppliedStageRef.current === '';
+      const stageChanged = lastAppliedStageRef.current !== targets.stageName;
+      
+      if (masterPlant && (isFirstApplication || stageChanged)) {
+        lastAppliedStageRef.current = targets.stageName;
         toast.success(
           `🤖 AI Pilot: ${masterPlant.strainName} → ${targets.stageName} — ${targets.targetTemp}°C, ${targets.targetHum}% RH, ${targets.lightHours}h світла`,
           { duration: 5000 }
@@ -630,6 +657,7 @@ export function useAutoPilot(
       setTargets(null);
       setMasterPlant(null);
       lastFingerprintRef.current = '';
+      lastAppliedStageRef.current = ''; // Reset stage tracker
     }
   }, [deviceId, isAiActive, fetchAndCalculate]);
 
