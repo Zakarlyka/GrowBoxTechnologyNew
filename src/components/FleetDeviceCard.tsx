@@ -39,7 +39,10 @@ export const FleetDeviceCard = React.memo(function FleetDeviceCard({ device }: F
   };
 
   return (
-    <Card className="gradient-card border-border/50 hover:border-primary/50 transition-all">
+    <Card 
+      className="gradient-card border-border/50 hover:border-primary/50 transition-all cursor-pointer group"
+      onClick={handleManage}
+    >
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-4">
           {/* Left: Device Info */}
@@ -53,7 +56,7 @@ export const FleetDeviceCard = React.memo(function FleetDeviceCard({ device }: F
                 )}
               </div>
               <div className="min-w-0">
-                <h3 className="font-semibold text-foreground truncate">{device.name}</h3>
+                <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">{device.name}</h3>
                 {device.location && (
                   <p className="text-xs text-muted-foreground truncate">{device.location}</p>
                 )}
@@ -69,10 +72,10 @@ export const FleetDeviceCard = React.memo(function FleetDeviceCard({ device }: F
             {isOnline ? t('status.online') : t('status.offline')}
           </Badge>
 
-          {/* Right: Manage Button */}
+          {/* Right: Manage Button (visual cue) */}
           <Button 
-            onClick={handleManage}
-            className="shrink-0 min-h-[44px]"
+            className="shrink-0 min-h-[44px] group-hover:bg-primary/90"
+            tabIndex={-1}
           >
             <Settings2 className="h-4 w-4 mr-2" />
             {t('devices.manage')}
