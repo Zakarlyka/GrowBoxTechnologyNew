@@ -1,7 +1,8 @@
 # 🌿 Agro Hogwards - Complete Migration & Restoration Guide
 
-> **Version:** 2.0 | **Last Updated:** 2026-01-21  
-> **Purpose:** Full project backup for recreation on any platform (Cursor, VS Code, new Lovable instance)
+> **Version:** 2.1 | **Last Updated:** 2026-01-21  
+> **Purpose:** Full project backup for recreation on any platform (Cursor, VS Code, new Lovable instance)  
+> **Recent Updates:** Archive system, GrowHistoryPage, smart lifecycle logic
 
 ---
 
@@ -869,6 +870,28 @@ Parse the text into JSON with:
 
 **Purpose:** Automatically update plant stage in database based on elapsed time.
 
+**Key Functions:**
+- `calculateStageFromAge(startDate, growingParams)` - Core function that determines stage from age
+- `buildStageDefinitions(growingParams)` - Builds cumulative timeline from strain stages
+- `normalizeStageNameForDB(stageName)` - Maps aliases to standard names
+- `getStageDisplayInfo(startDate, currentStage, growingParams)` - UI display helper
+
+**Stage Normalization Map:**
+```typescript
+const normalizeMap = {
+  'seedling': 'seedling',
+  'germination': 'seedling',
+  'vegetation': 'vegetation', 
+  'veg': 'vegetation',
+  'flowering': 'flowering',
+  'bloom': 'flowering',
+  'ripening': 'flushing',
+  'flushing': 'flushing',
+  'harvested': 'harvested',
+  'archived': 'archived',
+};
+```
+
 **Flow:**
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -879,17 +902,43 @@ Parse the text into JSON with:
 │  ↓                                                       │
 │  FOR EACH active plant:                                  │
 │    1. Get start_date and strain.growing_params           │
-│    2. Calculate days_alive = today - start_date          │
-│    3. Build stage timeline:                              │
-│       Seedling: days 1-14                                │
-│       Vegetation: days 15-35                             │
-│       Flowering: days 36-70                              │
-│       Ripening: days 71+                                 │
-│    4. Find which stage days_alive falls into             │
-│    5. IF calculated_stage ≠ stored current_stage:        │
-│       → UPDATE plants SET current_stage = calculated     │
+│    2. Build stage definitions with cumulative days:      │
+│       Seedling: days 0-14 (startDay: 0, endDay: 14)      │
+│       Vegetation: days 14-42 (startDay: 14, endDay: 42)  │
+│       Flowering: days 42-98 (startDay: 42, endDay: 98)   │
+│       Flushing: days 98-112 (startDay: 98, endDay: 112)  │
+│    3. Calculate totalAge = differenceInDays(now, start)  │
+│    4. Find stage where totalAge >= startDay && < endDay  │
+│    5. Calculate dayInStage = totalAge - startDay + 1     │
+│    6. IF past all stages → return 'harvested' (overdue)  │
+│    7. IF calculated ≠ stored → UPDATE database           │
 │                                                          │
 └─────────────────────────────────────────────────────────┘
+```
+
+**Critical: Rollover Logic**
+```typescript
+// When plant exceeds stage duration, it MUST roll over
+// "Flowering Day 53/47" → "Flushing Day 6"
+
+// In calculateStageFromAge():
+if (totalAge >= stage.startDay && totalAge < stage.endDay) {
+  return {
+    stageName: stage.name,
+    dayInStage: totalAge - stage.startDay + 1,
+    stageDuration: stage.durationDays,
+    isOverdue: false,
+  };
+}
+
+// Past ALL stages:
+if (totalAge >= lastStage.endDay) {
+  return {
+    stageName: 'Harvested',
+    normalizedName: 'harvested',
+    isOverdue: true,
+  };
+}
 ```
 
 **Stage Override (Manual):**
@@ -905,6 +954,51 @@ useStageOverride().overrideStage({
 // This RECALCULATES start_date to make the math align:
 // new_start_date = today - (cumulative_days_before_stage + dayInStage - 1)
 ```
+
+### 5.4 Plant Archive System
+
+**Purpose:** Move completed/harvested plants to history while keeping them visible.
+
+**Database Stage Values:**
+- Active plants: `seedling`, `vegetation`, `pre-flowering`, `flowering`, `flushing`, `drying`
+- Archived plants: `harvested`, `archived`
+
+**Archive Flow:**
+```
+┌─────────────────────────────────────────────────────────┐
+│              Archive Workflow                            │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  EditPlantDialog → "Move to Archive" button              │
+│  ↓                                                       │
+│  Confirmation Dialog                                     │
+│  ↓                                                       │
+│  UPDATE plants SET                                       │
+│    current_stage = 'harvested',                          │
+│    is_main = false                                       │
+│  ↓                                                       │
+│  Invalidate queries: ['plants-with-strains'],            │
+│    ['archived-plants'], ['main-plant']                   │
+│  ↓                                                       │
+│  Plant disappears from ActiveGrowsSection                │
+│  Plant appears in GrowHistoryPage                        │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Data Fetching (usePlantsWithStrains):**
+```typescript
+// Active plants - EXCLUDE archived
+.not('current_stage', 'in', '("harvested","archived")')
+
+// Archived plants (GrowHistoryPage)
+.in('current_stage', ['harvested', 'archived'])
+```
+
+**GrowHistoryPage Features:**
+- Stats: Completed grows count, unique strains count
+- Card display: Photo, name, strain, start date, grow duration, device, notes
+- Status badges: "Harvested" or "Archived"
 
 ### 5.4 DeviceSettings Protocol (ESP8266 Communication)
 
@@ -995,16 +1089,48 @@ npm run dev
 
 ## 📋 7. VERIFICATION CHECKLIST
 
+### Core Features
 - [ ] User registration creates profile + role
 - [ ] Device registration works with QR code
 - [ ] ESP8266 can send/receive data
 - [ ] AI Import parses strain datasheets
 - [ ] Smart AI Mode calculates targets from strain
-- [ ] Plant stages auto-transition based on timeline
-- [ ] Stage override recalculates start_date
-- [ ] Archive functionality works
-- [ ] Grow History shows completed plants
 - [ ] Admin panel manages users/strains/articles
+
+### Plant Lifecycle (v2.1)
+- [ ] `calculateStageFromAge()` returns correct stage from start_date
+- [ ] Stages auto-transition on mount via `useAutoStageTransition()`
+- [ ] Overdue plants roll to next stage (no "Flowering 53/47")
+- [ ] Progress bars capped at 100%
+- [ ] "Overdue" badge displays when plant past expected duration
+- [ ] Stage override recalculates start_date correctly
+
+### Archive System (v2.1)
+- [ ] "Move to Archive" button in EditPlantDialog
+- [ ] Archived plants disappear from ActiveGrowsSection
+- [ ] GrowHistoryPage shows harvested/archived plants
+- [ ] Stats display: completed grows, unique strains
+- [ ] Missing data plants show "Data Missing" badge (not hidden)
+
+---
+
+## 🆕 8. CHANGELOG
+
+### v2.1 (2026-01-21)
+- **Fixed:** Stage calculation rollover logic (Flowering→Flushing auto-transition)
+- **Fixed:** Progress bars capped at 100%
+- **Added:** "Overdue" badge for plants past lifecycle
+- **Added:** `harvested` and `archived` stage support
+- **Added:** GrowHistoryPage for completed grows
+- **Added:** "Move to Archive" button in EditPlantDialog
+- **Fixed:** ActiveGrowsSection shows plants with missing data (with badge)
+- **Updated:** usePlantsWithStrains excludes `harvested`/`archived` from active view
+
+### v2.0 (2026-01-20)
+- Initial comprehensive migration guide
+- Complete SQL schema documentation
+- AI Smart Mode logic documentation
+- ESP8266 communication protocol
 
 ---
 
