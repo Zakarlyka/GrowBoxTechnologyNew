@@ -233,8 +233,25 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
 
     setIsSaving(true);
     try {
+      // Check if this is the first plant for this device - auto-set as main if so
+      const { data: existingPlants, error: checkError } = await supabase
+        .from('plants')
+        .select('id')
+        .eq('device_id', data.deviceId)
+        .not('current_stage', 'in', '("harvested","archived")') // Only count active plants
+        .limit(1);
+      
+      if (checkError) {
+        console.error('[AddPlantDialog] Error checking existing plants:', checkError);
+      }
+      
+      const isFirstPlant = !existingPlants || existingPlants.length === 0;
+      const shouldBeMain = isFirstPlant ? true : data.isMain;
+      
+      console.log('[AddPlantDialog] Is first plant for device?', isFirstPlant, '→ is_main:', shouldBeMain);
+
       // If this will be the main plant, first unset any existing main plant for this device
-      if (data.isMain) {
+      if (shouldBeMain && !isFirstPlant) {
         await supabase
           .from('plants')
           .update({ is_main: false })
@@ -259,7 +276,7 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
         strain_id: data.strainId ? parseInt(data.strainId) : null,
         current_stage: calculatedStage,
         start_date: format(data.startDate, 'yyyy-MM-dd'),
-        is_main: data.isMain,
+        is_main: shouldBeMain, // Use calculated value
         photo_url: finalPhotoUrl,
       };
       console.log('[AddPlantDialog] Insert payload:', insertPayload);
