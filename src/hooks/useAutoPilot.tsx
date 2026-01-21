@@ -311,6 +311,35 @@ function extractStageTargets(
 }
 
 /**
+ * Calculate Saturation Vapor Pressure (SVP) from temperature
+ * Using the Magnus-Tetens formula
+ * @param tempC - Temperature in Celsius
+ * @returns SVP in kPa
+ */
+function calculateSVP(tempC: number): number {
+  return 0.6108 * Math.exp((17.27 * tempC) / (tempC + 237.3));
+}
+
+/**
+ * Calculate ideal humidity from temperature and VPD target
+ * VPD = SVP * (1 - RH/100) → RH = 100 * (1 - VPD/SVP)
+ * @param tempC - Temperature in Celsius  
+ * @param vpdKpa - Target VPD in kPa
+ * @returns Calculated RH percentage, clamped to safe limits
+ */
+function calculateHumidityFromVPD(tempC: number, vpdKpa: number): number {
+  const svp = calculateSVP(tempC);
+  
+  // RH = 100 * (1 - VPD/SVP)
+  let calculatedRH = 100 * (1 - vpdKpa / svp);
+  
+  // Clamp to safe limits (30% - 85%)
+  calculatedRH = Math.max(30, Math.min(85, calculatedRH));
+  
+  return Math.round(calculatedRH);
+}
+
+/**
  * Convert environment target to autopilot settings
  * @param stageTarget - Environment targets from strain data
  * @param stageName - Current stage name
@@ -326,14 +355,38 @@ function calculateAutoPilotTargets(
   const tempNight = stageTarget.temp_night ?? tempDay - 2;
   const targetTemp = Math.round((tempDay + tempNight) / 2);
   
-  // Humidity: prefer rh, then average of min/max, then fallback
+  // VPD target - calculate first as it may be used for humidity
+  let vpdTarget: number | null = null;
+  if (stageTarget.vpd_target !== undefined) {
+    vpdTarget = stageTarget.vpd_target;
+  } else if (stageTarget.vpd_range) {
+    // Parse "0.8-1.1" format
+    const match = stageTarget.vpd_range.match(/([\d.]+)-([\d.]+)/);
+    if (match) {
+      vpdTarget = (parseFloat(match[1]) + parseFloat(match[2])) / 2;
+    }
+  }
+  
+  // Humidity calculation with VPD-based dynamic fallback
+  // Priority: 1) Explicit RH, 2) Min/Max average, 3) VPD-calculated, 4) Stage defaults
   let targetHum: number;
+  let humiditySource: string = 'default';
+  
   if (stageTarget.rh !== undefined) {
+    // Priority 1: Explicit RH from strain data
     targetHum = stageTarget.rh;
+    humiditySource = 'explicit_rh';
   } else if (stageTarget.humidity_min !== undefined && stageTarget.humidity_max !== undefined) {
+    // Priority 2: Average of min/max
     targetHum = Math.round((stageTarget.humidity_min + stageTarget.humidity_max) / 2);
+    humiditySource = 'min_max_average';
+  } else if (vpdTarget !== null && targetTemp > 0) {
+    // Priority 3: Calculate from VPD target and temperature
+    targetHum = calculateHumidityFromVPD(targetTemp, vpdTarget);
+    humiditySource = 'vpd_calculated';
+    console.log(`AutoPilot: Dynamic VPD humidity calculation - Temp: ${targetTemp}°C, VPD: ${vpdTarget} kPa → RH: ${targetHum}%`);
   } else {
-    // Stage-based defaults
+    // Priority 4: Stage-based defaults
     const humDefaults: Record<string, number> = {
       seedling: 70,
       vegetation: 60,
@@ -341,7 +394,10 @@ function calculateAutoPilotTargets(
       drying: 50,
     };
     targetHum = humDefaults[normalizeStage(stageName)] ?? 55;
+    humiditySource = 'stage_default';
   }
+  
+  console.log(`AutoPilot: Humidity source: ${humiditySource}, value: ${targetHum}%`);
   
   // Light hours: use stage value or stage-based defaults
   let lightHours: number;
@@ -360,18 +416,6 @@ function calculateAutoPilotTargets(
   // Calculate light schedule - RESPECT user-defined start time, AI only controls duration
   const lightStartH = currentSettings?.light_start_h ?? 6;
   const lightEndH = (lightStartH + lightHours) % 24;
-  
-  // VPD target
-  let vpdTarget: number | null = null;
-  if (stageTarget.vpd_target !== undefined) {
-    vpdTarget = stageTarget.vpd_target;
-  } else if (stageTarget.vpd_range) {
-    // Parse "0.8-1.1" format
-    const match = stageTarget.vpd_range.match(/([\d.]+)-([\d.]+)/);
-    if (match) {
-      vpdTarget = (parseFloat(match[1]) + parseFloat(match[2])) / 2;
-    }
-  }
   
   return {
     targetTemp,
