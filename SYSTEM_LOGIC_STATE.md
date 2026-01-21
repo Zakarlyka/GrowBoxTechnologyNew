@@ -145,21 +145,26 @@ Edge Function: get_device_settings(device_uuid) → Returns JSONB
 
 ---
 
-## 3. 📅 CHANGELOG & DECISIONS
+## 3. 📅 CHANGELOG & DECISIONS (Project History)
 
-### Recent Fixes (January 2026)
+### Complete Project Timeline
 
-| Date | Change | Reason |
-|------|--------|--------|
-| 2026-01-21 | Added VPD-based humidity calculation | Static humidity + hot room = bad VPD |
-| 2026-01-21 | First plant auto-set as Master | AI mode didn't work until manual selection |
-| 2026-01-21 | Added drying stage safety defaults | Missing config caused undefined behavior |
-| 2026-01-21 | Light schedule respects user start time | Hardcoded 6AM broke night growers |
-| 2026-01-21 | Toast spam prevention via stage tracking | Every render showed duplicate toasts |
-| 2026-01-20 | Fixed "Flowering 53/47" overflow | Stage wasn't rolling over when duration exceeded |
-| 2026-01-20 | Implemented time-aware lifecycle | Static stages didn't reflect actual plant age |
-| 2026-01-20 | Fixed DeviceControls freezing loop | Infinite re-render from improper state handling |
-| 2026-01-20 | Added Archive/History system | Harvested plants cluttered active views |
+| Date | Type | Change | Details |
+|------|------|--------|---------|
+| **2026-01-21** | UX | Clickable Device Cards | Made entire card interactive for better usability |
+| **2026-01-21** | Feature | Plant Archive System | Created GrowHistoryPage and "Move to Archive" flow to manage harvested plants |
+| **2026-01-21** | Logic | Smart Lifecycle (Time-Aware) | Implemented `usePlantLifecycle` to auto-transition stages based on age (fixed "Day 53/47" overflow) |
+| **2026-01-21** | Fix | DeviceControls Logic | Fixed infinite loop in AI Toggle and enabled manual inputs when AI is OFF |
+| **2026-01-21** | Logic | VPD-based Humidity Calculation | Dynamic humidity from `vpd_target` when explicit RH is missing |
+| **2026-01-21** | Logic | First Plant Auto-Master | New plants auto-set as `is_main: true` if first on device |
+| **2026-01-21** | Safety | Drying Stage Defaults | Added `light_hours: 0` and safe temp/humidity for drying |
+| **2026-01-21** | UX | Light Schedule Respect | AI only controls duration, respects user's `light_start_h` |
+| **2026-01-21** | UX | Toast Spam Prevention | Uses `lastAppliedStageRef` to prevent duplicate notifications |
+| **2026-01-20** | Feature | Smart AI Pilot | Created `useAutoPilot` to sync Device Settings with Master Plant Strain Data |
+| **2026-01-19** | Feature | AI Strain Import | Implemented Edge Function `parse-strain-text` to convert raw text into JSON Passport |
+| **2026-01-15** | Architecture | Digital Twin Setup | Established `devices` table with JSONB settings for ESP8266 sync |
+| **2026-01-10** | Database | Scientific Passport | Designed `library_strains` with stage-based environment targets (`optimal_environments`) |
+| **2026-01-01** | Init | Project Setup | Initialized React + Supabase Auth + Row Level Security (RLS) |
 
 ### Architecture Decisions
 
@@ -169,6 +174,7 @@ Edge Function: get_device_settings(device_uuid) → Returns JSONB
 | Manual override shifts start_date | Only update current_stage | Keeps all calculations consistent |
 | VPD calc as fallback, not primary | Always calculate from VPD | Respects explicit breeder recommendations |
 | Normalize stages in code | Enum in database | More flexible, handles legacy data |
+| Entire device card clickable | Button-only interaction | Better mobile UX, faster navigation |
 
 ---
 
@@ -176,14 +182,17 @@ Edge Function: get_device_settings(device_uuid) → Returns JSONB
 
 ### ✅ Recently Fixed
 - [x] Hardcoded Light Schedule (6 AM start) → Now respects user setting
-- [x] Missing Drying safety defaults → Added with light_hours: 0
+- [x] Missing Drying safety defaults → Added with `light_hours: 0`
 - [x] First plant not auto-set as Main → Checks existing plants on add
 - [x] VPD not applied to humidity → Dynamic calculation with priority system
+- [x] Device cards not clickable → Entire card now navigates to dashboard
 
-### 🔴 Open Issues
+### 🔴 Open Issues (Priority Order)
 
 | Priority | Issue | Impact | Suggested Fix |
 |----------|-------|--------|---------------|
+| **HIGH** | Hardcoded Light Schedule (starts at 6 AM) | Night growers can't set custom wake times | Add `light_start_h` input to DeviceControls |
+| **HIGH** | Missing safety defaults for Drying stage | Undefined behavior when entering drying | Enforce `light_hours: 0`, temp: 18°C, RH: 50% |
 | HIGH | No validation for conflicting schedules | Multiple plants on same device can fight | Add schedule conflict detection |
 | MEDIUM | Archive doesn't preserve journal events | History loses context | Join plant_journal_events in archive query |
 | MEDIUM | VPD display missing in Dashboard | User can't see calculated value | Add VPD sensor card |
