@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
-import logo from '@/assets/logo-agro-hogwards-new.png';
+import logo from '@/assets/logo-agro-hogwards.png';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);

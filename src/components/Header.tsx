@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ChevronDown, User, Settings, LogOut, Globe, Layers } from 'lucide-react';
-import logoAgroHogwards from '@/assets/logo-agro-hogwards-new.png';
+import logoAgroHogwards from '@/assets/logo-agro-hogwards.png';
 
 // Pages that support device filtering via URL params
 const DEVICE_AWARE_PAGES = ['/dashboard', '/laboratory', '/analytics'];
