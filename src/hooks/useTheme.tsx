@@ -28,13 +28,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
+    const body = document.body;
     
-    // Remove all theme classes
-    themes.forEach(t => root.classList.remove(`theme-${t.id}`));
+    // Remove all theme classes from both html and body
+    themes.forEach(t => {
+      root.classList.remove(`theme-${t.id}`);
+      body.classList.remove(`theme-${t.id}`);
+    });
     
-    // Add current theme class (cyberpunk is default, no class needed)
+    // Add current theme class to BOTH html and body for maximum coverage
     if (theme !== 'cyberpunk') {
       root.classList.add(`theme-${theme}`);
+      body.classList.add(`theme-${theme}`);
     }
     
     localStorage.setItem(THEME_STORAGE_KEY, theme);
