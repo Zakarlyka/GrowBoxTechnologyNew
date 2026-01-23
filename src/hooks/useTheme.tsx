@@ -27,19 +27,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
+    const root = window.document.documentElement;
+    const body = window.document.body;
     
-    // Remove all theme classes from both html and body
-    themes.forEach(t => {
-      root.classList.remove(`theme-${t.id}`);
-      body.classList.remove(`theme-${t.id}`);
-    });
+    // 1. Clean slate - remove ALL possible theme classes first
+    root.classList.remove("light", "dark", "theme-agro-nature", "theme-cyberpunk");
+    body.classList.remove("light", "dark", "theme-agro-nature", "theme-cyberpunk");
     
-    // Add current theme class to BOTH html and body for maximum coverage
-    if (theme !== 'cyberpunk') {
-      root.classList.add(`theme-${theme}`);
-      body.classList.add(`theme-${theme}`);
+    // 2. Apply strictly ONE state (exclusive mode)
+    if (theme === "agro-nature") {
+      root.classList.add("theme-agro-nature");
+      body.classList.add("theme-agro-nature");
+    } else {
+      // Default to dark/cyberpunk
+      root.classList.add("dark");
+      body.classList.add("dark");
     }
     
     localStorage.setItem(THEME_STORAGE_KEY, theme);
