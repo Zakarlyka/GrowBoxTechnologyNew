@@ -83,70 +83,78 @@
   }
 
   /* === AGRO NATURE THEME === */
+  /* Applied via class on <html> element for global coverage */
   .theme-agro-nature {
-    /* Deep Forest Green backgrounds */
-    --background: 150 60% 5%;
-    --foreground: 90 20% 95%;
+    /* Deep Forest Green backgrounds - #022c22 equivalent */
+    --background: 164 90% 8% !important;
+    --foreground: 120 20% 95% !important;
 
-    /* Cards with glassmorphism feel */
-    --card: 150 40% 10%;
-    --card-foreground: 90 20% 95%;
+    /* Cards with glassmorphism feel - Darker Emerald */
+    --card: 164 80% 12% !important;
+    --card-foreground: 120 20% 95% !important;
 
     /* Popovers */
-    --popover: 150 45% 8%;
-    --popover-foreground: 90 20% 95%;
+    --popover: 164 80% 12% !important;
+    --popover-foreground: 120 20% 95% !important;
 
-    /* Primary - Vibrant Lime Green */
-    --primary: 82 85% 67%;
-    --primary-foreground: 150 60% 5%;
+    /* Primary - Vibrant Lime Green #4ade80 */
+    --primary: 142 70% 50% !important;
+    --primary-foreground: 164 90% 8% !important;
 
-    /* Secondary - Earthy sage tones */
-    --secondary: 140 20% 18%;
-    --secondary-foreground: 90 20% 90%;
+    /* Secondary - Sage Green */
+    --secondary: 164 30% 20% !important;
+    --secondary-foreground: 120 20% 90% !important;
 
     /* Muted elements */
-    --muted: 145 15% 14%;
-    --muted-foreground: 130 12% 55%;
+    --muted: 164 30% 20% !important;
+    --muted-foreground: 150 15% 60% !important;
 
-    /* Accent - Bright lime for highlights */
-    --accent: 82 85% 67%;
-    --accent-foreground: 150 60% 5%;
+    /* Accent - Vibrant Lime */
+    --accent: 142 70% 50% !important;
+    --accent-foreground: 164 90% 8% !important;
 
     /* Success - Healthy plant green */
-    --success: 140 70% 45%;
-    --success-foreground: 90 20% 95%;
+    --success: 140 70% 45% !important;
+    --success-foreground: 120 20% 95% !important;
 
     /* Warning - Golden amber */
-    --warning: 40 90% 50%;
-    --warning-foreground: 150 60% 5%;
+    --warning: 40 90% 50% !important;
+    --warning-foreground: 164 90% 8% !important;
 
     /* Destructive - Warm red */
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 90 20% 95%;
+    --destructive: 0 62.8% 30.6% !important;
+    --destructive-foreground: 120 20% 95% !important;
 
     /* Borders - Low contrast green */
-    --border: 145 20% 18%;
-    --input: 145 25% 14%;
-    --ring: 82 85% 67%;
+    --border: 164 30% 18% !important;
+    --input: 164 30% 15% !important;
+    --ring: 142 70% 50% !important;
 
     /* Gradients for Agro theme */
-    --gradient-primary: linear-gradient(135deg, hsl(82 85% 67%), hsl(140 70% 45%));
-    --gradient-card: linear-gradient(135deg, hsl(150 40% 10%), hsl(145 35% 14%));
-    --gradient-accent: linear-gradient(90deg, hsl(82 85% 67%), hsl(100 75% 55%));
+    --gradient-primary: linear-gradient(135deg, hsl(142 70% 50%), hsl(140 70% 45%));
+    --gradient-card: linear-gradient(135deg, hsl(164 80% 12%), hsl(164 60% 16%));
+    --gradient-accent: linear-gradient(90deg, hsl(142 70% 50%), hsl(120 60% 55%));
     
     /* Glows and effects */
-    --glow-primary: 0 0 20px hsl(82 85% 67% / 0.35);
+    --glow-primary: 0 0 20px hsl(142 70% 50% / 0.4);
     --glow-accent: 0 0 20px hsl(140 70% 45% / 0.3);
-    --shadow-card: 0 8px 32px hsl(150 60% 3% / 0.5);
+    --shadow-card: 0 8px 32px hsl(164 90% 3% / 0.6);
 
-    --sidebar-background: 150 45% 8%;
-    --sidebar-foreground: 90 20% 75%;
-    --sidebar-primary: 82 85% 67%;
-    --sidebar-primary-foreground: 150 60% 5%;
-    --sidebar-accent: 145 15% 14%;
-    --sidebar-accent-foreground: 90 20% 95%;
-    --sidebar-border: 145 20% 18%;
-    --sidebar-ring: 82 85% 67%;
+    --sidebar-background: 164 80% 10% !important;
+    --sidebar-foreground: 120 20% 80% !important;
+    --sidebar-primary: 142 70% 50% !important;
+    --sidebar-primary-foreground: 164 90% 8% !important;
+    --sidebar-accent: 164 30% 18% !important;
+    --sidebar-accent-foreground: 120 20% 95% !important;
+    --sidebar-border: 164 30% 18% !important;
+    --sidebar-ring: 142 70% 50% !important;
+  }
+  
+  /* Glassmorphism for cards in Agro Nature theme */
+  .theme-agro-nature .glass-card,
+  .theme-agro-nature [data-slot="card"] {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .dark {
