@@ -28,8 +28,8 @@
     "title": "Панель управления",
     "subtitle": "Управляйте своими устройствами в реальном времени",
     "totalDevices": "Всего устройств",
-    "onlineDevices": "Онлайн",
-    "offlineDevices": "Офлайн",
+    "onlineDevices": "Online",
+    "offlineDevices": "Offline",
     "activity": "Активность",
     "temperature": "Температура",
     "humidity": "Влажность",
@@ -44,8 +44,8 @@
   "devices": {
     "title": "Мои устройства",
     "addDevice": "Добавить устройство",
-    "online": "Онлайн",
-    "offline": "Офлайн",
+    "online": "Online",
+    "offline": "Offline",
     "lastSeen": "Последняя активность",
     "controls": "Управление",
     "telemetry": "Телеметрия",
@@ -93,7 +93,7 @@
     "summer": "SUMMER",
     "targetTemp": "Целевая температура",
     "targetHumidity": "Целевая влажность",
-    "hysteresis": "Гистерезис",
+    "hysteresis": "Hysteresis",
     "startTime": "Время включения",
     "endTime": "Время выключения",
     "hours": "Часы",
@@ -219,5 +219,19 @@
     "deviceId": "ID устройства",
     "clickLinkAfterWifi": "Нажмите на ссылку после подключения к Wi-Fi сети GrowBox-Setup",
     "orScanQr": "Или отсканируйте QR-код камерой телефона"
+  },
+  "help": {
+    "hysteresis": "Разница температур для включения/выключения. Предотвращает частое щёлканье реле.",
+    "vpd": "Дефицит давления пара. Показатель того, насколько комфортно растению 'дышать'.",
+    "aiMode": "Автопилот. Система сама управляет климатом на основе паспорта сорта.",
+    "masterPlant": "Главное растение, по профилю которого настраивается устройство."
+  },
+  "protected": {
+    "online": "Online",
+    "offline": "Offline",
+    "wifi": "Wi-Fi",
+    "masterPlant": "Master Plant",
+    "vpd": "VPD",
+    "agroHogwards": "Agro Hogwards"
   }
 }
