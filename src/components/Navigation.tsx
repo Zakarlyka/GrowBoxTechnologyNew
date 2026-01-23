@@ -96,14 +96,6 @@ export function Navigation() {
           </nav>
         </div>
         
-        {/* Connection Status */}
-        <div className="mt-auto p-6 border-t border-border/40">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse-glow"></div>
-            <Wifi className="w-4 h-4 text-success" />
-            <span className="text-muted-foreground">MQTT з'єднано</span>
-          </div>
-        </div>
       </aside>
 
       {/* Bottom Navigation for Mobile */}
