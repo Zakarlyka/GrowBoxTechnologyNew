@@ -1,0 +1,60 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+
+export type Theme = 'cyberpunk' | 'agro-nature';
+
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  themes: { id: Theme; name: string; description: string }[];
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const THEME_STORAGE_KEY = 'app-theme';
+
+const themes: ThemeContextType['themes'] = [
+  { id: 'cyberpunk', name: 'Cyberpunk', description: 'Dark tech with electric blue accents' },
+  { id: 'agro-nature', name: 'Agro Nature', description: 'Deep forest green with lime accents' },
+];
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
+      return saved && themes.some(t => t.id === saved) ? saved : 'cyberpunk';
+    }
+    return 'cyberpunk';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    
+    // Remove all theme classes
+    themes.forEach(t => root.classList.remove(`theme-${t.id}`));
+    
+    // Add current theme class (cyberpunk is default, no class needed)
+    if (theme !== 'cyberpunk') {
+      root.classList.add(`theme-${theme}`);
+    }
+    
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, themes }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+}
