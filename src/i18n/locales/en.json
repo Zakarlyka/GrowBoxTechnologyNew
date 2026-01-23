@@ -219,5 +219,19 @@
     "deviceId": "Device ID",
     "clickLinkAfterWifi": "Click the link after connecting to GrowBox-Setup Wi-Fi network",
     "orScanQr": "Or scan the QR code with your phone camera"
+  },
+  "help": {
+    "hysteresis": "Temperature difference for on/off switching. Prevents frequent relay clicking.",
+    "vpd": "Vapor Pressure Deficit. Indicator of how comfortable it is for the plant to 'breathe'.",
+    "aiMode": "Autopilot. The system controls the climate based on the strain passport.",
+    "masterPlant": "The main plant whose profile determines the device settings."
+  },
+  "protected": {
+    "online": "Online",
+    "offline": "Offline",
+    "wifi": "Wi-Fi",
+    "masterPlant": "Master Plant",
+    "vpd": "VPD",
+    "agroHogwards": "Agro Hogwards"
   }
 }

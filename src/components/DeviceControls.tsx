@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SmartTooltip } from "@/components/ui/smart-tooltip";
 import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useAuth } from "@/hooks/useAuth";
@@ -245,7 +246,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-lg">🤖 Smart AI Mode</span>
+                  <SmartTooltip term="🤖 Smart AI Mode" content={t('help.aiMode')}>
+                    <span className="font-semibold text-lg">🤖 Smart AI Mode</span>
+                  </SmartTooltip>
                   {isAiActive && (
                     <Badge className="bg-yellow-500 text-black text-xs">
                       <Sparkles className="w-3 h-3 mr-1" />
@@ -558,7 +561,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    ± {t('controls.hysteresis')} (°C)
+                    ± <SmartTooltip term={t('controls.hysteresis')} content={t('help.hysteresis')} /> (°C)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
@@ -611,7 +614,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">
-                    ± {t('controls.hysteresis')} (%)
+                    ± <SmartTooltip term={t('controls.hysteresis')} content={t('help.hysteresis')} /> (%)
                   </Label>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">

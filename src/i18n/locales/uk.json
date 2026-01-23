@@ -28,8 +28,8 @@
     "title": "Панель керування",
     "subtitle": "Керуйте своїми пристроями в реальному часі",
     "totalDevices": "Всього пристроїв",
-    "onlineDevices": "Онлайн",
-    "offlineDevices": "Офлайн",
+    "onlineDevices": "Online",
+    "offlineDevices": "Offline",
     "activity": "Активність",
     "temperature": "Температура",
     "humidity": "Вологість",
@@ -44,8 +44,8 @@
   "devices": {
     "title": "Мої пристрої",
     "addDevice": "Додати пристрій",
-    "online": "Онлайн",
-    "offline": "Офлайн",
+    "online": "Online",
+    "offline": "Offline",
     "lastSeen": "Востаннє онлайн",
     "controls": "Керування",
     "telemetry": "Телеметрія",
@@ -93,7 +93,7 @@
     "summer": "SUMMER",
     "targetTemp": "Цільова температура",
     "targetHumidity": "Цільова вологість",
-    "hysteresis": "Гістерезис",
+    "hysteresis": "Hysteresis",
     "startTime": "Час ввімкнення",
     "endTime": "Час вимкнення",
     "hours": "Години",
@@ -219,5 +219,19 @@
     "deviceId": "ID пристрою",
     "clickLinkAfterWifi": "Натисніть на посилання після підключення до Wi-Fi мережі GrowBox-Setup",
     "orScanQr": "Або відскануйте QR-код через додаток або камеру"
+  },
+  "help": {
+    "hysteresis": "Різниця температур для вмикання/вимикання. Запобігає частому клацанню реле.",
+    "vpd": "Тиск дефіциту пари. Показник того, наскільки комфортно рослині 'дихати'.",
+    "aiMode": "Автопілот. Система сама керує кліматом на основі паспорта сорту.",
+    "masterPlant": "Головна рослина, за профілем якої налаштовується пристрій."
+  },
+  "protected": {
+    "online": "Online",
+    "offline": "Offline",
+    "wifi": "Wi-Fi",
+    "masterPlant": "Master Plant",
+    "vpd": "VPD",
+    "agroHogwards": "Agro Hogwards"
   }
 }
