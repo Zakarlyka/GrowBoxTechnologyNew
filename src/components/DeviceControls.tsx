@@ -372,51 +372,51 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
-                      <SmartHelp content={t('help.lightStartTime')} isText={false}>
-                        <Select
-                          value={String(lightStartH).padStart(2, '0')}
-                          onValueChange={(value) => {
-                            setLightStartH(parseInt(value, 10));
-                            setHasChanges(true);
-                          }}
-                          disabled={isAiActive}
-                        >
+                      <Select
+                        value={String(lightStartH).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightStartH(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                      >
+                        <SmartHelp content={t('help.lightStartTime')} isText={false}>
                           <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            {hourOptions.map((hour) => (
-                              <SelectItem key={hour} value={hour}>
-                                {hour}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </SmartHelp>
+                        </SmartHelp>
+                        <SelectContent>
+                          {hourOptions.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
-                      <SmartHelp content={t('help.lightStartTime')} isText={false}>
-                        <Select
-                          value={String(lightStartM).padStart(2, '0')}
-                          onValueChange={(value) => {
-                            setLightStartM(parseInt(value, 10));
-                            setHasChanges(true);
-                          }}
-                          disabled={isAiActive}
-                        >
+                      <Select
+                        value={String(lightStartM).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightStartM(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                      >
+                        <SmartHelp content={t('help.lightStartTime')} isText={false}>
                           <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            {minuteOptions.map((minute) => (
-                              <SelectItem key={minute} value={minute}>
-                                {minute}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </SmartHelp>
+                        </SmartHelp>
+                        <SelectContent>
+                          {minuteOptions.map((minute) => (
+                            <SelectItem key={minute} value={minute}>
+                              {minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
@@ -429,51 +429,51 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
-                      <SmartHelp content={t('help.lightEndTime')} isText={false}>
-                        <Select
-                          value={String(lightEndH).padStart(2, '0')}
-                          onValueChange={(value) => {
-                            setLightEndH(parseInt(value, 10));
-                            setHasChanges(true);
-                          }}
-                          disabled={isAiActive}
-                        >
+                      <Select
+                        value={String(lightEndH).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightEndH(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                      >
+                        <SmartHelp content={t('help.lightEndTime')} isText={false}>
                           <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            {hourOptions.map((hour) => (
-                              <SelectItem key={hour} value={hour}>
-                                {hour}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </SmartHelp>
+                        </SmartHelp>
+                        <SelectContent>
+                          {hourOptions.map((hour) => (
+                            <SelectItem key={hour} value={hour}>
+                              {hour}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
-                      <SmartHelp content={t('help.lightEndTime')} isText={false}>
-                        <Select
-                          value={String(lightEndM).padStart(2, '0')}
-                          onValueChange={(value) => {
-                            setLightEndM(parseInt(value, 10));
-                            setHasChanges(true);
-                          }}
-                          disabled={isAiActive}
-                        >
+                      <Select
+                        value={String(lightEndM).padStart(2, '0')}
+                        onValueChange={(value) => {
+                          setLightEndM(parseInt(value, 10));
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                      >
+                        <SmartHelp content={t('help.lightEndTime')} isText={false}>
                           <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
-                            {minuteOptions.map((minute) => (
-                              <SelectItem key={minute} value={minute}>
-                                {minute}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </SmartHelp>
+                        </SmartHelp>
+                        <SelectContent>
+                          {minuteOptions.map((minute) => (
+                            <SelectItem key={minute} value={minute}>
+                              {minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

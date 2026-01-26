@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,10 @@ interface DeviceCardProps {
   device: Device;
 }
 
-export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardProps) {
+const DeviceCardBase = forwardRef<HTMLDivElement, DeviceCardProps>(function DeviceCardBase(
+  { device },
+  ref
+) {
   const { t } = useTranslation();
   const { latestLog } = useDeviceLogs(device.id);
   const { settings } = useDeviceControls(device.device_id);
@@ -130,6 +133,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
 
   return (
     <Card 
+      ref={ref}
       className="gradient-card border-border/50 hover:border-primary/50 transition-all cursor-pointer"
       onClick={() => navigate(`/dashboard?device=${device.id}`)}
     >
@@ -223,3 +227,7 @@ export const DeviceCard = React.memo(function DeviceCard({ device }: DeviceCardP
     </Card>
   );
 });
+
+DeviceCardBase.displayName = 'DeviceCard';
+
+export const DeviceCard = React.memo(DeviceCardBase);
