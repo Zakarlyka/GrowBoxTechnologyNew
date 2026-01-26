@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ChevronDown, User, Settings, LogOut, Globe, Layers, HelpCircle, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Navigation } from '@/components/Navigation';
+import { SmartHelp } from '@/components/ui/smart-help';
 import { cn } from '@/lib/utils';
 
 // Pages that support device filtering via URL params
@@ -111,48 +112,50 @@ export function Header() {
         <div className="flex items-center gap-1 md:gap-2">
           {/* Global Device Selector - only show on device-aware pages */}
           {isDeviceAwarePage && !devicesLoading && devices.length > 0 && (
-            <Select value={selectedDeviceId || 'all'} onValueChange={handleDeviceSelect}>
-              <SelectTrigger className="w-[100px] sm:w-[160px] md:w-[200px] h-9 bg-background border-border text-sm">
-                <div className="flex items-center gap-2 truncate">
-                  {selectedDevice ? (
-                    <>
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${
-                        selectedDevice.last_seen_at && Date.now() - new Date(selectedDevice.last_seen_at).getTime() < 40000 
-                          ? 'bg-success' 
-                          : 'bg-destructive'
-                      }`} />
-                      <span className="truncate">{selectedDevice.name}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Layers className="w-4 h-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate hidden sm:inline">Усі пристрої</span>
-                      <span className="truncate sm:hidden">Усі</span>
-                    </>
-                  )}
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-background border-border z-[100]">
-                <SelectItem value="all">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-muted-foreground" />
-                    <span>Усі пристрої</span>
+            <SmartHelp content={t('help.deviceSelector')} isText={false}>
+              <Select value={selectedDeviceId || 'all'} onValueChange={handleDeviceSelect}>
+                <SelectTrigger className="w-[100px] sm:w-[160px] md:w-[200px] h-9 bg-background border-border text-sm">
+                  <div className="flex items-center gap-2 truncate">
+                    {selectedDevice ? (
+                      <>
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${
+                          selectedDevice.last_seen_at && Date.now() - new Date(selectedDevice.last_seen_at).getTime() < 40000 
+                            ? 'bg-success' 
+                            : 'bg-destructive'
+                        }`} />
+                        <span className="truncate">{selectedDevice.name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Layers className="w-4 h-4 shrink-0 text-muted-foreground" />
+                        <span className="truncate hidden sm:inline">{t('header.allDevices')}</span>
+                        <span className="truncate sm:hidden">{t('header.all')}</span>
+                      </>
+                    )}
                   </div>
-                </SelectItem>
-                {devices.map(device => (
-                  <SelectItem key={device.id} value={device.id}>
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border z-[100]">
+                  <SelectItem value="all">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        device.last_seen_at && Date.now() - new Date(device.last_seen_at).getTime() < 40000 
-                          ? 'bg-success' 
-                          : 'bg-destructive'
-                      }`} />
-                      <span>{device.name}</span>
+                      <Layers className="w-4 h-4 text-muted-foreground" />
+                      <span>{t('header.allDevices')}</span>
                     </div>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  {devices.map(device => (
+                    <SelectItem key={device.id} value={device.id}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          device.last_seen_at && Date.now() - new Date(device.last_seen_at).getTime() < 40000 
+                            ? 'bg-success' 
+                            : 'bg-destructive'
+                        }`} />
+                        <span>{device.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SmartHelp>
           )}
 
           {/* Help Mode Toggle - Education Mode */}
@@ -184,61 +187,65 @@ export function Header() {
           </TooltipProvider>
 
           {/* Language Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 md:h-10 px-2 md:px-3">
-                <Globe className="w-4 h-4 md:mr-1" />
-                <span className="hidden md:inline">{currentLanguage.flag}</span>
-                <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
-              {languages.map(lang => (
-                <DropdownMenuItem 
-                  key={lang.code} 
-                  onClick={() => changeLanguage(lang.code)} 
-                  className="flex items-center gap-2"
-                >
-                  <span>{lang.flag}</span>
-                  <span>{lang.name}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SmartHelp content={t('help.languageSelector')} isText={false}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 md:h-10 px-2 md:px-3">
+                  <Globe className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline">{currentLanguage.flag}</span>
+                  <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
+                {languages.map(lang => (
+                  <DropdownMenuItem 
+                    key={lang.code} 
+                    onClick={() => changeLanguage(lang.code)} 
+                    className="flex items-center gap-2"
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SmartHelp>
 
           {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 md:h-10 px-2 md:px-3">
-                <User className="w-4 h-4 md:mr-1" />
-                <span className="hidden md:inline max-w-24 truncate">
-                  {profile?.full_name || user?.email?.split('@')[0] || 'User'}
-                </span>
-                <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-background border-border z-[100]">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-                {role && (
-                  <Badge variant="outline" className="mt-1 text-xs">
-                    {t(`roles.${role}`)}
-                  </Badge>
-                )}
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/account')}>
-                <Settings className="w-4 h-4 mr-2" />
-                {t('navigation.settings')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                {t('navigation.logout')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SmartHelp content={t('help.userMenu')} isText={false}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 md:h-10 px-2 md:px-3">
+                  <User className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline max-w-24 truncate">
+                    {profile?.full_name || user?.email?.split('@')[0] || 'User'}
+                  </span>
+                  <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background border-border z-[100]">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  {role && (
+                    <Badge variant="outline" className="mt-1 text-xs">
+                      {t(`roles.${role}`)}
+                    </Badge>
+                  )}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/account')}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  {t('navigation.settings')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  {t('navigation.logout')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SmartHelp>
         </div>
       </div>
     </header>

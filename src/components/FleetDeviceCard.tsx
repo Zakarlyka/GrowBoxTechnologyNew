@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Wifi, WifiOff, Settings2 } from 'lucide-react';
 import { Device } from '@/hooks/useDevices';
 import { useNavigate } from 'react-router-dom';
+import { SmartHelp } from '@/components/ui/smart-help';
 
 interface FleetDeviceCardProps {
   device: Device;
@@ -65,21 +66,25 @@ export const FleetDeviceCard = React.memo(function FleetDeviceCard({ device }: F
           </div>
 
           {/* Middle: Status Badge */}
-          <Badge 
-            variant={isOnline ? 'default' : 'destructive'}
-            className="shrink-0"
-          >
-            {isOnline ? t('status.online') : t('status.offline')}
-          </Badge>
+          <SmartHelp content={t('help.deviceStatus')} isText={false}>
+            <Badge 
+              variant={isOnline ? 'default' : 'destructive'}
+              className="shrink-0"
+            >
+              {isOnline ? t('status.online') : t('status.offline')}
+            </Badge>
+          </SmartHelp>
 
           {/* Right: Manage Button (visual cue) */}
-          <Button 
-            className="shrink-0 min-h-[44px] group-hover:bg-primary/90"
-            tabIndex={-1}
-          >
-            <Settings2 className="h-4 w-4 mr-2" />
-            {t('devices.manage')}
-          </Button>
+          <SmartHelp content={t('help.manageDevice')} isText={false}>
+            <Button 
+              className="shrink-0 min-h-[44px] group-hover:bg-primary/90"
+              tabIndex={-1}
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              {t('devices.manage')}
+            </Button>
+          </SmartHelp>
         </div>
       </CardContent>
     </Card>
