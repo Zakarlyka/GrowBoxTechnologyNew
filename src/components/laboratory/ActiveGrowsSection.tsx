@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SmartHelp } from '@/components/ui/smart-help';
+import { useTranslation } from 'react-i18next';
 import { 
   Sprout, 
   Leaf, 
@@ -69,6 +71,7 @@ const stageBgColors: Record<string, string> = {
 };
 
 export const ActiveGrowsSection = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -248,17 +251,18 @@ export const ActiveGrowsSection = () => {
     const isMaster = plant.is_main;
 
     return (
-      <Card
-        key={plant.id}
-        className={`group cursor-pointer transition-all hover:shadow-xl relative overflow-hidden min-h-[180px] md:min-h-[200px] ${
-          isMaster 
-            ? 'border-2 border-amber-500/40 hover:border-amber-500/60' 
-            : isConflict 
-              ? 'border-2 border-red-500/40 hover:border-red-500/60'
-              : 'hover:border-primary/50'
-        }`}
-        onClick={() => handlePlantClick(plant)}
-      >
+      <SmartHelp content={t('help.plantCard')}>
+        <Card
+          key={plant.id}
+          className={`group cursor-pointer transition-all hover:shadow-xl relative overflow-hidden min-h-[180px] md:min-h-[200px] ${
+            isMaster 
+              ? 'border-2 border-amber-500/40 hover:border-amber-500/60' 
+              : isConflict 
+                ? 'border-2 border-red-500/40 hover:border-red-500/60'
+                : 'hover:border-primary/50'
+          }`}
+          onClick={() => handlePlantClick(plant)}
+        >
         {/* Background Image */}
         {photoUrl && (
           <div 
@@ -403,7 +407,8 @@ export const ActiveGrowsSection = () => {
           )}
 
         </CardContent>
-      </Card>
+        </Card>
+      </SmartHelp>
     );
   };
 

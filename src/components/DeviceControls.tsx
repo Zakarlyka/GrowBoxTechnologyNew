@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SmartTooltip } from "@/components/ui/smart-tooltip";
+import { SmartHelp } from "@/components/ui/smart-help";
 import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useAuth } from "@/hooks/useAuth";
@@ -712,15 +713,17 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
 
             {/* Large Force Water Button */}
-            <Button
-              size="lg"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 min-h-[48px]"
-              onClick={handleWaterNow}
-              disabled={isWatering}
-            >
-              <Droplets className={cn("w-6 h-6 mr-2", isWatering && "animate-pulse")} />
-              {isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
-            </Button>
+            <SmartHelp content={t('help.waterNow')} showIcon>
+              <Button
+                size="lg"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 min-h-[48px]"
+                onClick={handleWaterNow}
+                disabled={isWatering}
+              >
+                <Droplets className={cn("w-6 h-6 mr-2", isWatering && "animate-pulse")} />
+                {isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
+              </Button>
+            </SmartHelp>
 
             {/* Irrigation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">

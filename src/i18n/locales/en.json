@@ -259,7 +259,16 @@
     "hysteresis": "Temperature difference for on/off switching. Prevents frequent relay clicking.",
     "vpd": "Vapor Pressure Deficit. Indicator of how comfortable it is for the plant to 'breathe'.",
     "aiMode": "Autopilot. The system controls the climate based on the strain passport.",
-    "masterPlant": "The main plant whose profile determines the device settings."
+    "masterPlant": "The main plant whose profile determines the device settings.",
+    "waterNow": "Activates the pump for exactly 10 seconds for manual watering. Use for testing or emergency moistening.",
+    "plantCard": "Active plant card. Click to view details, change stage, or add notes.",
+    "navDevices": "List of all your connected grow boxes and devices.",
+    "navDashboard": "Real-time monitoring dashboard with sensor data and device status.",
+    "navLaboratory": "Main control center for live plants. Add new grow cycles and track growth stages.",
+    "navAnalytics": "Temperature, humidity, and VPD charts for the entire growing period.",
+    "navLibrary": "Strain knowledge base. Stores plant passports with ideal growing conditions.",
+    "navAdmin": "Administrator panel for managing users and system settings.",
+    "navSettings": "Your profile, notification preferences, and account settings."
   },
   "protected": {
     "online": "Online",
