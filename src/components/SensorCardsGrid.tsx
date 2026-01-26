@@ -15,15 +15,9 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Thermometer, Droplets, Sprout, Sun, Moon, Wind, Info } from 'lucide-react';
+import { Thermometer, Droplets, Sprout, Sun, Moon, Wind } from 'lucide-react';
 import { DraggableSensorCard } from './DraggableSensorCard';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useHelpMode } from '@/contexts/HelpModeContext';
+import { SmartHelp } from '@/components/ui/smart-help';
 
 interface VPDAnalysis {
   vpd: number | null;
@@ -54,7 +48,6 @@ const STORAGE_KEY = 'dashboard-sensor-order-v2';
 
 export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode, vpdAnalysis }: SensorCardsGridProps) {
   const { t } = useTranslation();
-  const { isHelpModeEnabled } = useHelpMode();
   
   const [sensorOrder, setSensorOrder] = useState<SensorId[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -106,111 +99,97 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
     vpd: t('help.vpd'),
   };
 
-  const SensorTooltipIcon = ({ sensorId }: { sensorId: SensorId }) => {
-    if (!isHelpModeEnabled) return null;
-    
-    return (
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-help">
-              <Info className="h-3 w-3 text-primary/60 hover:text-primary transition-colors ml-1 animate-pulse" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[220px] bg-primary/10 border-primary/30 backdrop-blur-sm">
-            <p className="text-xs text-foreground">{sensorTooltips[sensorId]}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  };
-
   const renderSensorCard = (id: SensorId) => {
     switch (id) {
       case 'temperature':
         return (
           <DraggableSensorCard key={id} id={id}>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 h-full">
-              <div className="flex items-center space-x-2">
-                <Thermometer className="h-4 w-4 text-orange-500" />
-                <span className="text-sm text-muted-foreground">{t('sensors.temperature', 'Темп')}</span>
-                <SensorTooltipIcon sensorId="temperature" />
+            <SmartHelp content={sensorTooltips.temperature} isText={false}>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 h-full">
+                <div className="flex items-center space-x-2">
+                  <Thermometer className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm text-muted-foreground">{t('sensors.temperature', 'Темп')}</span>
+                </div>
+                <span className="text-lg font-semibold text-foreground">
+                  {temperature ? `${temperature.toFixed(1)}°C` : '-- °C'}
+                </span>
               </div>
-              <span className="text-lg font-semibold text-foreground">
-                {temperature ? `${temperature.toFixed(1)}°C` : '-- °C'}
-              </span>
-            </div>
+            </SmartHelp>
           </DraggableSensorCard>
         );
       case 'humidity':
         return (
           <DraggableSensorCard key={id} id={id}>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 h-full">
-              <div className="flex items-center space-x-2">
-                <Droplets className="h-4 w-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">RH</span>
-                <SensorTooltipIcon sensorId="humidity" />
+            <SmartHelp content={sensorTooltips.humidity} isText={false}>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 h-full">
+                <div className="flex items-center space-x-2">
+                  <Droplets className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-muted-foreground">RH</span>
+                </div>
+                <span className="text-lg font-semibold text-foreground">
+                  {humidity ? `${humidity.toFixed(0)}%` : '-- %'}
+                </span>
               </div>
-              <span className="text-lg font-semibold text-foreground">
-                {humidity ? `${humidity.toFixed(0)}%` : '-- %'}
-              </span>
-            </div>
+            </SmartHelp>
           </DraggableSensorCard>
         );
       case 'soil':
         return (
           <DraggableSensorCard key={id} id={id}>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30 h-full">
-              <div className="flex items-center space-x-2">
-                <Sprout className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">{t('sensors.soil', 'Ґрунт')}</span>
-                <SensorTooltipIcon sensorId="soil" />
+            <SmartHelp content={sensorTooltips.soil} isText={false}>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30 h-full">
+                <div className="flex items-center space-x-2">
+                  <Sprout className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">{t('sensors.soil', 'Ґрунт')}</span>
+                </div>
+                <span className="text-lg font-semibold text-foreground">
+                  {soilMoisture !== null && soilMoisture !== undefined
+                    ? `${soilMoisture.toFixed(0)}%` : '-- %'}
+                </span>
               </div>
-              <span className="text-lg font-semibold text-foreground">
-                {soilMoisture !== null && soilMoisture !== undefined
-                  ? `${soilMoisture.toFixed(0)}%` : '-- %'}
-              </span>
-            </div>
+            </SmartHelp>
           </DraggableSensorCard>
         );
       case 'light':
         return (
           <DraggableSensorCard key={id} id={id}>
-            <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
-              lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-indigo-500/10 border-indigo-500/30'
-            }`}>
-              <div className="flex items-center space-x-2">
-                {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-indigo-400" />}
-                <span className="text-sm text-muted-foreground">
-                  {lightMode ? `${lightMode.dayHours}/${lightMode.nightHours}` : '--'}
-                </span>
-                <SensorTooltipIcon sensorId="light" />
+            <SmartHelp content={sensorTooltips.light} isText={false}>
+              <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
+                lightMode?.isDay ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-indigo-500/10 border-indigo-500/30'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  {lightMode?.isDay ? <Sun className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4 text-indigo-400" />}
+                  <span className="text-sm text-muted-foreground">
+                    {lightMode ? `${lightMode.dayHours}/${lightMode.nightHours}` : '--'}
+                  </span>
+                </div>
+                {lightMode && (
+                  <span className="text-lg font-semibold text-foreground">
+                    {lightMode.isDay ? '☀️' : '🌙'}
+                  </span>
+                )}
               </div>
-              {lightMode && (
-                <span className="text-lg font-semibold text-foreground">
-                  {lightMode.isDay ? '☀️' : '🌙'}
-                </span>
-              )}
-            </div>
+            </SmartHelp>
           </DraggableSensorCard>
         );
       case 'vpd':
         return (
           <DraggableSensorCard key={id} id={id}>
-            <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
-              vpdAnalysis ? `${vpdAnalysis.bgColor} ${vpdAnalysis.borderColor}` : 'bg-muted/20 border-border/30'
-            }`}>
-              <div className="flex items-center space-x-2">
-                <Wind className={`h-4 w-4 ${vpdAnalysis?.color || 'text-muted-foreground'}`} />
-                <span className="text-sm text-muted-foreground">VPD</span>
-                <SensorTooltipIcon sensorId="vpd" />
+            <SmartHelp content={sensorTooltips.vpd} isText={false}>
+              <div className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
+                vpdAnalysis ? `${vpdAnalysis.bgColor} ${vpdAnalysis.borderColor}` : 'bg-muted/20 border-border/30'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  <Wind className={`h-4 w-4 ${vpdAnalysis?.color || 'text-muted-foreground'}`} />
+                  <span className="text-sm text-muted-foreground">VPD</span>
+                </div>
+                <span className={`text-lg font-semibold ${vpdAnalysis?.color || 'text-foreground'}`}>
+                  {vpdAnalysis && !vpdAnalysis.isOffline && vpdAnalysis.vpd !== null
+                    ? `${vpdAnalysis.vpd.toFixed(2)}`
+                    : '-- kPa'}
+                </span>
               </div>
-              <span className={`text-lg font-semibold ${vpdAnalysis?.color || 'text-foreground'}`}>
-                {vpdAnalysis && !vpdAnalysis.isOffline && vpdAnalysis.vpd !== null
-                  ? `${vpdAnalysis.vpd.toFixed(2)}`
-                  : '-- kPa'}
-              </span>
-            </div>
+            </SmartHelp>
           </DraggableSensorCard>
         );
     }

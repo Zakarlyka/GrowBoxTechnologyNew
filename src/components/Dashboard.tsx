@@ -14,6 +14,7 @@ import { ActivePlantContext } from './ActivePlantContext';
 import { useDevices } from '@/hooks/useDevices';
 import { useDeviceControls } from '@/hooks/useDeviceControls';
 import { DeviceControls } from '@/components/DeviceControls';
+import { SmartHelp } from '@/components/ui/smart-help';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -232,9 +233,11 @@ export function Dashboard() {
             </h1>
             <p className="text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
           </div>
-          <Badge variant={isOnline ? 'default' : 'destructive'} className="flex items-center gap-1">
-            {isOnline ? <><Wifi className="h-3 w-3" />Online</> : <><WifiOff className="h-3 w-3" />Offline</>}
-          </Badge>
+          <SmartHelp content={t('help.connectionStatus')} isText={false}>
+            <Badge variant={isOnline ? 'default' : 'destructive'} className="flex items-center gap-1">
+              {isOnline ? <><Wifi className="h-3 w-3" />Online</> : <><WifiOff className="h-3 w-3" />Offline</>}
+            </Badge>
+          </SmartHelp>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -242,10 +245,12 @@ export function Dashboard() {
             <QrCode className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">QR</span>
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} className="min-h-[44px]">
-            <Trash2 className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Видалити</span>
-          </Button>
+          <SmartHelp content={t('help.deleteDevice')} isText={false}>
+            <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} className="min-h-[44px]">
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Видалити</span>
+            </Button>
+          </SmartHelp>
         </div>
       </div>
 

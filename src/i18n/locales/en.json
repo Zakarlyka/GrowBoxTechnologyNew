@@ -268,7 +268,13 @@
     "navAnalytics": "Temperature, humidity, and VPD charts for the entire growing period.",
     "navLibrary": "Strain knowledge base. Stores plant passports with ideal growing conditions.",
     "navAdmin": "Administrator panel for managing users and system settings.",
-    "navSettings": "Your profile, notification preferences, and account settings."
+    "navSettings": "Your profile, notification preferences, and account settings.",
+    "connectionStatus": "Device connection status to the server.",
+    "deleteDevice": "Permanently delete this device from your account.",
+    "climateCard": "Temperature and humidity settings block.",
+    "ventilationCard": "Air circulation and ventilation system for the box.",
+    "ventDuration": "Fan operation time in seconds.",
+    "ventPause": "Pause duration between fan activations."
   },
   "protected": {
     "online": "Online",
