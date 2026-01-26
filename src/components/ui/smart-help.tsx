@@ -19,10 +19,14 @@ interface SmartHelpProps {
  * SmartHelp - Educational wrapper that adds help tooltips when Help Mode is enabled
  * 
  * When isHelpModeEnabled === false: Renders children normally
- * When isHelpModeEnabled === true: Wraps children with help interaction
+ * When isHelpModeEnabled === true: Wraps children with help interaction + visual indicator
  * 
  * Desktop: Shows tooltip on hover
  * Mobile: Shows popover on tap
+ * 
+ * Visual cues when active:
+ * - Subtle dotted underline on text elements
+ * - Small "?" badge in corner for card-like elements
  */
 export function SmartHelp({ 
   content, 
@@ -43,6 +47,11 @@ export function SmartHelp({
     <HelpCircle className="w-3.5 h-3.5 text-primary/70 hover:text-primary transition-colors shrink-0" />
   );
 
+  // Visual indicator styles when help mode is active
+  const helpActiveStyles = showIcon 
+    ? "" // Icon already indicates help
+    : "relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:border-b after:border-dotted after:border-primary/40";
+
   const contentElement = showIcon ? (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       {iconPosition === 'left' && HelpIcon}
@@ -50,14 +59,18 @@ export function SmartHelp({
       {iconPosition === 'right' && HelpIcon}
     </span>
   ) : (
-    <span className={cn("cursor-help", className)}>
+    <span className={cn(
+      "cursor-help inline-block",
+      helpActiveStyles,
+      className
+    )}>
       {children}
     </span>
   );
 
   // Desktop: Tooltip on hover
   const DesktopVersion = (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex items-center">
@@ -66,9 +79,12 @@ export function SmartHelp({
         </TooltipTrigger>
         <TooltipContent 
           side="top" 
-          className="max-w-xs bg-background border-border shadow-lg z-[100] p-3"
+          className="max-w-xs bg-primary/10 border-primary/30 shadow-lg z-[100] p-3 backdrop-blur-sm"
         >
-          <p className="text-sm text-foreground leading-relaxed">{content}</p>
+          <div className="flex items-start gap-2">
+            <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm text-foreground leading-relaxed">{content}</p>
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -84,9 +100,12 @@ export function SmartHelp({
       </PopoverTrigger>
       <PopoverContent 
         side="top" 
-        className="w-72 bg-background border-border shadow-lg z-[100] p-3"
+        className="w-72 bg-primary/10 border-primary/30 shadow-lg z-[100] p-3 backdrop-blur-sm"
       >
-        <p className="text-sm text-foreground leading-relaxed">{content}</p>
+        <div className="flex items-start gap-2">
+          <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground leading-relaxed">{content}</p>
+        </div>
       </PopoverContent>
     </Popover>
   );
