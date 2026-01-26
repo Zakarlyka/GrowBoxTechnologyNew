@@ -474,10 +474,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card B: Climate Control 🌡️ */}
         <Card className="gradient-card border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-              <Thermometer className="w-5 h-5" />
-              {t('controls.climate')}
-            </CardTitle>
+            <SmartHelp content={t('help.climateCard')}>
+              <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                <Thermometer className="w-5 h-5" />
+                {t('controls.climate')}
+              </CardTitle>
+            </SmartHelp>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON */}
@@ -713,7 +715,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
 
             {/* Large Force Water Button */}
-            <SmartHelp content={t('help.waterNow')} showIcon>
+            <SmartHelp content={t('help.waterNow')} isText={false}>
               <Button
                 size="lg"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 min-h-[48px]"
@@ -788,10 +790,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card D: Ventilation 💨 */}
         <Card className="gradient-card border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-              <Wind className="w-5 h-5" />
-              {t('controls.ventilation')}
-            </CardTitle>
+            <SmartHelp content={t('help.ventilationCard')}>
+              <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                <Wind className="w-5 h-5" />
+                {t('controls.ventilation')}
+              </CardTitle>
+            </SmartHelp>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Button Group: OFF | ON */}
@@ -826,9 +830,11 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             {/* Ventilation Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  ⏱️ {t('controls.workDuration')} ({t('controls.seconds')})
-                </Label>
+                <SmartHelp content={t('help.ventDuration')}>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    ⏱️ {t('controls.workDuration')} ({t('controls.seconds')})
+                  </Label>
+                </SmartHelp>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Input
@@ -849,9 +855,11 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  ⏸️ {t('controls.pauseDuration')} ({t('controls.seconds')})
-                </Label>
+                <SmartHelp content={t('help.ventPause')}>
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    ⏸️ {t('controls.pauseDuration')} ({t('controls.seconds')})
+                  </Label>
+                </SmartHelp>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <Input

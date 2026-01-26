@@ -251,7 +251,7 @@ export const ActiveGrowsSection = () => {
     const isMaster = plant.is_main;
 
     return (
-      <SmartHelp content={t('help.plantCard')}>
+      <SmartHelp content={t('help.plantCard')} isText={false}>
         <Card
           key={plant.id}
           className={`group cursor-pointer transition-all hover:shadow-xl relative overflow-hidden min-h-[180px] md:min-h-[200px] ${

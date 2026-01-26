@@ -86,7 +86,7 @@ export function Navigation() {
               const isActive = location.pathname === item.path;
               return (
                 <Link key={item.path} to={item.path}>
-                  <SmartHelp content={t(item.helpKey)}>
+                  <SmartHelp content={t(item.helpKey)} isText={false}>
                     <Button
                       variant={isActive ? "default" : "ghost"}
                       className={cn(
@@ -123,7 +123,7 @@ export function Navigation() {
             const isActive = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path}>
-                <SmartHelp content={t(item.helpKey)}>
+                <SmartHelp content={t(item.helpKey)} isText={false}>
                   <Button
                     variant={isActive ? "default" : "ghost"}
                     size="sm"
