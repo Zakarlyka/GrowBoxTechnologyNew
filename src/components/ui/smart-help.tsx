@@ -1,9 +1,10 @@
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, isValidElement, Fragment } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useHelpMode } from '@/contexts/HelpModeContext';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Slot } from '@radix-ui/react-slot';
 
 interface SmartHelpProps {
   content: string;
@@ -46,18 +47,24 @@ export function SmartHelp({
     className
   );
 
+  // IMPORTANT: Do NOT use display:contents wrappers around grid/flex items.
+  // Instead, use Radix Slot so TooltipTrigger/PopoverTrigger can attach directly
+  // to the child without inserting layout-breaking wrapper nodes.
+  const triggerChild =
+    isValidElement(children) && children.type !== Fragment ? (
+      <Slot className={helpActiveStyles}>{children}</Slot>
+    ) : (
+      // Fallback for text/fragments: minimal wrapper (safe for inline usage)
+      <span className={helpActiveStyles}>{children}</span>
+    );
+
   // Single render path - detect mobile at runtime to avoid duplicate children
   if (isMobile) {
-    // Mobile: Popover on tap
     return (
       <Popover open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-        <PopoverTrigger asChild>
-          <div className={helpActiveStyles} style={{ display: 'contents' }}>
-            {children}
-          </div>
-        </PopoverTrigger>
-        <PopoverContent 
-          side="top" 
+        <PopoverTrigger asChild>{triggerChild}</PopoverTrigger>
+        <PopoverContent
+          side="top"
           className="w-72 bg-primary/10 border-primary/30 shadow-lg z-[100] p-3 backdrop-blur-sm"
         >
           <p className="text-sm text-foreground leading-relaxed">{content}</p>
@@ -66,17 +73,12 @@ export function SmartHelp({
     );
   }
 
-  // Desktop: Tooltip on hover
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={helpActiveStyles} style={{ display: 'contents' }}>
-            {children}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent 
-          side="top" 
+        <TooltipTrigger asChild>{triggerChild}</TooltipTrigger>
+        <TooltipContent
+          side="top"
           className="max-w-xs bg-primary/10 border-primary/30 shadow-lg z-[100] p-3 backdrop-blur-sm"
         >
           <p className="text-sm text-foreground leading-relaxed">{content}</p>
