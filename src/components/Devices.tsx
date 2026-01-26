@@ -6,6 +6,7 @@ import { Plus, Activity, AlertCircle, Cpu } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
 import { AddDeviceDialog } from './AddDeviceDialog';
 import { FleetDeviceCard } from './FleetDeviceCard';
+import { SmartHelp } from '@/components/ui/smart-help';
 
 export function Devices() {
   const { t } = useTranslation();
@@ -39,74 +40,84 @@ export function Devices() {
             {t('devices.title')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Управління парком пристроїв
+            {t('devices.subtitle')}
           </p>
         </div>
-        <Button className="gradient-primary min-h-[44px]" onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('devices.addDevice')}
-        </Button>
+        <SmartHelp content={t('help.addDeviceButton')} isText={false}>
+          <Button className="gradient-primary min-h-[44px]" onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('devices.addDevice')}
+          </Button>
+        </SmartHelp>
       </div>
 
       {/* Fleet Stats - Compact */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="gradient-card border-border/50">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">{t('dashboard.totalDevices')}</p>
-                <p className="text-2xl font-bold text-foreground">{devices.length}</p>
+        <SmartHelp content={t('help.statsTotal')} isText={false}>
+          <Card className="gradient-card border-border/50">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.totalDevices')}</p>
+                  <p className="text-2xl font-bold text-foreground">{devices.length}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <Cpu className="h-5 w-5 text-primary" />
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-primary/10">
-                <Cpu className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </SmartHelp>
 
-        <Card className="gradient-card border-border/50">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">{t('dashboard.onlineDevices')}</p>
-                <p className="text-2xl font-bold text-success">{onlineCount}</p>
+        <SmartHelp content={t('help.statsOnline')} isText={false}>
+          <Card className="gradient-card border-border/50">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.onlineDevices')}</p>
+                  <p className="text-2xl font-bold text-success">{onlineCount}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-success/10">
+                  <Activity className="h-5 w-5 text-success" />
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-success/10">
-                <Activity className="h-5 w-5 text-success" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </SmartHelp>
 
-        <Card className="gradient-card border-border/50">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">{t('dashboard.offlineDevices')}</p>
-                <p className="text-2xl font-bold text-destructive">{devices.length - onlineCount}</p>
+        <SmartHelp content={t('help.statsOffline')} isText={false}>
+          <Card className="gradient-card border-border/50">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.offlineDevices')}</p>
+                  <p className="text-2xl font-bold text-destructive">{devices.length - onlineCount}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-destructive/10">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-destructive/10">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </SmartHelp>
 
-        <Card className="gradient-card border-border/50">
-          <CardContent className="pt-5 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">{t('dashboard.activity')}</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {devices.length > 0 ? Math.round((onlineCount / devices.length) * 100) : 0}%
-                </p>
+        <SmartHelp content={t('help.statsActivity')} isText={false}>
+          <Card className="gradient-card border-border/50">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.activity')}</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {devices.length > 0 ? Math.round((onlineCount / devices.length) * 100) : 0}%
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-accent/10">
+                  <Activity className="h-5 w-5 text-accent" />
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-accent/10">
-                <Activity className="h-5 w-5 text-accent" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </SmartHelp>
       </div>
 
       {/* Device Fleet List */}
@@ -122,10 +133,12 @@ export function Devices() {
             <p className="text-sm text-muted-foreground mb-4 text-center">
               {t('dashboard.noDevicesDescription')}
             </p>
-            <Button onClick={() => setAddDialogOpen(true)} className="gradient-primary min-h-[44px]">
-              <Plus className="mr-2 h-4 w-4" />
-              {t('devices.addDevice')}
-            </Button>
+            <SmartHelp content={t('help.addDeviceButton')} isText={false}>
+              <Button onClick={() => setAddDialogOpen(true)} className="gradient-primary min-h-[44px]">
+                <Plus className="mr-2 h-4 w-4" />
+                {t('devices.addDevice')}
+              </Button>
+            </SmartHelp>
           </CardContent>
         </Card>
       ) : (

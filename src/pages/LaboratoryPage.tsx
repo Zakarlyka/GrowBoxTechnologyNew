@@ -9,12 +9,14 @@ import { NutrientCalculator } from '@/components/laboratory/NutrientCalculator';
 import { VPDCalculator } from '@/components/laboratory/VPDCalculator';
 import { WaterMixingCalculator } from '@/components/laboratory/WaterMixingCalculator';
 import { ActiveGrowsSection } from '@/components/laboratory/ActiveGrowsSection';
+import { SmartHelp } from '@/components/ui/smart-help';
 
 interface ToolConfig {
   id: string;
   icon: React.ElementType;
   titleKey: string;
   descriptionKey: string;
+  helpKey: string;
   color: string;
   bgColor: string;
   borderColor: string;
@@ -32,6 +34,7 @@ const LaboratoryPage = () => {
       icon: Beaker,
       titleKey: 'laboratory.nutrientCalculator',
       descriptionKey: 'laboratory.nutrientCalculatorDesc',
+      helpKey: 'help.labNutrientCalc',
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500/30',
@@ -42,6 +45,7 @@ const LaboratoryPage = () => {
       icon: Thermometer,
       titleKey: 'laboratory.vpdChart',
       descriptionKey: 'laboratory.vpdChartDesc',
+      helpKey: 'help.labVpdCalc',
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10',
       borderColor: 'border-orange-500/30',
@@ -52,6 +56,7 @@ const LaboratoryPage = () => {
       icon: Droplets,
       titleKey: 'laboratory.waterMixing',
       descriptionKey: 'laboratory.waterMixingDesc',
+      helpKey: 'help.labWaterMixing',
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10',
       borderColor: 'border-blue-500/30',
@@ -84,19 +89,23 @@ const LaboratoryPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sprout className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
-              <CardTitle className="text-base md:text-lg">🧪 Експериментальні зразки</CardTitle>
+              <SmartHelp content={t('help.labActiveGrows')}>
+                <CardTitle className="text-base md:text-lg">🧪 {t('laboratory.experimentalSamples')}</CardTitle>
+              </SmartHelp>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2 text-xs"
-              onClick={() => navigate('/grow-history')}
-            >
-              <History className="h-3.5 w-3.5" />
-              Історія
-            </Button>
+            <SmartHelp content={t('help.labHistory')} isText={false}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 text-xs"
+                onClick={() => navigate('/grow-history')}
+              >
+                <History className="h-3.5 w-3.5" />
+                {t('laboratory.history')}
+              </Button>
+            </SmartHelp>
           </div>
-          <CardDescription className="text-xs md:text-sm">Ваші активні рослини</CardDescription>
+          <CardDescription className="text-xs md:text-sm">{t('laboratory.yourActivePlants')}</CardDescription>
         </CardHeader>
         <CardContent className="p-3 md:p-6 pt-0">
           <ActiveGrowsSection />
@@ -107,7 +116,9 @@ const LaboratoryPage = () => {
       <div className="space-y-3 md:space-y-4">
         <h2 className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
           <Beaker className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-          Інструменти
+          <SmartHelp content={t('help.labTools')}>
+            {t('laboratory.tools')}
+          </SmartHelp>
         </h2>
         {tools.map((tool) => {
           const Icon = tool.icon;
@@ -122,32 +133,34 @@ const LaboratoryPage = () => {
                 isExpanded ? `border-2 ${tool.borderColor}` : 'border border-border/50'
               )}
             >
-              <CardHeader
-                className={cn(
-                  'cursor-pointer transition-colors p-3 md:p-6',
-                  isExpanded ? tool.bgColor : 'hover:bg-muted/50'
-                )}
-                onClick={() => toggleTool(tool.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className={cn('p-2 md:p-2.5 rounded-lg border', tool.bgColor, tool.borderColor)}>
-                      <Icon className={cn('h-5 w-5 md:h-6 md:w-6', tool.color)} />
+              <SmartHelp content={t(tool.helpKey)} isText={false}>
+                <CardHeader
+                  className={cn(
+                    'cursor-pointer transition-colors p-3 md:p-6',
+                    isExpanded ? tool.bgColor : 'hover:bg-muted/50'
+                  )}
+                  onClick={() => toggleTool(tool.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className={cn('p-2 md:p-2.5 rounded-lg border', tool.bgColor, tool.borderColor)}>
+                        <Icon className={cn('h-5 w-5 md:h-6 md:w-6', tool.color)} />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base md:text-lg text-foreground">{t(tool.titleKey)}</CardTitle>
+                        <CardDescription className="text-xs md:text-sm hidden sm:block">{t(tool.descriptionKey)}</CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-base md:text-lg text-foreground">{t(tool.titleKey)}</CardTitle>
-                      <CardDescription className="text-xs md:text-sm hidden sm:block">{t(tool.descriptionKey)}</CardDescription>
-                    </div>
+                    <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10">
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                      )}
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10">
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-              </CardHeader>
+                </CardHeader>
+              </SmartHelp>
 
               {isExpanded && (
                 <CardContent className="p-3 md:p-6 pt-0 md:pt-0 pb-4 md:pb-6">

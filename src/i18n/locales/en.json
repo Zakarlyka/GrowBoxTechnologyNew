@@ -22,7 +22,11 @@
     "electricityCost": "⚡ Electricity Cost",
     "electricityCostDesc": "Calculate electricity costs for your equipment.",
     "waterMixing": "💧 Water Mixing",
-    "waterMixingDesc": "Temperature calculator for mixing hot and cold water."
+    "waterMixingDesc": "Temperature calculator for mixing hot and cold water.",
+    "experimentalSamples": "Experimental Samples",
+    "yourActivePlants": "Your active plants",
+    "history": "History",
+    "tools": "Tools"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -43,6 +47,7 @@
   },
   "devices": {
     "title": "My Devices",
+    "subtitle": "Manage your device fleet",
     "addDevice": "Add Device",
     "online": "Online",
     "offline": "Offline",
@@ -288,7 +293,27 @@
     "soilMin": "Dryness threshold. If moisture drops below this % — pump turns on.",
     "soilMax": "Watering target. Pump turns off when soil reaches this % moisture.",
     "ventSwitch": "Activation of cyclic airflow mode.",
-    "saveButton": "Save all changes to controller memory. Press after changing settings."
+    "saveButton": "Save all changes to controller memory. Press after changing settings.",
+    "addDeviceButton": "Add a new controller or grow box to your ecosystem. Opens the connection setup menu.",
+    "statsTotal": "Total number of devices in your ecosystem.",
+    "statsOnline": "Devices currently connected and transmitting data.",
+    "statsOffline": "Devices not responding. Check Wi-Fi connection.",
+    "statsActivity": "Percentage of active devices from total.",
+    "deviceStatus": "Current connection state. If Offline — check Wi-Fi on the device.",
+    "manageDevice": "Go to control panel for this device (light, watering, climate).",
+    "deviceSelector": "Select a device to filter data on this page.",
+    "languageSelector": "Change interface language.",
+    "userMenu": "Your profile, settings, and logout.",
+    "labActiveGrows": "Your active plants. Track their progress and growth stages.",
+    "labHistory": "View archive of completed growing cycles.",
+    "labTools": "Scientific calculators for optimizing growth.",
+    "labNutrientCalc": "Calculate precise nutrient doses for your feeding system.",
+    "labVpdCalc": "Optimize climate using vapor pressure deficit calculation.",
+    "labWaterMixing": "Calculator for mixing water of different temperatures."
+  },
+  "header": {
+    "allDevices": "All Devices",
+    "all": "All"
   },
   "protected": {
     "online": "Online",
