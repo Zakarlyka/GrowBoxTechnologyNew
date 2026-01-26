@@ -1,4 +1,4 @@
-import { useState, ReactNode } from 'react';
+import { useState, ReactNode, cloneElement, isValidElement } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useHelpMode } from '@/contexts/HelpModeContext';
@@ -15,11 +15,13 @@ interface SmartHelpProps {
 /**
  * SmartHelp - Educational wrapper that adds help tooltips when Help Mode is enabled
  * 
- * When isHelpModeEnabled === false: Renders children normally (NO extra icons)
+ * When isHelpModeEnabled === false: Renders children normally (NO extra wrappers)
  * When isHelpModeEnabled === true: Children become the tooltip trigger
  * 
  * Desktop: Shows tooltip on hover
  * Mobile: Shows popover on tap
+ * 
+ * LAYOUT-SAFE: Uses className="contents" to avoid breaking grid/flex layouts
  * 
  * Visual cues when active:
  * - cursor-help on hover
@@ -34,7 +36,7 @@ export function SmartHelp({
   const { isHelpModeEnabled } = useHelpMode();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // If help mode is disabled, just render children
+  // If help mode is disabled, just render children without any wrapper
   if (!isHelpModeEnabled) {
     return <>{children}</>;
   }
@@ -46,14 +48,27 @@ export function SmartHelp({
     className
   );
 
-  // Desktop: Tooltip on hover
+  // Try to clone the child element and add the help styles directly
+  // This avoids adding wrapper elements that break layouts
+  const enhanceChild = (child: ReactNode) => {
+    if (isValidElement(child)) {
+      const existingClassName = (child.props as any).className || '';
+      return cloneElement(child as React.ReactElement<any>, {
+        className: cn(existingClassName, helpActiveStyles),
+      });
+    }
+    // For non-element children (text, etc), wrap minimally
+    return <span className={helpActiveStyles}>{child}</span>;
+  };
+
+  // Desktop: Tooltip on hover - uses contents to be layout-invisible
   const DesktopVersion = (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className={helpActiveStyles}>
-            {children}
-          </span>
+          <div className="contents">
+            {enhanceChild(children)}
+          </div>
         </TooltipTrigger>
         <TooltipContent 
           side="top" 
@@ -65,13 +80,13 @@ export function SmartHelp({
     </TooltipProvider>
   );
 
-  // Mobile: Popover on tap
+  // Mobile: Popover on tap - uses contents to be layout-invisible
   const MobileVersion = (
     <Popover open={isMobileOpen} onOpenChange={setIsMobileOpen}>
       <PopoverTrigger asChild>
-        <span className={cn(helpActiveStyles, "touch-manipulation")}>
-          {children}
-        </span>
+        <div className="contents touch-manipulation">
+          {enhanceChild(children)}
+        </div>
       </PopoverTrigger>
       <PopoverContent 
         side="top" 
@@ -84,10 +99,10 @@ export function SmartHelp({
 
   return (
     <>
-      {/* Desktop version - hidden on mobile */}
-      <span className="hidden md:inline">{DesktopVersion}</span>
-      {/* Mobile version - hidden on desktop */}
-      <span className="inline md:hidden">{MobileVersion}</span>
+      {/* Desktop version - hidden on mobile, uses contents for layout transparency */}
+      <div className="contents hidden md:contents">{DesktopVersion}</div>
+      {/* Mobile version - hidden on desktop, uses contents for layout transparency */}
+      <div className="contents md:hidden">{MobileVersion}</div>
     </>
   );
 }
