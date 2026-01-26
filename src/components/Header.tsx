@@ -155,7 +155,7 @@ export function Header() {
             </Select>
           )}
 
-          {/* Help Mode Toggle */}
+          {/* Help Mode Toggle - Education Mode */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -164,15 +164,21 @@ export function Header() {
                   size="icon"
                   onClick={toggleHelpMode}
                   className={cn(
-                    "h-9 w-9 md:h-10 md:w-10 transition-all",
-                    isHelpModeEnabled && "bg-primary text-primary-foreground"
+                    "h-9 w-9 md:h-10 md:w-10 transition-all relative",
+                    isHelpModeEnabled && "bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
                   )}
                 >
-                  <HelpCircle className="h-4 w-4 md:h-5 md:w-5" />
+                  <HelpCircle className={cn(
+                    "h-4 w-4 md:h-5 md:w-5",
+                    isHelpModeEnabled && "animate-pulse"
+                  )} />
+                  {isHelpModeEnabled && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full animate-ping" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-background border-border z-[100]">
-                <p>{isHelpModeEnabled ? 'Вимкнути підказки' : 'Увімкнути підказки'}</p>
+                <p>{isHelpModeEnabled ? '🎓 Режим Навчання: ON — Вимкнути' : '🎓 Увімкнути Режим Навчання'}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -110,13 +110,15 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
     if (!isHelpModeEnabled) return null;
     
     return (
-      <TooltipProvider>
+      <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-help ml-1" />
+            <span className="cursor-help">
+              <Info className="h-3 w-3 text-primary/60 hover:text-primary transition-colors ml-1 animate-pulse" />
+            </span>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[200px]">
-            <p className="text-xs">{sensorTooltips[sensorId]}</p>
+          <TooltipContent side="top" className="max-w-[220px] bg-primary/10 border-primary/30 backdrop-blur-sm">
+            <p className="text-xs text-foreground">{sensorTooltips[sensorId]}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
