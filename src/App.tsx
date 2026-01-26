@@ -22,6 +22,7 @@ import AdminPage from "./pages/AdminPage";
 import LibraryPage from "./pages/LibraryPage";
 import ArticleDetailPage from "./pages/ArticleDetailPage";
 import GrowHistoryPage from "./pages/GrowHistoryPage";
+import GrowArchiveDetails from "./pages/GrowArchiveDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -291,6 +292,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <GrowHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/grow-history/:plantId"
+        element={
+          <ProtectedRoute>
+            <GrowArchiveDetails />
           </ProtectedRoute>
         }
       />

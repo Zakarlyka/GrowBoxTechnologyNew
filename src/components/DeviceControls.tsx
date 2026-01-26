@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SmartTooltip } from "@/components/ui/smart-tooltip";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf } from "lucide-react";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoPilot } from "@/hooks/useAutoPilot";
@@ -67,6 +67,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   // Modified state tracking
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Advanced Mode toggle - hides Hysteresis by default
+  const [showAdvancedClimate, setShowAdvancedClimate] = useState(false);
+  const [showAdvancedSoil, setShowAdvancedSoil] = useState(false);
 
   // Load settings from database on initial load
   useEffect(() => {
@@ -533,112 +537,132 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
             {/* Climate Inputs */}
             <div className="space-y-3 pt-2 border-t border-border/30">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    🌡️ {t('controls.targetTemp')} (°C)
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={targetTemp ?? ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setTargetTemp(val === '' ? '' : Number(val));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
-                        placeholder="25"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        °C
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    ± <SmartTooltip term={t('controls.hysteresis')} content={t('help.hysteresis')} /> (°C)
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={tempHyst ?? ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setTempHyst(val === '' ? '' : Number(val));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
-                        placeholder="2"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        °C
-                      </span>
-                    </div>
+              {/* Target Temperature */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  🌡️ {t('controls.targetTemp')} (°C)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={targetTemp ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setTargetTemp(val === '' ? '' : Number(val));
+                        setHasChanges(true);
+                      }}
+                      disabled={isAiActive}
+                      className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                      placeholder="25"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      °C
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    💧 {t('controls.targetHumidity')} (%)
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        value={targetHum ?? ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setTargetHum(val === '' ? '' : Number(val));
-                          setHasChanges(true);
-                        }}
-                        min="0"
-                        max="100"
-                        disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
-                        placeholder="60"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    ± <SmartTooltip term={t('controls.hysteresis')} content={t('help.hysteresis')} /> (%)
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        value={humHyst ?? ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setHumHyst(val === '' ? '' : Number(val));
-                          setHasChanges(true);
-                        }}
-                        min="0"
-                        max="50"
-                        disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
-                        placeholder="5"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        %
-                      </span>
-                    </div>
+
+              {/* Target Humidity */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  💧 {t('controls.targetHumidity')} (%)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={targetHum ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setTargetHum(val === '' ? '' : Number(val));
+                        setHasChanges(true);
+                      }}
+                      min="0"
+                      max="100"
+                      disabled={isAiActive}
+                      className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                      placeholder="60"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      %
+                    </span>
                   </div>
                 </div>
               </div>
+
+              {/* Advanced Settings Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedClimate(!showAdvancedClimate)}
+                className="w-full justify-between text-xs text-muted-foreground hover:text-foreground"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings2 className="w-3 h-3" />
+                  {t('controls.advancedSettings', 'Розширені налаштування')}
+                </span>
+                {showAdvancedClimate ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </Button>
+
+              {/* Advanced: Hysteresis (Hidden by default) */}
+              {showAdvancedClimate && (
+                <div className="grid grid-cols-2 gap-2 animate-fade-in">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      ± <SmartTooltip term={t('controls.hysteresis')} content={t('help.hysteresis')} /> (°C)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={tempHyst ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setTempHyst(val === '' ? '' : Number(val));
+                            setHasChanges(true);
+                          }}
+                          disabled={isAiActive}
+                          className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                          placeholder="2"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          °C
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      ± <SmartTooltip term={t('controls.hysteresis')} content={t('help.hysteresis')} /> (%)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type="number"
+                          value={humHyst ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHumHyst(val === '' ? '' : Number(val));
+                            setHasChanges(true);
+                          }}
+                          min="0"
+                          max="50"
+                          disabled={isAiActive}
+                          className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                          placeholder="5"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          %
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {isAiActive && (
                 <div className="flex items-center gap-1 text-xs text-yellow-600">
                   <Sparkles className="w-3 h-3" />

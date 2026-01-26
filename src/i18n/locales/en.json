@@ -110,7 +110,41 @@
     "saveConfiguration": "Save Configuration",
     "saving": "Saving...",
     "watering": "Watering...",
-    "wateringSeconds": "sec"
+    "wateringSeconds": "sec",
+    "advancedSettings": "Advanced Settings"
+  },
+  "sensorTooltips": {
+    "temperature": "Current air temperature inside the box.",
+    "humidity": "Relative humidity. Important for VPD calculation.",
+    "soilMoisture": "Soil moisture level (0% = dry, 100% = wet).",
+    "light": "Current light cycle status and duration.",
+    "ventilation": "Air circulation and ventilation system."
+  },
+  "growHistory": {
+    "title": "Grow History",
+    "subtitle": "Completed growing cycles",
+    "completedGrows": "Completed Grows",
+    "uniqueStrains": "Unique Strains",
+    "empty": "No completed cycles",
+    "emptyDesc": "When you finish growing a plant, it will appear here in the archive.",
+    "notFound": "Plant not found",
+    "unnamedPlant": "Unnamed Plant",
+    "startDate": "Start Date",
+    "duration": "Duration",
+    "device": "Device",
+    "stage": "Stage",
+    "charts": "Charts",
+    "gallery": "Gallery",
+    "journal": "Journal",
+    "notes": "Notes",
+    "day": "Day",
+    "mainPhoto": "Main Photo",
+    "noSensorData": "No sensor data",
+    "noSensorDataDesc": "Historical sensor data is not available for this grow.",
+    "noPhotos": "No photos",
+    "noPhotosDesc": "No photos were added during this grow.",
+    "noJournal": "Journal is empty",
+    "noJournalDesc": "No journal entries were added during this grow."
   },
   "sensors": {
     "temperature": "Temperature",
@@ -182,7 +216,8 @@
     "unknown": "Unknown",
     "secsAgo": "sec ago",
     "minsAgo": "min ago",
-    "hoursAgo": "hours ago"
+    "hoursAgo": "hours ago",
+    "days": "days"
   },
   "profile": {
     "title": "Profile",

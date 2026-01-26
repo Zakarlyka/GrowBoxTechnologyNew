@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   DndContext,
   closestCenter,
@@ -14,8 +15,15 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Thermometer, Droplets, Sprout, Sun, Moon, Wind } from 'lucide-react';
+import { Thermometer, Droplets, Sprout, Sun, Moon, Wind, Info } from 'lucide-react';
 import { DraggableSensorCard } from './DraggableSensorCard';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useHelpMode } from '@/contexts/HelpModeContext';
 
 interface VPDAnalysis {
   vpd: number | null;
@@ -45,6 +53,9 @@ const DEFAULT_ORDER: SensorId[] = ['temperature', 'humidity', 'soil', 'light', '
 const STORAGE_KEY = 'dashboard-sensor-order-v2';
 
 export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode, vpdAnalysis }: SensorCardsGridProps) {
+  const { t } = useTranslation();
+  const { isHelpModeEnabled } = useHelpMode();
+  
   const [sensorOrder, setSensorOrder] = useState<SensorId[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -86,6 +97,32 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
     }
   };
 
+  // Tooltip content for sensors
+  const sensorTooltips: Record<SensorId, string> = {
+    temperature: t('sensorTooltips.temperature', 'Поточна температура повітря в боксі.'),
+    humidity: t('sensorTooltips.humidity', 'Відносна вологість повітря. Важлива для VPD.'),
+    soil: t('sensorTooltips.soilMoisture', 'Рівень вологи у ґрунті (0% = сухо, 100% = мокро).'),
+    light: t('sensorTooltips.light', 'Поточний стан світлового циклу та тривалість.'),
+    vpd: t('help.vpd'),
+  };
+
+  const SensorTooltipIcon = ({ sensorId }: { sensorId: SensorId }) => {
+    if (!isHelpModeEnabled) return null;
+    
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-help ml-1" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[200px]">
+            <p className="text-xs">{sensorTooltips[sensorId]}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
   const renderSensorCard = (id: SensorId) => {
     switch (id) {
       case 'temperature':
@@ -94,7 +131,8 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
             <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 h-full">
               <div className="flex items-center space-x-2">
                 <Thermometer className="h-4 w-4 text-orange-500" />
-                <span className="text-sm text-muted-foreground">Темп</span>
+                <span className="text-sm text-muted-foreground">{t('sensors.temperature', 'Темп')}</span>
+                <SensorTooltipIcon sensorId="temperature" />
               </div>
               <span className="text-lg font-semibold text-foreground">
                 {temperature ? `${temperature.toFixed(1)}°C` : '-- °C'}
@@ -109,6 +147,7 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
               <div className="flex items-center space-x-2">
                 <Droplets className="h-4 w-4 text-blue-500" />
                 <span className="text-sm text-muted-foreground">RH</span>
+                <SensorTooltipIcon sensorId="humidity" />
               </div>
               <span className="text-lg font-semibold text-foreground">
                 {humidity ? `${humidity.toFixed(0)}%` : '-- %'}
@@ -122,7 +161,8 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
             <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30 h-full">
               <div className="flex items-center space-x-2">
                 <Sprout className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">Ґрунт</span>
+                <span className="text-sm text-muted-foreground">{t('sensors.soil', 'Ґрунт')}</span>
+                <SensorTooltipIcon sensorId="soil" />
               </div>
               <span className="text-lg font-semibold text-foreground">
                 {soilMoisture !== null && soilMoisture !== undefined
@@ -142,6 +182,7 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
                 <span className="text-sm text-muted-foreground">
                   {lightMode ? `${lightMode.dayHours}/${lightMode.nightHours}` : '--'}
                 </span>
+                <SensorTooltipIcon sensorId="light" />
               </div>
               {lightMode && (
                 <span className="text-lg font-semibold text-foreground">
@@ -160,6 +201,7 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
               <div className="flex items-center space-x-2">
                 <Wind className={`h-4 w-4 ${vpdAnalysis?.color || 'text-muted-foreground'}`} />
                 <span className="text-sm text-muted-foreground">VPD</span>
+                <SensorTooltipIcon sensorId="vpd" />
               </div>
               <span className={`text-lg font-semibold ${vpdAnalysis?.color || 'text-foreground'}`}>
                 {vpdAnalysis && !vpdAnalysis.isOffline && vpdAnalysis.vpd !== null
