@@ -1,8 +1,9 @@
-import { useState, ReactNode, cloneElement, isValidElement } from 'react';
+import { useState, ReactNode } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useHelpMode } from '@/contexts/HelpModeContext';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SmartHelpProps {
   content: string;
@@ -15,17 +16,13 @@ interface SmartHelpProps {
 /**
  * SmartHelp - Educational wrapper that adds help tooltips when Help Mode is enabled
  * 
- * When isHelpModeEnabled === false: Renders children normally (NO extra wrappers)
- * When isHelpModeEnabled === true: Children become the tooltip trigger
+ * When isHelpModeEnabled === false: Renders children AS-IS (no wrapper at all)
+ * When isHelpModeEnabled === true: Wraps with tooltip/popover using display:contents
  * 
  * Desktop: Shows tooltip on hover
  * Mobile: Shows popover on tap
  * 
- * LAYOUT-SAFE: Uses className="contents" to avoid breaking grid/flex layouts
- * 
- * Visual cues when active:
- * - cursor-help on hover
- * - Subtle dotted underline for text elements (controlled by isText prop)
+ * LAYOUT-SAFE: The wrapper div uses display:contents to be invisible to CSS layout
  */
 export function SmartHelp({ 
   content, 
@@ -35,39 +32,47 @@ export function SmartHelp({
 }: SmartHelpProps) {
   const { isHelpModeEnabled } = useHelpMode();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const isMobile = useIsMobile();
 
-  // If help mode is disabled, just render children without any wrapper
+  // If help mode is disabled, render children without ANY wrapper
   if (!isHelpModeEnabled) {
     return <>{children}</>;
   }
 
-  // Visual styles when help mode is active - only apply decoration to text
+  // Visual styles when help mode is active
   const helpActiveStyles = cn(
     "cursor-help",
     isText && "decoration-dotted underline underline-offset-4 decoration-primary/40",
     className
   );
 
-  // Try to clone the child element and add the help styles directly
-  // This avoids adding wrapper elements that break layouts
-  const enhanceChild = (child: ReactNode) => {
-    if (isValidElement(child)) {
-      const existingClassName = (child.props as any).className || '';
-      return cloneElement(child as React.ReactElement<any>, {
-        className: cn(existingClassName, helpActiveStyles),
-      });
-    }
-    // For non-element children (text, etc), wrap minimally
-    return <span className={helpActiveStyles}>{child}</span>;
-  };
+  // Single render path - detect mobile at runtime to avoid duplicate children
+  if (isMobile) {
+    // Mobile: Popover on tap
+    return (
+      <Popover open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+        <PopoverTrigger asChild>
+          <div className={helpActiveStyles} style={{ display: 'contents' }}>
+            {children}
+          </div>
+        </PopoverTrigger>
+        <PopoverContent 
+          side="top" 
+          className="w-72 bg-primary/10 border-primary/30 shadow-lg z-[100] p-3 backdrop-blur-sm"
+        >
+          <p className="text-sm text-foreground leading-relaxed">{content}</p>
+        </PopoverContent>
+      </Popover>
+    );
+  }
 
-  // Desktop: Tooltip on hover - uses contents to be layout-invisible
-  const DesktopVersion = (
+  // Desktop: Tooltip on hover
+  return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="contents">
-            {enhanceChild(children)}
+          <div className={helpActiveStyles} style={{ display: 'contents' }}>
+            {children}
           </div>
         </TooltipTrigger>
         <TooltipContent 
@@ -78,31 +83,5 @@ export function SmartHelp({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  );
-
-  // Mobile: Popover on tap - uses contents to be layout-invisible
-  const MobileVersion = (
-    <Popover open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-      <PopoverTrigger asChild>
-        <div className="contents touch-manipulation">
-          {enhanceChild(children)}
-        </div>
-      </PopoverTrigger>
-      <PopoverContent 
-        side="top" 
-        className="w-72 bg-primary/10 border-primary/30 shadow-lg z-[100] p-3 backdrop-blur-sm"
-      >
-        <p className="text-sm text-foreground leading-relaxed">{content}</p>
-      </PopoverContent>
-    </Popover>
-  );
-
-  return (
-    <>
-      {/* Desktop version - hidden on mobile, uses contents for layout transparency */}
-      <div className="contents hidden md:contents">{DesktopVersion}</div>
-      {/* Mobile version - hidden on desktop, uses contents for layout transparency */}
-      <div className="contents md:hidden">{MobileVersion}</div>
-    </>
   );
 }
