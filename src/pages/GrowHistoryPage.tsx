@@ -197,7 +197,8 @@ export default function GrowHistoryPage() {
               return (
                 <Card 
                   key={plant.id} 
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/grow-history/${plant.id}`)}
                 >
                   {/* Background Image */}
                   <div className="relative h-32">
