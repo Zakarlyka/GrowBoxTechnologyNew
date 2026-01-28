@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Header } from '@/components/Header';
 import { Navigation } from '@/components/Navigation';
@@ -7,7 +6,6 @@ import { Dashboard } from '@/components/Dashboard';
 import { Devices } from '@/components/Devices';
 import { RemoteControlPage } from '@/pages/RemoteControlPage';
 import { AdvancedCharts } from '@/components/AdvancedCharts';
-import { Settings } from '@/pages/Settings';
 import LaboratoryPage from '@/pages/LaboratoryPage';
 
 const Index = () => {
@@ -24,8 +22,6 @@ const Index = () => {
         return <RemoteControlPage />;
       case 'analytics':
         return <AdvancedCharts />;
-      case 'settings':
-        return <Settings />;
       case 'laboratory':
         return <LaboratoryPage />;
       default:
