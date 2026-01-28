@@ -10,8 +10,7 @@ import {
   Wifi, 
   FlaskConical,
   Shield,
-  BookOpen,
-  User
+  BookOpen
 } from 'lucide-react';
 
 export function Navigation() {
@@ -61,13 +60,6 @@ export function Navigation() {
       icon: Shield,
       roles: ['admin', 'superadmin'],
       helpKey: 'help.navAdmin'
-    },
-    {
-      path: '/account',
-      label: t('navigation.myAccount'),
-      icon: User,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navAccount'
     }
   ];
 
