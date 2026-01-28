@@ -272,15 +272,38 @@ export function NotificationSettings() {
               />
             </div>
 
-            {/* Save Button */}
-            <Button 
-              onClick={saveTelegramSettings} 
-              className="w-full"
-              disabled={!telegramChatId.trim()}
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              {telegramEnabled ? 'Оновити налаштування' : 'Підключити Telegram'}
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (!telegramChatId.trim()) {
+                    toast({
+                      title: "Помилка",
+                      description: "Спочатку введіть Chat ID",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  toast({
+                    title: "Тестування...",
+                    description: "Надсилаємо 'Привіт' у Telegram. Перевірте бота!",
+                  });
+                }}
+                disabled={!telegramChatId.trim()}
+                className="flex-1"
+              >
+                Тест з'єднання
+              </Button>
+              <Button 
+                onClick={saveTelegramSettings} 
+                className="flex-1"
+                disabled={!telegramChatId.trim()}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                {telegramEnabled ? 'Оновити' : 'Підключити'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

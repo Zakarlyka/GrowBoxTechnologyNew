@@ -65,7 +65,7 @@ export function Navigation() {
     },
     {
       path: '/settings',
-      label: t('navigation.settings'),
+      label: t('navigation.adminSettings'),
       icon: SettingsIcon,
       roles: ['user', 'developer', 'admin', 'superadmin'],
       helpKey: 'help.navSettings'

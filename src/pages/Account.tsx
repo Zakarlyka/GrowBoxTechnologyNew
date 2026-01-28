@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { User, Mail, Shield, Lock, LogOut, Loader2 } from 'lucide-react';
+import { User, Mail, Shield, Lock, LogOut, Loader2, CreditCard, Bell } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { BillingTab } from '@/components/billing/BillingTab';
+import { NotificationSettings } from '@/components/NotificationSettings';
 
 interface Profile {
   id: string;
@@ -31,6 +34,7 @@ export default function Account() {
   const [updating, setUpdating] = useState(false);
   const [fullName, setFullName] = useState('');
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
+  const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -250,161 +254,208 @@ export default function Account() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto p-6 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6">Налаштування Акаунту</h1>
+      <div className="container mx-auto p-6 max-w-5xl">
+        <h1 className="text-3xl font-bold mb-6">Мій Акаунт</h1>
         
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Profile Information Card */}
-          <Card className="gradient-card border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Інформація профілю
-              </CardTitle>
-              <CardDescription>
-                Ваші дані акаунту
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="full-name">Повне ім'я</Label>
-                  <Input
-                    id="full-name"
-                    type="text"
-                    placeholder="Введіть ваше ім'я"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Email</Label>
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profile.email}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Рівень доступу</Label>
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    <span
-                      className={`text-xs px-2 py-1 rounded-md border ${getRoleBadgeColor(role)}`}
-                    >
-                      {getRoleLabel(role)}
-                    </span>
-                  </div>
-                </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl mb-6">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Профіль</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              <span className="hidden sm:inline">Безпека</span>
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline">Тарифи</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Сповіщення</span>
+            </TabsTrigger>
+          </TabsList>
 
-                {profile.phone && (
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Телефон</Label>
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
-                      <span className="text-sm">{profile.phone}</span>
+          {/* Profile Tab */}
+          <TabsContent value="profile">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Profile Information Card */}
+              <Card className="gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Інформація профілю
+                  </CardTitle>
+                  <CardDescription>
+                    Ваші дані акаунту
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleProfileUpdate} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="full-name">Повне ім'я</Label>
+                      <Input
+                        id="full-name"
+                        type="text"
+                        placeholder="Введіть ваше ім'я"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                      />
                     </div>
-                  </div>
-                )}
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Email</Label>
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{profile.email}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Рівень доступу</Label>
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        <span
+                          className={`text-xs px-2 py-1 rounded-md border ${getRoleBadgeColor(role)}`}
+                        >
+                          {getRoleLabel(role)}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="units">Налаштування одиниць</Label>
-                  <Select value={units} onValueChange={(value: 'metric' | 'imperial') => setUnits(value)}>
-                    <SelectTrigger id="units">
-                      <SelectValue placeholder="Виберіть одиниці" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="metric">Metric (°C)</SelectItem>
-                      <SelectItem value="imperial">Imperial (°F)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    {profile.phone && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Телефон</Label>
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
+                          <span className="text-sm">{profile.phone}</span>
+                        </div>
+                      </div>
+                    )}
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={updating}
-                >
-                  {updating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Оновлення...
-                    </>
-                  ) : (
-                    'Оновити профіль'
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                    <div className="space-y-2">
+                      <Label htmlFor="units">Налаштування одиниць</Label>
+                      <Select value={units} onValueChange={(value: 'metric' | 'imperial') => setUnits(value)}>
+                        <SelectTrigger id="units">
+                          <SelectValue placeholder="Виберіть одиниці" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="metric">Metric (°C)</SelectItem>
+                          <SelectItem value="imperial">Imperial (°F)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          {/* Change Password Card */}
-          <Card className="gradient-card border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Зміна паролю
-              </CardTitle>
-              <CardDescription>
-                Оновіть ваш пароль для безпеки
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdatePassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">Новий пароль</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    placeholder="Мінімум 6 символів"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Підтвердити пароль</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="Повторіть новий пароль"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={updating}
-                >
-                  {updating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Оновлення...
-                    </>
-                  ) : (
-                    'Оновити пароль'
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={updating}
+                    >
+                      {updating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Оновлення...
+                        </>
+                      ) : (
+                        'Оновити профіль'
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
 
-        {/* Sign Out Button */}
-        <Card className="gradient-card border-border/50 mt-6">
-          <CardContent className="pt-6">
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={handleSignOut}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Вийти з акаунту
-            </Button>
-          </CardContent>
-        </Card>
+              {/* Sign Out Card */}
+              <Card className="gradient-card border-border/50 h-fit">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LogOut className="h-5 w-5" />
+                    Вихід з акаунту
+                  </CardTitle>
+                  <CardDescription>
+                    Завершіть сеанс на цьому пристрої
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Вийти з акаунту
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security">
+            <div className="max-w-md">
+              <Card className="gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lock className="h-5 w-5" />
+                    Зміна паролю
+                  </CardTitle>
+                  <CardDescription>
+                    Оновіть ваш пароль для безпеки
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdatePassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">Новий пароль</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        placeholder="Мінімум 6 символів"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Підтвердити пароль</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        placeholder="Повторіть новий пароль"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                    
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={updating}
+                    >
+                      {updating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Оновлення...
+                        </>
+                      ) : (
+                        'Оновити пароль'
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Billing Tab */}
+          <TabsContent value="billing">
+            <BillingTab />
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications">
+            <NotificationSettings />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
