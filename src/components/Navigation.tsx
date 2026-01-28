@@ -5,14 +5,13 @@ import { SmartHelp } from '@/components/ui/smart-help';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
   Cpu, 
   BarChart3, 
   Wifi, 
-  Settings as SettingsIcon, 
   FlaskConical,
   Shield,
-  BookOpen
+  BookOpen,
+  User
 } from 'lucide-react';
 
 export function Navigation() {
@@ -64,11 +63,11 @@ export function Navigation() {
       helpKey: 'help.navAdmin'
     },
     {
-      path: '/settings',
-      label: t('navigation.adminSettings'),
-      icon: SettingsIcon,
+      path: '/account',
+      label: t('navigation.myAccount'),
+      icon: User,
       roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navSettings'
+      helpKey: 'help.navAccount'
     }
   ];
 

@@ -17,7 +17,6 @@ import DeviceDetail from "./pages/DeviceDetail";
 import { RemoteControlPage } from "./pages/RemoteControlPage";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
-import { Settings } from "./pages/Settings";
 import AdminPage from "./pages/AdminPage";
 import LibraryPage from "./pages/LibraryPage";
 import ArticleDetailPage from "./pages/ArticleDetailPage";
@@ -221,15 +220,10 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      {/* Redirect old /settings to /account */}
       <Route
         path="/settings"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <Settings />
-            </Layout>
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/account" replace />}
       />
       <Route
         path="/device/:id"

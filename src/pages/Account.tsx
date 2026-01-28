@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { User, Mail, Shield, Lock, LogOut, Loader2, CreditCard, Bell } from 'lucide-react';
+import { User, Mail, Shield, Lock, LogOut, Loader2, CreditCard, Bell, Settings, Globe, Moon, Sun } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BillingTab } from '@/components/billing/BillingTab';
 import { NotificationSettings } from '@/components/NotificationSettings';
+import { useTheme } from 'next-themes';
 
 interface Profile {
   id: string;
@@ -26,6 +28,8 @@ interface Profile {
 
 export default function Account() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const { user, role, signOut, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,7 +77,6 @@ export default function Account() {
           variant: 'destructive',
         });
       } else if (!data) {
-        // Профіль не існує - створюємо новий
         const { data: newProfile, error: insertError } = await (supabase as any)
           .from('profiles')
           .insert({
@@ -210,6 +213,14 @@ export default function Account() {
     navigate('/auth');
   };
 
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+    toast({
+      title: 'Мову змінено',
+      description: lang === 'uk' ? 'Українська' : 'English',
+    });
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -255,17 +266,16 @@ export default function Account() {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto p-6 max-w-5xl">
-        <h1 className="text-3xl font-bold mb-6">Мій Акаунт</h1>
+        <h1 className="text-3xl font-bold mb-6 flex items-center gap-3">
+          <User className="h-8 w-8" />
+          Мій Акаунт
+        </h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 max-w-2xl mb-6">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Профіль</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              <span className="hidden sm:inline">Безпека</span>
             </TabsTrigger>
             <TabsTrigger value="billing" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
@@ -275,9 +285,13 @@ export default function Account() {
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Сповіщення</span>
             </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Уподобання</span>
+            </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
+          {/* Profile & Security Tab */}
           <TabsContent value="profile">
             <div className="grid gap-6 md:grid-cols-2">
               {/* Profile Information Card */}
@@ -324,28 +338,6 @@ export default function Account() {
                       </div>
                     </div>
 
-                    {profile.phone && (
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Телефон</Label>
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
-                          <span className="text-sm">{profile.phone}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="units">Налаштування одиниць</Label>
-                      <Select value={units} onValueChange={(value: 'metric' | 'imperial') => setUnits(value)}>
-                        <SelectTrigger id="units">
-                          <SelectValue placeholder="Виберіть одиниці" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="metric">Metric (°C)</SelectItem>
-                          <SelectItem value="imperial">Imperial (°F)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <Button
                       type="submit"
                       className="w-full"
@@ -364,85 +356,83 @@ export default function Account() {
                 </CardContent>
               </Card>
 
-              {/* Sign Out Card */}
-              <Card className="gradient-card border-border/50 h-fit">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LogOut className="h-5 w-5" />
-                    Вихід з акаунту
-                  </CardTitle>
-                  <CardDescription>
-                    Завершіть сеанс на цьому пристрої
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Вийти з акаунту
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+              {/* Security Card */}
+              <div className="space-y-6">
+                <Card className="gradient-card border-border/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lock className="h-5 w-5" />
+                      Зміна паролю
+                    </CardTitle>
+                    <CardDescription>
+                      Оновіть ваш пароль для безпеки
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleUpdatePassword} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">Новий пароль</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          placeholder="Мінімум 6 символів"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Підтвердити пароль</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          placeholder="Повторіть новий пароль"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                      </div>
+                      
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={updating}
+                      >
+                        {updating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Оновлення...
+                          </>
+                        ) : (
+                          'Оновити пароль'
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
 
-          {/* Security Tab */}
-          <TabsContent value="security">
-            <div className="max-w-md">
-              <Card className="gradient-card border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Lock className="h-5 w-5" />
-                    Зміна паролю
-                  </CardTitle>
-                  <CardDescription>
-                    Оновіть ваш пароль для безпеки
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleUpdatePassword} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">Новий пароль</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        placeholder="Мінімум 6 символів"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Підтвердити пароль</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        placeholder="Повторіть новий пароль"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                    </div>
-                    
+                {/* Sign Out Card */}
+                <Card className="gradient-card border-border/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <LogOut className="h-5 w-5" />
+                      Вихід з акаунту
+                    </CardTitle>
+                    <CardDescription>
+                      Завершіть сеанс на цьому пристрої
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
                     <Button
-                      type="submit"
+                      variant="destructive"
                       className="w-full"
-                      disabled={updating}
+                      onClick={handleSignOut}
                     >
-                      {updating ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Оновлення...
-                        </>
-                      ) : (
-                        'Оновити пароль'
-                      )}
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Вийти з акаунту
                     </Button>
-                  </form>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 
@@ -454,6 +444,96 @@ export default function Account() {
           {/* Notifications Tab */}
           <TabsContent value="notifications">
             <NotificationSettings />
+          </TabsContent>
+
+          {/* Preferences Tab */}
+          <TabsContent value="preferences">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Language Settings */}
+              <Card className="gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Мова інтерфейсу
+                  </CardTitle>
+                  <CardDescription>
+                    Оберіть мову для відображення
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Select value={i18n.language} onValueChange={changeLanguage}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Оберіть мову" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="uk">🇺🇦 Українська</SelectItem>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Theme Settings */}
+              <Card className="gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                    Тема оформлення
+                  </CardTitle>
+                  <CardDescription>
+                    Оберіть світлу чи темну тему
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Select value={theme} onValueChange={setTheme}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Оберіть тему" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">☀️ Світла</SelectItem>
+                      <SelectItem value="dark">🌙 Темна</SelectItem>
+                      <SelectItem value="system">💻 Системна</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Units Settings */}
+              <Card className="gradient-card border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Одиниці вимірювання
+                  </CardTitle>
+                  <CardDescription>
+                    Температура та інші вимірювання
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <form onSubmit={handleProfileUpdate}>
+                    <Select value={units} onValueChange={(value: 'metric' | 'imperial') => setUnits(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Оберіть одиниці" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="metric">🌡️ Метрична (°C)</SelectItem>
+                        <SelectItem value="imperial">🌡️ Імперська (°F)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button type="submit" className="w-full mt-4" disabled={updating}>
+                      {updating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Збереження...
+                        </>
+                      ) : (
+                        'Зберегти'
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
