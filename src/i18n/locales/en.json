@@ -10,6 +10,7 @@
     "library": "Library",
     "laboratory": "Laboratory",
     "admin": "Admin Panel",
+    "myAccount": "My Account",
     "logout": "Logout"
   },
   "laboratory": {
@@ -275,6 +276,7 @@
     "navLibrary": "Knowledge base. Strain encyclopedia, growing articles, and plant passport settings.",
     "navAdmin": "Administrator panel for managing users and system settings.",
     "navSettings": "Your profile, notification preferences, and account settings.",
+    "navAccount": "Personal cabinet: profile, subscription, notifications and preferences.",
     "connectionStatus": "Device connection status to the server.",
     "deleteDevice": "Permanently delete this device from your account.",
     "climateCard": "Temperature and humidity settings block.",
