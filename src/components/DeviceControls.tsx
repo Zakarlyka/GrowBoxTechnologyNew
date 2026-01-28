@@ -234,7 +234,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
 
   return (
-    <div className="relative space-y-4 pb-20 lg:pb-4">
+    <div className="relative space-y-4 pb-24 lg:pb-4">
       {/* 🤖 Smart AI Mode Toggle - Main Header */}
       <Card className={cn(
         "gradient-card border-2 transition-all",
@@ -761,6 +761,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </SmartHelp>
             </div>
 
+            {/* Separator between toggle and Water Now */}
+            <div className="border-t border-border/30 my-2" />
+
             {/* Large Force Water Button */}
             <SmartHelp content={t('help.waterNow')} isText={false}>
               <Button
@@ -953,22 +956,35 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
       </div>
 
-      {/* Global Save Action Bar - Full width at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 lg:relative lg:bottom-auto p-4 lg:p-0 lg:pt-2 bg-background/95 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none border-t border-border/50 lg:border-0 z-50">
-        <div className="max-w-screen-2xl mx-auto flex justify-end">
-          <SmartHelp content={t('help.saveButton')} isText={false}>
-            <Button 
-              size="lg" 
-              className="w-full lg:w-auto shadow-lg h-12" 
-              onClick={handleSave} 
-              disabled={!hasChanges || isSaving}
-            >
-              <Save className="w-5 h-5 mr-2" />
-              {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
-            </Button>
-          </SmartHelp>
-        </div>
+      {/* Global Save Action Bar - Separate container OUTSIDE the grid */}
+      <div className="mt-6 flex justify-end">
+        <SmartHelp content={t('help.saveButton')} isText={false}>
+          <Button 
+            size="lg" 
+            className="shadow-lg h-12 px-8" 
+            onClick={handleSave} 
+            disabled={!hasChanges || isSaving}
+          >
+            <Save className="w-5 h-5 mr-2" />
+            {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
+          </Button>
+        </SmartHelp>
       </div>
+
+      {/* Mobile Fixed Save Bar - Only shows on mobile when there are changes */}
+      {hasChanges && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 z-50 lg:hidden">
+          <Button 
+            size="lg" 
+            className="w-full shadow-lg h-12" 
+            onClick={handleSave} 
+            disabled={isSaving}
+          >
+            <Save className="w-5 h-5 mr-2" />
+            {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
