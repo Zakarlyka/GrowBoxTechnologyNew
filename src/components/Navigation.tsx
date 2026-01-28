@@ -4,105 +4,74 @@ import { Button } from '@/components/ui/button';
 import { SmartHelp } from '@/components/ui/smart-help';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Cpu, 
-  BarChart3, 
-  Wifi, 
-  Settings as SettingsIcon, 
-  FlaskConical,
-  Shield,
-  BookOpen
-} from 'lucide-react';
-
+import { LayoutDashboard, Cpu, BarChart3, Wifi, Settings as SettingsIcon, FlaskConical, Shield, BookOpen } from 'lucide-react';
 export function Navigation() {
-  const { t } = useTranslation();
-  const { role } = useAuth();
+  const {
+    t
+  } = useTranslation();
+  const {
+    role
+  } = useAuth();
   const location = useLocation();
-
-  const menuItems = [
-    {
-      path: '/devices',
-      label: t('navigation.myDevices'),
-      icon: Cpu,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navDevices'
-    },
-    {
-      path: '/dashboard',
-      label: t('navigation.dashboard'),
-      icon: Wifi,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navDashboard'
-    },
-    {
-      path: '/laboratory',
-      label: t('navigation.laboratory'),
-      icon: FlaskConical,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navLaboratory'
-    },
-    {
-      path: '/analytics',
-      label: t('navigation.analytics'),
-      icon: BarChart3,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navAnalytics'
-    },
-    {
-      path: '/library',
-      label: t('navigation.library'),
-      icon: BookOpen,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navLibrary'
-    },
-    {
-      path: '/admin',
-      label: t('navigation.admin'),
-      icon: Shield,
-      roles: ['admin', 'superadmin'],
-      helpKey: 'help.navAdmin'
-    },
-    {
-      path: '/settings',
-      label: t('navigation.settings'),
-      icon: SettingsIcon,
-      roles: ['user', 'developer', 'admin', 'superadmin'],
-      helpKey: 'help.navSettings'
-    }
-  ];
-
-  const visibleItems = menuItems.filter(item => 
-    item.roles.includes(role || 'user')
-  );
-
-  return (
-    <>
+  const menuItems = [{
+    path: '/devices',
+    label: t('navigation.myDevices'),
+    icon: Cpu,
+    roles: ['user', 'developer', 'admin', 'superadmin'],
+    helpKey: 'help.navDevices'
+  }, {
+    path: '/dashboard',
+    label: t('navigation.dashboard'),
+    icon: Wifi,
+    roles: ['user', 'developer', 'admin', 'superadmin'],
+    helpKey: 'help.navDashboard'
+  }, {
+    path: '/laboratory',
+    label: t('navigation.laboratory'),
+    icon: FlaskConical,
+    roles: ['user', 'developer', 'admin', 'superadmin'],
+    helpKey: 'help.navLaboratory'
+  }, {
+    path: '/analytics',
+    label: t('navigation.analytics'),
+    icon: BarChart3,
+    roles: ['user', 'developer', 'admin', 'superadmin'],
+    helpKey: 'help.navAnalytics'
+  }, {
+    path: '/library',
+    label: t('navigation.library'),
+    icon: BookOpen,
+    roles: ['user', 'developer', 'admin', 'superadmin'],
+    helpKey: 'help.navLibrary'
+  }, {
+    path: '/admin',
+    label: t('navigation.admin'),
+    icon: Shield,
+    roles: ['admin', 'superadmin'],
+    helpKey: 'help.navAdmin'
+  }, {
+    path: '/settings',
+    label: t('navigation.settings'),
+    icon: SettingsIcon,
+    roles: ['user', 'developer', 'admin', 'superadmin'],
+    helpKey: 'help.navSettings'
+  }];
+  const visibleItems = menuItems.filter(item => item.roles.includes(role || 'user'));
+  return <>
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 border-r border-border/40 bg-card/50 flex-col">
         <div className="p-6">
           <nav className="space-y-2">
-            {visibleItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <Link key={item.path} to={item.path}>
+            {visibleItems.map(item => {
+            const isActive = location.pathname === item.path;
+            return <Link key={item.path} to={item.path}>
                   <SmartHelp content={t(item.helpKey)} isText={false}>
-                    <Button
-                      variant={isActive ? "default" : "ghost"}
-                      className={cn(
-                        "w-full justify-start gap-3 transition-all duration-200",
-                        isActive 
-                          ? "bg-primary text-primary-foreground shadow-md glow-primary" 
-                          : "hover:bg-secondary/80 text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <item.icon className="w-5 h-5" />
+                    <Button variant={isActive ? "default" : "ghost"} className={cn("w-full justify-start gap-3 transition-all duration-200", isActive ? "bg-primary text-primary-foreground shadow-md glow-primary" : "hover:bg-secondary/80 text-muted-foreground hover:text-foreground")}>Адмін-Налаштування<item.icon className="w-5 h-5" />
                       {item.label}
                     </Button>
                   </SmartHelp>
-                </Link>
-              );
-            })}
+                </Link>;
+          })}
           </nav>
         </div>
         
@@ -119,30 +88,18 @@ export function Navigation() {
       {/* Bottom Navigation for Mobile */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/40 p-1.5 md:p-2 z-30 safe-area-bottom">
         <div className="flex justify-around max-w-md mx-auto">
-          {visibleItems.slice(0, 5).map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link key={item.path} to={item.path}>
+          {visibleItems.slice(0, 5).map(item => {
+          const isActive = location.pathname === item.path;
+          return <Link key={item.path} to={item.path}>
                 <SmartHelp content={t(item.helpKey)} isText={false}>
-                  <Button
-                    variant={isActive ? "default" : "ghost"}
-                    size="sm"
-                    className={cn(
-                      "flex-col h-auto py-1.5 px-2 md:py-2 md:px-3 gap-0.5 md:gap-1 min-w-0",
-                      isActive 
-                        ? "bg-primary text-primary-foreground" 
-                        : "text-muted-foreground"
-                    )}
-                  >
+                  <Button variant={isActive ? "default" : "ghost"} size="sm" className={cn("flex-col h-auto py-1.5 px-2 md:py-2 md:px-3 gap-0.5 md:gap-1 min-w-0", isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground")}>
                     <item.icon className="w-4 h-4 md:w-5 md:h-5" />
                     <span className="text-[10px] md:text-xs truncate max-w-[48px] md:max-w-none">{item.label}</span>
                   </Button>
                 </SmartHelp>
-              </Link>
-            );
-          })}
+              </Link>;
+        })}
         </div>
       </nav>
-    </>
-  );
+    </>;
 }
