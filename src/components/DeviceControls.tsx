@@ -315,11 +315,11 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </CardContent>
       </Card>
 
-      {/* 4-Card Grid - Responsive */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      {/* 4-Card Grid - Unified Layout */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 items-stretch">
         {/* Card A: Lighting 💡 */}
-        <Card className="gradient-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="gradient-card border-border/50 h-full flex flex-col">
+          <CardHeader className="pb-3 px-5 pt-5">
             <SmartHelp content={t('help.lightingCard')}>
               <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
                 <Lightbulb className="w-5 h-5" />
@@ -327,13 +327,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </CardTitle>
             </SmartHelp>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
             {/* Button Group: OFF | ON */}
             <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <SmartHelp content={t('help.lightSwitch')} isText={false}>
                 <Button
                   variant={lightMode === 0 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all min-h-[44px]", lightMode === 0 && "bg-destructive text-destructive-foreground")}
+                  className={cn("flex-1 transition-all h-10", lightMode === 0 && "bg-destructive text-destructive-foreground")}
                   onClick={() => {
                     setLightMode(0);
                     setHasChanges(true);
@@ -347,7 +347,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Button
                   variant={lightMode === 1 ? "default" : "outline"}
                   className={cn(
-                    "flex-1 transition-all min-h-[44px]",
+                    "flex-1 transition-all h-10",
                     lightMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
                   )}
                   onClick={() => {
@@ -361,137 +361,139 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </SmartHelp>
             </div>
 
-            {/* Time Inputs (visible if ON or AI) */}
-            {(lightMode === 1 || isAiActive) && (
-              <div className="space-y-4 pt-2 border-t border-border/30">
-                {/* Group 1: Start Time */}
-                <div className="mb-4">
-                  <SmartHelp content={t('help.lightStartTime')}>
-                    <Label className="text-xs font-medium text-muted-foreground mb-2 block">☀️ {t('controls.startTime')}</Label>
-                  </SmartHelp>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
-                      <Select
-                        value={String(lightStartH).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightStartH(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SmartHelp content={t('help.lightStartTime')} isText={false}>
-                          <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </SmartHelp>
-                        <SelectContent>
-                          {hourOptions.map((hour) => (
-                            <SelectItem key={hour} value={hour}>
-                              {hour}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
-                      <Select
-                        value={String(lightStartM).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightStartM(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SmartHelp content={t('help.lightStartTime')} isText={false}>
-                          <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </SmartHelp>
-                        <SelectContent>
-                          {minuteOptions.map((minute) => (
-                            <SelectItem key={minute} value={minute}>
-                              {minute}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+            {/* Time Inputs - Main content area (grows to fill) */}
+            <div className="flex-1 space-y-4 pt-2 border-t border-border/30">
+              {(lightMode === 1 || isAiActive) && (
+                <>
+                  {/* Group 1: Start Time */}
+                  <div>
+                    <SmartHelp content={t('help.lightStartTime')}>
+                      <Label className="text-sm font-medium text-muted-foreground mb-2 block">☀️ {t('controls.startTime')}</Label>
+                    </SmartHelp>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
+                        <Select
+                          value={String(lightStartH).padStart(2, '0')}
+                          onValueChange={(value) => {
+                            setLightStartH(parseInt(value, 10));
+                            setHasChanges(true);
+                          }}
+                          disabled={isAiActive}
+                        >
+                          <SmartHelp content={t('help.lightStartTime')} isText={false}>
+                            <SelectTrigger className={cn("h-10 bg-input", isAiActive && "opacity-50")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </SmartHelp>
+                          <SelectContent>
+                            {hourOptions.map((hour) => (
+                              <SelectItem key={hour} value={hour}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
+                        <Select
+                          value={String(lightStartM).padStart(2, '0')}
+                          onValueChange={(value) => {
+                            setLightStartM(parseInt(value, 10));
+                            setHasChanges(true);
+                          }}
+                          disabled={isAiActive}
+                        >
+                          <SmartHelp content={t('help.lightStartTime')} isText={false}>
+                            <SelectTrigger className={cn("h-10 bg-input", isAiActive && "opacity-50")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </SmartHelp>
+                          <SelectContent>
+                            {minuteOptions.map((minute) => (
+                              <SelectItem key={minute} value={minute}>
+                                {minute}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Group 2: End Time */}
-                <div>
-                  <SmartHelp content={t('help.lightEndTime')}>
-                    <Label className="text-xs font-medium text-muted-foreground mb-2 block">🌙 {t('controls.endTime')}</Label>
-                  </SmartHelp>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
-                      <Select
-                        value={String(lightEndH).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightEndH(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SmartHelp content={t('help.lightEndTime')} isText={false}>
-                          <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </SmartHelp>
-                        <SelectContent>
-                          {hourOptions.map((hour) => (
-                            <SelectItem key={hour} value={hour}>
-                              {hour}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
-                      <Select
-                        value={String(lightEndM).padStart(2, '0')}
-                        onValueChange={(value) => {
-                          setLightEndM(parseInt(value, 10));
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                      >
-                        <SmartHelp content={t('help.lightEndTime')} isText={false}>
-                          <SelectTrigger className={cn("h-10", isAiActive && "opacity-50")}>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </SmartHelp>
-                        <SelectContent>
-                          {minuteOptions.map((minute) => (
-                            <SelectItem key={minute} value={minute}>
-                              {minute}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {/* Group 2: End Time */}
+                  <div>
+                    <SmartHelp content={t('help.lightEndTime')}>
+                      <Label className="text-sm font-medium text-muted-foreground mb-2 block">🌙 {t('controls.endTime')}</Label>
+                    </SmartHelp>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">{t('controls.hours')}</p>
+                        <Select
+                          value={String(lightEndH).padStart(2, '0')}
+                          onValueChange={(value) => {
+                            setLightEndH(parseInt(value, 10));
+                            setHasChanges(true);
+                          }}
+                          disabled={isAiActive}
+                        >
+                          <SmartHelp content={t('help.lightEndTime')} isText={false}>
+                            <SelectTrigger className={cn("h-10 bg-input", isAiActive && "opacity-50")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </SmartHelp>
+                          <SelectContent>
+                            {hourOptions.map((hour) => (
+                              <SelectItem key={hour} value={hour}>
+                                {hour}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">{t('controls.minutes')}</p>
+                        <Select
+                          value={String(lightEndM).padStart(2, '0')}
+                          onValueChange={(value) => {
+                            setLightEndM(parseInt(value, 10));
+                            setHasChanges(true);
+                          }}
+                          disabled={isAiActive}
+                        >
+                          <SmartHelp content={t('help.lightEndTime')} isText={false}>
+                            <SelectTrigger className={cn("h-10 bg-input", isAiActive && "opacity-50")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </SmartHelp>
+                          <SelectContent>
+                            {minuteOptions.map((minute) => (
+                              <SelectItem key={minute} value={minute}>
+                                {minute}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {isAiActive && (
-                  <div className="flex items-center gap-1 text-xs text-yellow-600">
-                    <Sparkles className="w-3 h-3" />
-                    <span>{t('controls.aiManagesSchedule')}</span>
-                  </div>
-                )}
-              </div>
-            )}
+                  {isAiActive && (
+                    <div className="flex items-center gap-1 text-xs text-yellow-600">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{t('controls.aiManagesSchedule')}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         {/* Card B: Climate Control 🌡️ */}
-        <Card className="gradient-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="gradient-card border-border/50 h-full flex flex-col">
+          <CardHeader className="pb-3 px-5 pt-5">
             <SmartHelp content={t('help.climateCard')}>
               <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
                 <Thermometer className="w-5 h-5" />
@@ -499,16 +501,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </CardTitle>
             </SmartHelp>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
             {/* Button Group: OFF | ON */}
             <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <SmartHelp content={t('help.climateSwitch')} isText={false}>
                 <Button
                   variant={climateMode === 0 ? "destructive" : "outline"}
-                  className={cn(
-                    "flex-1 transition-all min-h-[44px]",
-                    climateMode === 0 && "bg-destructive text-destructive-foreground",
-                  )}
+                  className={cn("flex-1 transition-all h-10", climateMode === 0 && "bg-destructive text-destructive-foreground")}
                   onClick={() => {
                     setClimateMode(0);
                     setHasChanges(true);
@@ -522,7 +521,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Button
                   variant={climateMode === 1 ? "default" : "outline"}
                   className={cn(
-                    "flex-1 transition-all min-h-[44px]",
+                    "flex-1 transition-all h-10",
                     climateMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
                   )}
                   onClick={() => {
@@ -541,7 +540,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <SmartHelp content={t('help.seasonalMode')} isText={false}>
                 <Button
                   variant={seasonalMode === 0 ? "default" : "outline"}
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1 h-10"
                   onClick={() => {
                     setSeasonalMode(0);
                     setHasChanges(true);
@@ -553,7 +552,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               <SmartHelp content={t('help.seasonalMode')} isText={false}>
                 <Button
                   variant={seasonalMode === 1 ? "default" : "outline"}
-                  className="flex-1 min-h-[44px]"
+                  className="flex-1 h-10"
                   onClick={() => {
                     setSeasonalMode(1);
                     setHasChanges(true);
@@ -564,12 +563,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </SmartHelp>
             </div>
 
-            {/* Climate Inputs */}
-            <div className="space-y-3 pt-2 border-t border-border/30">
+            {/* Climate Inputs - Main content area (grows to fill) */}
+            <div className="flex-1 space-y-3 pt-2 border-t border-border/30">
               {/* Target Temperature */}
               <div className="space-y-1">
                 <SmartHelp content={t('help.targetTemp')}>
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">
                     🌡️ {t('controls.targetTemp')} (°C)
                   </Label>
                 </SmartHelp>
@@ -586,7 +585,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                           setHasChanges(true);
                         }}
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50 cursor-not-allowed")}
                         placeholder="25"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -600,7 +599,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               {/* Target Humidity */}
               <div className="space-y-1">
                 <SmartHelp content={t('help.targetHumidity')}>
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">
                     💧 {t('controls.targetHumidity')} (%)
                   </Label>
                 </SmartHelp>
@@ -618,7 +617,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="0"
                         max="100"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50 cursor-not-allowed")}
                         placeholder="60"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -634,7 +633,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAdvancedClimate(!showAdvancedClimate)}
-                className="w-full justify-between text-xs text-muted-foreground hover:text-foreground"
+                className="w-full justify-between text-xs text-muted-foreground hover:text-foreground h-8"
               >
                 <span className="flex items-center gap-2">
                   <Settings2 className="w-3 h-3" />
@@ -648,7 +647,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <div className="grid grid-cols-2 gap-2 animate-fade-in">
                   <div className="space-y-1">
                     <SmartHelp content={t('help.hysteresis')}>
-                      <Label className="text-xs font-medium text-muted-foreground">
+                      <Label className="text-sm font-medium text-muted-foreground">
                         ± {t('controls.hysteresis')} (°C)
                       </Label>
                     </SmartHelp>
@@ -665,7 +664,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                               setHasChanges(true);
                             }}
                             disabled={isAiActive}
-                            className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                            className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50 cursor-not-allowed")}
                             placeholder="2"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -677,7 +676,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </div>
                   <div className="space-y-1">
                     <SmartHelp content={t('help.hysteresis')}>
-                      <Label className="text-xs font-medium text-muted-foreground">
+                      <Label className="text-sm font-medium text-muted-foreground">
                         ± {t('controls.hysteresis')} (%)
                       </Label>
                     </SmartHelp>
@@ -695,7 +694,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                             min="0"
                             max="50"
                             disabled={isAiActive}
-                            className={cn("pr-12 h-10", isAiActive && "opacity-50 cursor-not-allowed")}
+                            className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50 cursor-not-allowed")}
                             placeholder="5"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -719,8 +718,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
 
         {/* Card C: Irrigation 💧 */}
-        <Card className="gradient-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="gradient-card border-border/50 h-full flex flex-col">
+          <CardHeader className="pb-3 px-5 pt-5">
             <SmartHelp content={t('help.irrigationCard')}>
               <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
                 <Droplets className="w-5 h-5" />
@@ -728,13 +727,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </CardTitle>
             </SmartHelp>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
             {/* Button Group: OFF | ON */}
             <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <SmartHelp content={t('help.irrigationSwitch')} isText={false}>
                 <Button
                   variant={pumpMode === 2 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all min-h-[44px]", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
+                  className={cn("flex-1 transition-all h-10", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
                   onClick={() => {
                     setPumpMode(2);
                     setHasChanges(true);
@@ -748,7 +747,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Button
                   variant={pumpMode === 0 ? "default" : "outline"}
                   className={cn(
-                    "flex-1 transition-all min-h-[44px]",
+                    "flex-1 transition-all h-10",
                     pumpMode === 0 && "bg-green-600 hover:bg-green-700 text-white",
                   )}
                   onClick={() => {
@@ -766,20 +765,20 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <SmartHelp content={t('help.waterNow')} isText={false}>
               <Button
                 size="lg"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 min-h-[48px]"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 h-10"
                 onClick={handleWaterNow}
                 disabled={isWatering}
               >
-                <Droplets className={cn("w-6 h-6 mr-2", isWatering && "animate-pulse")} />
+                <Droplets className={cn("w-5 h-5 mr-2", isWatering && "animate-pulse")} />
                 {isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
               </Button>
             </SmartHelp>
 
-            {/* Irrigation Inputs */}
-            <div className="space-y-3 pt-2 border-t border-border/30">
+            {/* Irrigation Inputs - Main content area (grows to fill) */}
+            <div className="flex-1 space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
                 <SmartHelp content={t('help.soilMin')}>
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">
                     📉 {t('controls.soilMoistureMin')} %
                   </Label>
                 </SmartHelp>
@@ -796,7 +795,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="0"
                         max="100"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
@@ -807,7 +806,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="space-y-1">
                 <SmartHelp content={t('help.soilMax')}>
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">
                     📈 {t('controls.soilMoistureMax')} %
                   </Label>
                 </SmartHelp>
@@ -824,7 +823,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="0"
                         max="100"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
@@ -844,8 +843,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
 
         {/* Card D: Ventilation 💨 */}
-        <Card className="gradient-card border-border/50">
-          <CardHeader className="pb-3">
+        <Card className="gradient-card border-border/50 h-full flex flex-col">
+          <CardHeader className="pb-3 px-5 pt-5">
             <SmartHelp content={t('help.ventilationCard')}>
               <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
                 <Wind className="w-5 h-5" />
@@ -853,13 +852,13 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </CardTitle>
             </SmartHelp>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
             {/* Button Group: OFF | ON */}
             <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
               <SmartHelp content={t('help.ventSwitch')} isText={false}>
                 <Button
                   variant={ventMode === 0 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all min-h-[44px]", ventMode === 0 && "bg-destructive text-destructive-foreground")}
+                  className={cn("flex-1 transition-all h-10", ventMode === 0 && "bg-destructive text-destructive-foreground")}
                   onClick={() => {
                     setVentMode(0);
                     setHasChanges(true);
@@ -873,7 +872,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Button
                   variant={ventMode === 1 ? "default" : "outline"}
                   className={cn(
-                    "flex-1 transition-all min-h-[44px]",
+                    "flex-1 transition-all h-10",
                     ventMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
                   )}
                   onClick={() => {
@@ -887,11 +886,11 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </SmartHelp>
             </div>
 
-            {/* Ventilation Inputs */}
-            <div className="space-y-3 pt-2 border-t border-border/30">
+            {/* Ventilation Inputs - Main content area (grows to fill) */}
+            <div className="flex-1 space-y-3 pt-2 border-t border-border/30">
               <div className="space-y-1">
                 <SmartHelp content={t('help.ventDuration')}>
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">
                     ⏱️ {t('controls.workDuration')} ({t('controls.seconds')})
                   </Label>
                 </SmartHelp>
@@ -907,7 +906,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         }}
                         min="0"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         {t('controls.seconds')}
@@ -918,7 +917,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
               <div className="space-y-1">
                 <SmartHelp content={t('help.ventPause')}>
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">
                     ⏸️ {t('controls.pauseDuration')} ({t('controls.seconds')})
                   </Label>
                 </SmartHelp>
@@ -934,7 +933,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         }}
                         min="0"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10", isAiActive && "opacity-50")}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         {t('controls.seconds')}
@@ -954,19 +953,21 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
       </div>
 
-      {/* Save Button - Fixed on mobile, normal on desktop */}
-      <div className="fixed bottom-20 lg:bottom-6 left-4 right-4 lg:left-auto lg:right-6 z-50">
-        <SmartHelp content={t('help.saveButton')} isText={false}>
-          <Button 
-            size="lg" 
-            className="w-full lg:w-auto shadow-lg min-h-[48px]" 
-            onClick={handleSave} 
-            disabled={!hasChanges || isSaving}
-          >
-            <Save className="w-5 h-5 mr-2" />
-            {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
-          </Button>
-        </SmartHelp>
+      {/* Global Save Action Bar - Full width at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 lg:relative lg:bottom-auto p-4 lg:p-0 lg:pt-2 bg-background/95 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none border-t border-border/50 lg:border-0 z-50">
+        <div className="max-w-screen-2xl mx-auto flex justify-end">
+          <SmartHelp content={t('help.saveButton')} isText={false}>
+            <Button 
+              size="lg" 
+              className="w-full lg:w-auto shadow-lg h-12" 
+              onClick={handleSave} 
+              disabled={!hasChanges || isSaving}
+            >
+              <Save className="w-5 h-5 mr-2" />
+              {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
+            </Button>
+          </SmartHelp>
+        </div>
       </div>
     </div>
   );
