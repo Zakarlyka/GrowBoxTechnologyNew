@@ -13,6 +13,7 @@ import { ChevronDown, User, Settings, LogOut, Globe, Layers, HelpCircle, Menu } 
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Navigation } from '@/components/Navigation';
 import { SmartHelp } from '@/components/ui/smart-help';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { cn } from '@/lib/utils';
 
 // Pages that support device filtering via URL params
@@ -157,6 +158,9 @@ export function Header() {
               </Select>
             </SmartHelp>
           )}
+
+          {/* Notification Center Bell */}
+          <NotificationCenter />
 
           {/* Help Mode Toggle - Education Mode */}
           <TooltipProvider>
