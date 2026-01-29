@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Bell, Thermometer, Droplets, CreditCard, Zap, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { uk } from 'date-fns/locale';
@@ -71,10 +71,16 @@ const typeStyles: Record<NotificationType, { bg: string; text: string; border: s
 
 export function NotificationCenter() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [open, setOpen] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleOpenSettings = () => {
+    setOpen(false);
+    navigate('/account?tab=notifications');
+  };
 
   const markAsRead = (id: string) => {
     setNotifications(prev => 
@@ -220,7 +226,7 @@ export function NotificationCenter() {
           <Button 
             variant="ghost" 
             className="w-full text-sm h-8" 
-            onClick={() => setOpen(false)}
+            onClick={handleOpenSettings}
           >
             Налаштування сповіщень
           </Button>

@@ -1,87 +1,125 @@
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useDevices } from '@/hooks/useDevices';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Library, FileText, Users, Server, Activity, Database } from 'lucide-react';
+import { Shield, Library, FileText, Users, BarChart3, Database, Sprout, Cpu, CheckCircle2, Server } from 'lucide-react';
 import { LibraryStrainManager } from '@/components/admin/LibraryStrainManager';
 import { ArticleManager } from '@/components/admin/ArticleManager';
 import { UserManager } from '@/components/admin/UserManager';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
-// System Status Component
-function SystemStatus() {
+// Business Metrics Component
+function BusinessMetrics() {
+  // Fetch total users count
+  const { data: usersCount = 0 } = useQuery({
+    queryKey: ['admin-users-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
+  // Fetch devices data
+  const { devices } = useDevices();
+  const onlineDevices = devices.filter(d => 
+    d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() < 60000
+  ).length;
+
+  // Fetch active grows count
+  const { data: activeGrows = 0 } = useQuery({
+    queryKey: ['admin-active-grows'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('plants')
+        .select('*', { count: 'exact', head: true })
+        .neq('current_stage', 'harvested');
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
   return (
     <div className="space-y-6">
-      {/* Server Status */}
+      {/* Business Metrics */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Статус Серверів
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
-                <span>API Server</span>
-              </div>
-              <Badge variant="outline" className="text-success border-success">Online</Badge>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
-                <span>MQTT Broker</span>
-              </div>
-              <Badge variant="outline" className="text-success border-success">Online</Badge>
-            </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
-                <span>Database</span>
-              </div>
-              <Badge variant="outline" className="text-success border-success">Online</Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* MQTT Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            MQTT Конфігурація
+            <BarChart3 className="h-5 w-5" />
+            Огляд Платформи
           </CardTitle>
           <CardDescription>
-            Налаштування брокера повідомлень для пристроїв
+            Ключові метрики системи Agro Hogwards
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Broker Host</label>
-              <div className="p-3 bg-muted rounded-md font-mono text-sm">mqtt.agrohogwards.com</div>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Total Users */}
+            <div className="p-4 border rounded-lg bg-card">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{usersCount}</p>
+                  <p className="text-sm text-muted-foreground">Користувачів</p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Port</label>
-              <div className="p-3 bg-muted rounded-md font-mono text-sm">8883 (SSL)</div>
+
+            {/* Total Devices */}
+            <div className="p-4 border rounded-lg bg-card">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-accent/10">
+                  <Cpu className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{devices.length}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Пристроїв ({onlineDevices} онлайн)
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Topic Prefix</label>
-              <div className="p-3 bg-muted rounded-md font-mono text-sm">agro/devices/</div>
+
+            {/* Active Grows */}
+            <div className="p-4 border rounded-lg bg-card">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-success/10">
+                  <Sprout className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{activeGrows}</p>
+                  <p className="text-sm text-muted-foreground">Активних вирощувань</p>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">QoS Level</label>
-              <div className="p-3 bg-muted rounded-md font-mono text-sm">1 (At least once)</div>
+
+            {/* System Health */}
+            <div className="p-4 border rounded-lg bg-card">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-success/10">
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <Badge className="bg-success/20 text-success border-success hover:bg-success/30">
+                    Працює справно
+                  </Badge>
+                  <p className="text-sm text-muted-foreground mt-1">Стан системи</p>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* System Logs Placeholder */}
+      {/* System Logs */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -94,23 +132,23 @@ function SystemStatus() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2 font-mono text-xs">
-            <div className="p-2 bg-muted rounded flex gap-2">
-              <span className="text-muted-foreground">[2024-01-28 14:32:15]</span>
+            <div className="p-2 bg-muted rounded flex gap-2 flex-wrap">
+              <span className="text-muted-foreground">[2026-01-29 14:32:15]</span>
               <Badge variant="outline" className="text-xs">INFO</Badge>
               <span>Device ESP8266-001 connected</span>
             </div>
-            <div className="p-2 bg-muted rounded flex gap-2">
-              <span className="text-muted-foreground">[2024-01-28 14:31:42]</span>
+            <div className="p-2 bg-muted rounded flex gap-2 flex-wrap">
+              <span className="text-muted-foreground">[2026-01-29 14:31:42]</span>
               <Badge variant="outline" className="text-xs">INFO</Badge>
               <span>Sensor data received from device ESP8266-002</span>
             </div>
-            <div className="p-2 bg-muted rounded flex gap-2">
-              <span className="text-muted-foreground">[2024-01-28 14:30:18]</span>
+            <div className="p-2 bg-muted rounded flex gap-2 flex-wrap">
+              <span className="text-muted-foreground">[2026-01-29 14:30:18]</span>
               <Badge variant="outline" className="text-warning border-warning text-xs">WARN</Badge>
               <span>High temperature alert triggered</span>
             </div>
-            <div className="p-2 bg-muted rounded flex gap-2">
-              <span className="text-muted-foreground">[2024-01-28 14:28:55]</span>
+            <div className="p-2 bg-muted rounded flex gap-2 flex-wrap">
+              <span className="text-muted-foreground">[2026-01-29 14:28:55]</span>
               <Badge variant="outline" className="text-xs">INFO</Badge>
               <span>User authentication successful</span>
             </div>
@@ -193,7 +231,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="system" className="mt-6">
-            <SystemStatus />
+            <BusinessMetrics />
           </TabsContent>
 
           <TabsContent value="library" className="mt-6">
