@@ -947,6 +947,39 @@ export type Database = {
           },
         ]
       }
+      telegram_users: {
+        Row: {
+          chat_id: number
+          created_at: string | null
+          first_name: string | null
+          id: string
+          is_verified: boolean | null
+          updated_at: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          is_verified?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          is_verified?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           created_at: string
