@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,9 +13,20 @@ import { ChevronDown, User, Settings, LogOut, Globe, Layers, HelpCircle } from '
 import { SmartHelp } from '@/components/ui/smart-help';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 // Pages that support device filtering via URL params
 const DEVICE_AWARE_PAGES = ['/dashboard', '/laboratory', '/analytics'];
+
+// Standardized language codes: ua, en, ru
+const LANGUAGES = [
+  { code: 'ua', name: 'Українська', label: 'UA' },
+  { code: 'en', name: 'English', label: 'EN' },
+  { code: 'ru', name: 'Русский', label: 'RU' },
+] as const;
+
+type LanguageCode = 'ua' | 'en' | 'ru';
 
 export function Header() {
   const { t, i18n } = useTranslation();
@@ -38,6 +49,28 @@ export function Header() {
     return null;
   }, [devices, selectedDeviceId]);
 
+  // Load saved language from notification_settings on login
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadSavedLanguage = async () => {
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('language')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (!error && data?.language) {
+        const savedLang = data.language as LanguageCode;
+        if (LANGUAGES.some(l => l.code === savedLang) && savedLang !== i18n.language) {
+          i18n.changeLanguage(savedLang);
+        }
+      }
+    };
+    
+    loadSavedLanguage();
+  }, [user, i18n]);
+
   const handleDeviceSelect = (deviceId: string) => {
     if (deviceId === 'all') {
       const newParams = new URLSearchParams(searchParams);
@@ -48,17 +81,31 @@ export function Header() {
     }
   };
 
-  const changeLanguage = (lng: string) => {
+  const changeLanguage = useCallback(async (lng: LanguageCode) => {
+    // Change language in i18n
     i18n.changeLanguage(lng);
-  };
+    
+    // Persist to database if user is logged in
+    if (user) {
+      const { error } = await supabase
+        .from('notification_settings')
+        .upsert(
+          { user_id: user.id, language: lng },
+          { onConflict: 'user_id' }
+        );
+      
+      if (error) {
+        console.error('Failed to save language preference:', error);
+        toast({
+          title: t('common.error'),
+          description: 'Failed to save language preference',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [user, i18n, t]);
 
-  const languages = [
-    { code: 'uk', name: 'Українська', flag: '🇺🇦' },
-    { code: 'en', name: 'English', flag: '🇺🇸' },
-    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  ];
-
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+  const currentLanguage = LANGUAGES.find(lang => lang.code === i18n.language) || LANGUAGES[0];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -165,18 +212,21 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-9 md:h-10 px-2 md:px-3">
                   <Globe className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline">{currentLanguage.flag}</span>
+                  <span className="hidden md:inline font-mono text-xs font-semibold">{currentLanguage.label}</span>
                   <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background border-border z-[100]">
-                {languages.map(lang => (
+                {LANGUAGES.map(lang => (
                   <DropdownMenuItem 
                     key={lang.code} 
                     onClick={() => changeLanguage(lang.code)} 
-                    className="flex items-center gap-2"
+                    className={cn(
+                      "flex items-center gap-2",
+                      currentLanguage.code === lang.code && "bg-accent"
+                    )}
                   >
-                    <span>{lang.flag}</span>
+                    <span className="font-mono text-xs font-semibold w-6">{lang.label}</span>
                     <span>{lang.name}</span>
                   </DropdownMenuItem>
                 ))}

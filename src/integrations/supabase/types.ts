@@ -459,6 +459,7 @@ export type Database = {
           humidity_max: number | null
           humidity_min: number | null
           id: string
+          language: string | null
           push_enabled: boolean | null
           telegram_chat_id: string | null
           telegram_enabled: boolean | null
@@ -473,6 +474,7 @@ export type Database = {
           humidity_max?: number | null
           humidity_min?: number | null
           id?: string
+          language?: string | null
           push_enabled?: boolean | null
           telegram_chat_id?: string | null
           telegram_enabled?: boolean | null
@@ -487,6 +489,7 @@ export type Database = {
           humidity_max?: number | null
           humidity_min?: number | null
           id?: string
+          language?: string | null
           push_enabled?: boolean | null
           telegram_chat_id?: string | null
           telegram_enabled?: boolean | null
@@ -733,6 +736,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_ai_allowed: boolean
+          language: string | null
           phone: string | null
           units: Database["public"]["Enums"]["preferred_units"]
           updated_at: string
@@ -747,6 +751,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_ai_allowed?: boolean
+          language?: string | null
           phone?: string | null
           units?: Database["public"]["Enums"]["preferred_units"]
           updated_at?: string
@@ -761,6 +766,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_ai_allowed?: boolean
+          language?: string | null
           phone?: string | null
           units?: Database["public"]["Enums"]["preferred_units"]
           updated_at?: string
