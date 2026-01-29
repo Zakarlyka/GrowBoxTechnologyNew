@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, Plus, Leaf, Clock, FlaskConical, BookOpen, Globe, User, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ interface LibraryStrain {
 }
 
 export default function LibraryPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { devices } = useDevices();
@@ -161,14 +163,14 @@ export default function LibraryPage() {
       if (error) throw error;
       
       toast({
-        title: 'Успіх',
-        description: `Сорт "${strainToDelete.name}" видалено`,
+        title: t('status.success'),
+        description: t('library.strainDeleted', { name: strainToDelete.name }),
       });
       
       fetchStrains();
     } catch (error: any) {
       toast({
-        title: 'Помилка',
+        title: t('status.error'),
         description: error.message,
         variant: 'destructive',
       });
@@ -238,7 +240,7 @@ export default function LibraryPage() {
         {/* Private badge for user strains */}
         {!strain.is_public && (
           <Badge className="absolute top-2 right-2 bg-background/80 text-foreground text-xs">
-            🔒 Private
+            🔒 {t('library.private')}
           </Badge>
         )}
       </div>
@@ -289,12 +291,12 @@ export default function LibraryPage() {
           {strain.flowering_days && (
             <Badge variant="outline" className="text-xs gap-1">
               <Clock className="h-3 w-3" />
-              {strain.flowering_days} днів
+              {strain.flowering_days} {t('library.days')}
             </Badge>
           )}
         </div>
 
-        {/* Description */}
+        {/* Description - Dynamic data, not translated */}
         {strain.description && (
           <p className="text-sm text-muted-foreground line-clamp-2">
             {strain.description}
@@ -308,7 +310,7 @@ export default function LibraryPage() {
           size="lg"
         >
           <Leaf className="h-4 w-4" />
-          🌱 Вирощувати цей сорт
+          🌱 {t('library.growThisStrain')}
         </Button>
       </CardContent>
     </Card>
@@ -321,7 +323,7 @@ export default function LibraryPage() {
       return (
         <Card>
           <CardContent className="p-8 text-center text-muted-foreground">
-            {searchQuery ? 'Сортів не знайдено' : 'Бібліотека сортів порожня'}
+            {searchQuery ? t('library.noStrainsFound') : t('library.emptyLibrary')}
           </CardContent>
         </Card>
       );
@@ -350,10 +352,10 @@ export default function LibraryPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <FlaskConical className="h-8 w-8 text-primary" />
-              Бібліотека
+              {t('library.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Сорти та база знань
+              {t('library.subtitle')}
             </p>
           </div>
         </div>
@@ -363,15 +365,15 @@ export default function LibraryPage() {
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="global" className="gap-2">
               <Globe className="h-4 w-4" />
-              Глобальна
+              {t('library.global')}
             </TabsTrigger>
             <TabsTrigger value="my-strains" className="gap-2">
               <User className="h-4 w-4" />
-              Мої сорти
+              {t('library.myStrains')}
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
-              База знань
+              {t('library.knowledgeBase')}
             </TabsTrigger>
           </TabsList>
 
@@ -381,7 +383,7 @@ export default function LibraryPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Пошук за назвою або бридером..."
+                  placeholder={t('library.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 bg-background/50"
@@ -397,7 +399,7 @@ export default function LibraryPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Пошук за назвою або бридером..."
+                  placeholder={t('library.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 bg-background/50"
@@ -405,7 +407,7 @@ export default function LibraryPage() {
               </div>
               <Button onClick={handleAddStrain} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Додати сорт
+                {t('library.addStrain')}
               </Button>
             </div>
             {renderStrainsGrid(myStrains, true)}
@@ -438,19 +440,18 @@ export default function LibraryPage() {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Видалити сорт?</AlertDialogTitle>
+              <AlertDialogTitle>{t('library.deleteStrain')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Ви впевнені, що хочете видалити "{strainToDelete?.name}"? 
-                Цю дію неможливо скасувати.
+                {t('library.deleteStrainConfirm', { name: strainToDelete?.name })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Скасувати</AlertDialogCancel>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDeleteStrain}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Видалити
+                {t('common.delete')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

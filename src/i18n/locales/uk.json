@@ -127,7 +127,13 @@
     "saving": "Збереження...",
     "watering": "Полив...",
     "wateringSeconds": "сек",
-    "advancedSettings": "Розширені налаштування"
+    "advancedSettings": "Розширені налаштування",
+    "aiModeActive": "Активний",
+    "aiLoadingProfile": "Завантаження профілю рослини...",
+    "aiNoMasterPlant": "Не знайдено Master Plant для AI",
+    "aiEnableDescription": "Увімкніть для автоматичного керування",
+    "aiAccessBlocked": "AI доступ заблокований. Зверніться до Адміністратора.",
+    "contactAdmin": "Зверніться до Адміністратора для активації AI"
   },
   "sensorTooltips": {
     "temperature": "Поточна температура повітря в боксі.",
@@ -212,7 +218,9 @@
     "account": "Акаунт",
     "devices": "Пристрої",
     "cabinet": "Кабінет",
-    "manageDevicesAndProfile": "Керуйте своїми пристроями та профілем"
+    "manageDevicesAndProfile": "Керуйте своїми пристроями та профілем",
+    "helpModeOn": "Режим Навчання: ON — Вимкнути",
+    "helpModeOff": "Увімкнути Режим Навчання"
   },
   "common": {
     "save": "Зберегти",
@@ -378,5 +386,66 @@
     "success": "Дані сенсорів симульовано",
     "error": "Помилка симуляції даних сенсорів",
     "watchdogNote": "Watchdog-тригер виявить ці значення та надішле сповіщення в Telegram"
+  },
+  "library": {
+    "title": "Бібліотека",
+    "subtitle": "Сорти та база знань",
+    "global": "Глобальна",
+    "myStrains": "Мої сорти",
+    "knowledgeBase": "База знань",
+    "growThisStrain": "Вирощувати цей сорт",
+    "addStrain": "Додати сорт",
+    "searchPlaceholder": "Пошук за назвою або бридером...",
+    "noStrainsFound": "Сортів не знайдено",
+    "emptyLibrary": "Бібліотека сортів порожня",
+    "deleteStrain": "Видалити сорт?",
+    "deleteStrainConfirm": "Ви впевнені, що хочете видалити \"{name}\"? Цю дію неможливо скасувати.",
+    "strainDeleted": "Сорт \"{name}\" видалено",
+    "private": "Приватний",
+    "days": "днів",
+    "articles": "статей",
+    "article": "стаття",
+    "categories": "Категорії",
+    "recentArticles": "Нові статті",
+    "searchResults": "Результати пошуку",
+    "searchArticles": "Пошук статей...",
+    "noArticlesInCategory": "У цій категорії поки немає статей",
+    "nothingFound": "Нічого не знайдено за запитом \"{query}\"",
+    "back": "Назад",
+    "germination": "Пророщування",
+    "vegetation": "Вегетація",
+    "flowering": "Цвітіння",
+    "troubleshooting": "Вирішення проблем",
+    "nutrients": "Живлення"
+  },
+  "strainDetails": {
+    "morphology": "Морфологія",
+    "stretchRatio": "Коеф. Розтягування",
+    "budDensity": "Щільність Шишок",
+    "odorIntensity": "Інтенсивність Запаху",
+    "resistance": "Стійкість",
+    "timeline": "Таймлайн",
+    "environment": "Середовище",
+    "aiWatchdog": "AI Watchdog",
+    "wiki": "Вікі",
+    "resistanceMatrix": "Матриця Стійкості",
+    "highStretch": "Високий стретч",
+    "moderate": "Помірний",
+    "lowStretch": "Низький стретч",
+    "morphologyNotAvailable": "Дані морфології недоступні",
+    "indoor": "Indoor",
+    "mold": "Пліснява",
+    "pests": "Шкідники",
+    "cold": "Холод",
+    "heat": "Спека",
+    "drought": "Посуха",
+    "stageStart": "Початок"
+  },
+  "admin": {
+    "title": "Адмін-панель",
+    "users": "Користувачі",
+    "strains": "Сорти",
+    "articles": "Статті",
+    "system": "Система"
   }
 }

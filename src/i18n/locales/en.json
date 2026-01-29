@@ -127,7 +127,13 @@
     "saving": "Saving...",
     "watering": "Watering...",
     "wateringSeconds": "sec",
-    "advancedSettings": "Advanced Settings"
+    "advancedSettings": "Advanced Settings",
+    "aiModeActive": "Active",
+    "aiLoadingProfile": "Loading plant profile...",
+    "aiNoMasterPlant": "No Master Plant found for AI",
+    "aiEnableDescription": "Enable for automatic control",
+    "aiAccessBlocked": "AI access blocked. Contact Administrator.",
+    "contactAdmin": "Contact Administrator to activate AI"
   },
   "sensorTooltips": {
     "temperature": "Current air temperature inside the box.",
@@ -212,7 +218,9 @@
     "account": "Account",
     "devices": "Devices",
     "cabinet": "Cabinet",
-    "manageDevicesAndProfile": "Manage your devices and profile"
+    "manageDevicesAndProfile": "Manage your devices and profile",
+    "helpModeOn": "Education Mode: ON — Turn off",
+    "helpModeOff": "Turn on Education Mode"
   },
   "common": {
     "save": "Save",
@@ -378,5 +386,66 @@
     "success": "Sensor data simulated",
     "error": "Failed to simulate sensor data",
     "watchdogNote": "The Watchdog trigger will detect these values and send notifications to Telegram"
+  },
+  "library": {
+    "title": "Library",
+    "subtitle": "Strains and knowledge base",
+    "global": "Global",
+    "myStrains": "My Strains",
+    "knowledgeBase": "Knowledge Base",
+    "growThisStrain": "Grow this strain",
+    "addStrain": "Add Strain",
+    "searchPlaceholder": "Search by name or breeder...",
+    "noStrainsFound": "No strains found",
+    "emptyLibrary": "Strain library is empty",
+    "deleteStrain": "Delete Strain?",
+    "deleteStrainConfirm": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    "strainDeleted": "Strain \"{name}\" deleted",
+    "private": "Private",
+    "days": "days",
+    "articles": "articles",
+    "article": "article",
+    "categories": "Categories",
+    "recentArticles": "Recent Articles",
+    "searchResults": "Search Results",
+    "searchArticles": "Search articles...",
+    "noArticlesInCategory": "No articles in this category",
+    "nothingFound": "Nothing found for \"{query}\"",
+    "back": "Back",
+    "germination": "Germination",
+    "vegetation": "Vegetation",
+    "flowering": "Flowering",
+    "troubleshooting": "Troubleshooting",
+    "nutrients": "Nutrients"
+  },
+  "strainDetails": {
+    "morphology": "Morphology",
+    "stretchRatio": "Stretch Ratio",
+    "budDensity": "Bud Density",
+    "odorIntensity": "Odor Intensity",
+    "resistance": "Resistance",
+    "timeline": "Timeline",
+    "environment": "Environment",
+    "aiWatchdog": "AI Watchdog",
+    "wiki": "Wiki",
+    "resistanceMatrix": "Resistance Matrix",
+    "highStretch": "High stretch",
+    "moderate": "Moderate",
+    "lowStretch": "Low stretch",
+    "morphologyNotAvailable": "Morphology data not available",
+    "indoor": "Indoor",
+    "mold": "Mold",
+    "pests": "Pests",
+    "cold": "Cold",
+    "heat": "Heat",
+    "drought": "Drought",
+    "stageStart": "Start"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "users": "Users",
+    "strains": "Strains",
+    "articles": "Articles",
+    "system": "System"
   }
 }

@@ -201,7 +201,7 @@ export function Header() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-background border-border z-[100]">
-                <p>{isHelpModeEnabled ? '🎓 Режим Навчання: ON — Вимкнути' : '🎓 Увімкнути Режим Навчання'}</p>
+                <p>{isHelpModeEnabled ? `🎓 ${t('settings.helpModeOn')}` : `🎓 ${t('settings.helpModeOff')}`}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

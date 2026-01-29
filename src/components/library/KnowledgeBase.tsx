@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,20 +27,22 @@ interface Article {
   image_url: string | null;
 }
 
-const CATEGORIES = [
-  { id: 'germination', name: 'Пророщування', icon: Sprout, emoji: '🌱', color: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' },
-  { id: 'vegetation', name: 'Вегетація', icon: Leaf, emoji: '🌿', color: 'bg-green-500/10 border-green-500/30 text-green-500' },
-  { id: 'flowering', name: 'Цвітіння', icon: Flower2, emoji: '🌸', color: 'bg-pink-500/10 border-pink-500/30 text-pink-500' },
-  { id: 'troubleshooting', name: 'Вирішення проблем', icon: Stethoscope, emoji: '🚑', color: 'bg-red-500/10 border-red-500/30 text-red-500' },
-  { id: 'nutrients', name: 'Живлення', icon: FlaskConical, emoji: '🧪', color: 'bg-purple-500/10 border-purple-500/30 text-purple-500' },
-];
-
 export function KnowledgeBase() {
+  const { t } = useTranslation();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Category definitions with translation keys
+  const CATEGORIES = [
+    { id: 'germination', translationKey: 'library.germination', icon: Sprout, emoji: '🌱', color: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' },
+    { id: 'vegetation', translationKey: 'library.vegetation', icon: Leaf, emoji: '🌿', color: 'bg-green-500/10 border-green-500/30 text-green-500' },
+    { id: 'flowering', translationKey: 'library.flowering', icon: Flower2, emoji: '🌸', color: 'bg-pink-500/10 border-pink-500/30 text-pink-500' },
+    { id: 'troubleshooting', translationKey: 'library.troubleshooting', icon: Stethoscope, emoji: '🚑', color: 'bg-red-500/10 border-red-500/30 text-red-500' },
+    { id: 'nutrients', translationKey: 'library.nutrients', icon: FlaskConical, emoji: '🧪', color: 'bg-purple-500/10 border-purple-500/30 text-purple-500' },
+  ];
 
   useEffect(() => {
     fetchArticles();
@@ -80,15 +83,19 @@ export function KnowledgeBase() {
   const getCategoryInfo = (categoryName: string) => {
     return CATEGORIES.find(c => 
       c.id === categoryName.toLowerCase() || 
-      c.name.toLowerCase() === categoryName.toLowerCase()
+      categoryName.toLowerCase().includes(c.id)
     ) || CATEGORIES[0];
   };
 
   const getArticleCountByCategory = (categoryId: string) => {
     return articles.filter(a => 
       a.category?.toLowerCase() === categoryId.toLowerCase() ||
-      a.category?.toLowerCase() === CATEGORIES.find(c => c.id === categoryId)?.name.toLowerCase()
+      a.category?.toLowerCase().includes(categoryId)
     ).length;
+  };
+
+  const getArticleCountText = (count: number) => {
+    return `${count} ${count === 1 ? t('library.article') : t('library.articles')}`;
   };
 
   if (loading) {
@@ -123,19 +130,19 @@ export function KnowledgeBase() {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Назад
+            {t('library.back')}
           </Button>
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            {categoryInfo?.emoji} {categoryInfo?.name}
+            {categoryInfo?.emoji} {categoryInfo ? t(categoryInfo.translationKey) : selectedCategory}
           </h2>
-          <Badge variant="secondary">{filteredArticles.length} статей</Badge>
+          <Badge variant="secondary">{getArticleCountText(filteredArticles.length)}</Badge>
         </div>
 
         {filteredArticles.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>У цій категорії поки немає статей</p>
+              <p>{t('library.noArticlesInCategory')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -156,6 +163,7 @@ export function KnowledgeBase() {
                       />
                     )}
                     <div className="flex-1 min-w-0">
+                      {/* Title is dynamic content - not translated */}
                       <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
                         {article.title}
                       </h3>
@@ -163,7 +171,7 @@ export function KnowledgeBase() {
                         {getArticleExcerpt(article.content)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {new Date(article.created_at).toLocaleDateString('uk-UA')}
+                        {new Date(article.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -183,7 +191,7 @@ export function KnowledgeBase() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Пошук статей..."
+          placeholder={t('library.searchArticles')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10 bg-background/50"
@@ -194,12 +202,12 @@ export function KnowledgeBase() {
       {searchQuery ? (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">
-            Результати пошуку ({filteredArticles.length})
+            {t('library.searchResults')} ({filteredArticles.length})
           </h2>
           {filteredArticles.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                Нічого не знайдено за запитом "{searchQuery}"
+                {t('library.nothingFound', { query: searchQuery })}
               </CardContent>
             </Card>
           ) : (
@@ -218,6 +226,7 @@ export function KnowledgeBase() {
                           {catInfo.emoji} {article.category}
                         </Badge>
                       </div>
+                      {/* Title is dynamic content - not translated */}
                       <h3 className="font-semibold text-foreground mb-1">
                         {article.title}
                       </h3>
@@ -234,7 +243,7 @@ export function KnowledgeBase() {
       ) : (
         /* Categories Grid */
         <>
-          <h2 className="text-lg font-semibold">Категорії</h2>
+          <h2 className="text-lg font-semibold">{t('library.categories')}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORIES.map((category) => {
               const Icon = category.icon;
@@ -249,10 +258,10 @@ export function KnowledgeBase() {
                   <CardContent className="p-6 text-center">
                     <div className="text-4xl mb-3">{category.emoji}</div>
                     <h3 className="font-semibold text-lg text-foreground mb-1">
-                      {category.name}
+                      {t(category.translationKey)}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {articleCount} {articleCount === 1 ? 'стаття' : 'статей'}
+                      {getArticleCountText(articleCount)}
                     </p>
                   </CardContent>
                 </Card>
@@ -263,7 +272,7 @@ export function KnowledgeBase() {
           {/* Recent Articles */}
           {articles.length > 0 && (
             <div className="space-y-4 mt-8">
-              <h2 className="text-lg font-semibold">Нові статті</h2>
+              <h2 className="text-lg font-semibold">{t('library.recentArticles')}</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 {articles.slice(0, 4).map((article) => {
                   const catInfo = getCategoryInfo(article.category);
@@ -277,6 +286,7 @@ export function KnowledgeBase() {
                         <Badge className={`text-xs border mb-2 ${catInfo.color}`}>
                           {catInfo.emoji} {article.category}
                         </Badge>
+                        {/* Title is dynamic content - not translated */}
                         <h3 className="font-semibold text-foreground line-clamp-1">
                           {article.title}
                         </h3>
