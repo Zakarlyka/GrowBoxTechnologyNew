@@ -2,17 +2,89 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Activity, AlertCircle, Cpu } from 'lucide-react';
+import { Plus, Activity, AlertCircle, Cpu, Beaker } from 'lucide-react';
 import { useDevices } from '@/hooks/useDevices';
+import { useAuth } from '@/hooks/useAuth';
 import { AddDeviceDialog } from './AddDeviceDialog';
 import { FleetDeviceCard } from './FleetDeviceCard';
 import { SmartHelp } from '@/components/ui/smart-help';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export function Devices() {
   const { t } = useTranslation();
   const { devices, loading, fetchDevices } = useDevices();
+  const { user } = useAuth();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false);
+
+  // Check if demo device already exists
+  const hasDemoDevice = devices.some(d => d.type === 'demo' || d.name === 'Demo Growbox');
+
+  // Create Demo Device with mock plant
+  const handleCreateDemoDevice = async () => {
+    if (!user) return;
+    setIsCreatingDemo(true);
+
+    try {
+      // Generate unique demo device ID
+      const demoDeviceId = `demo_${Date.now()}`;
+
+      // 1. Create demo device
+      const { data: deviceData, error: deviceError } = await supabase
+        .from('devices')
+        .insert({
+          user_id: user.id,
+          device_id: demoDeviceId,
+          name: 'Demo Growbox',
+          type: 'demo',
+          status: 'offline',
+          settings: {
+            target_temp: 25,
+            target_hum: 60,
+            soil_min: 30,
+            soil_max: 70,
+            light_mode: 1,
+            light_start_h: 6,
+            light_end_h: 22
+          }
+        })
+        .select()
+        .single();
+
+      if (deviceError) throw deviceError;
+
+      // 2. Create mock plant linked to this device
+      const { error: plantError } = await supabase
+        .from('plants')
+        .insert({
+          user_id: user.id,
+          device_id: demoDeviceId,
+          custom_name: 'Demo Plant',
+          current_stage: 'vegetative',
+          is_main: true,
+          start_date: new Date().toISOString().split('T')[0]
+        });
+
+      if (plantError) {
+        console.warn('Failed to create mock plant:', plantError);
+      }
+
+      toast.success('🛠️ Demo Growbox створено!', {
+        description: 'Використовуйте панель симуляції для тестування сповіщень'
+      });
+
+      fetchDevices();
+    } catch (error: any) {
+      console.error('Demo device creation error:', error);
+      toast.error('Помилка створення Demo пристрою', {
+        description: error.message
+      });
+    } finally {
+      setIsCreatingDemo(false);
+    }
+  };
 
   // 3-Stage Logic: Stage A+B (0-40s) = Online, Stage C (>40s) = Offline
   useEffect(() => {
@@ -43,12 +115,29 @@ export function Devices() {
             {t('devices.subtitle')}
           </p>
         </div>
-        <SmartHelp content={t('help.addDeviceButton')} isText={false}>
-          <Button className="gradient-primary min-h-[44px]" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('devices.addDevice')}
-          </Button>
-        </SmartHelp>
+        <div className="flex gap-2 flex-wrap">
+          {/* Demo Device Button */}
+          {!hasDemoDevice && (
+            <SmartHelp content="Створіть тестовий пристрій для перевірки сповіщень Telegram" isText={false}>
+              <Button 
+                variant="outline" 
+                className="min-h-[44px] border-warning/50 text-warning hover:bg-warning/10"
+                onClick={handleCreateDemoDevice}
+                disabled={isCreatingDemo}
+              >
+                <Beaker className="mr-2 h-4 w-4" />
+                {isCreatingDemo ? 'Створення...' : '🛠️ Demo Growbox'}
+              </Button>
+            </SmartHelp>
+          )}
+          
+          <SmartHelp content={t('help.addDeviceButton')} isText={false}>
+            <Button className="gradient-primary min-h-[44px]" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('devices.addDevice')}
+            </Button>
+          </SmartHelp>
+        </div>
       </div>
 
       {/* Fleet Stats - Compact */}
