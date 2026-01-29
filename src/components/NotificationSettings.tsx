@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Mail, Smartphone, Thermometer, Droplets, MessageCircle, ExternalLink, Copy, Check } from 'lucide-react';
+import { Bell, Mail, Smartphone, Thermometer, Droplets, MessageCircle, ExternalLink, Copy, Check, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface NotificationSetting {
@@ -20,6 +20,8 @@ interface NotificationSetting {
   temperature_max?: number;
   humidity_min?: number;
   humidity_max?: number;
+  telegram_chat_id?: string;
+  telegram_enabled?: boolean;
 }
 
 export function NotificationSettings() {
@@ -30,6 +32,8 @@ export function NotificationSettings() {
   const [telegramChatId, setTelegramChatId] = useState('');
   const [telegramEnabled, setTelegramEnabled] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [testingTelegram, setTestingTelegram] = useState(false);
+  const [savingTelegram, setSavingTelegram] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -53,7 +57,9 @@ export function NotificationSettings() {
       }
 
       if (data) {
-        setSettings(data as any);
+        setSettings(data as NotificationSetting);
+        setTelegramChatId((data as NotificationSetting).telegram_chat_id || '');
+        setTelegramEnabled((data as NotificationSetting).telegram_enabled || false);
       } else {
         // Create default settings if none exist
         const defaultSettings = {
@@ -64,16 +70,18 @@ export function NotificationSettings() {
           temperature_max: 30,
           humidity_min: 40,
           humidity_max: 80,
+          telegram_enabled: false,
+          telegram_chat_id: null,
         };
         
-        const { data: newSettings, error: createError } = await (supabase as any)
+        const { data: newSettings, error: createError } = await supabase
           .from('notification_settings')
           .insert(defaultSettings)
           .select()
           .single();
 
         if (!createError && newSettings) {
-          setSettings(newSettings as any);
+          setSettings(newSettings as NotificationSetting);
         }
       }
     } catch (err) {
@@ -83,14 +91,14 @@ export function NotificationSettings() {
     }
   };
 
-  const updateSetting = async (field: keyof NotificationSetting, value: any) => {
+  const updateSetting = async (field: keyof NotificationSetting, value: unknown) => {
     if (!settings || !user) return;
 
     try {
       setSaving(true);
       const updatedSettings = { ...settings, [field]: value };
       
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('notification_settings')
         .update({ [field]: value })
         .eq('user_id', user.id);
@@ -133,7 +141,47 @@ export function NotificationSettings() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const saveTelegramSettings = () => {
+  const testTelegramConnection = async () => {
+    if (!telegramChatId.trim()) {
+      toast({
+        title: "Помилка",
+        description: "Спочатку введіть Chat ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestingTelegram(true);
+    try {
+      const response = await supabase.functions.invoke('telegram-notify', {
+        body: {
+          chat_id: telegramChatId.trim(),
+          message: 'Тестове повідомлення',
+          test: true,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast({
+        title: "Успіх! 🎉",
+        description: "Перевірте Telegram — повідомлення надіслано!",
+      });
+    } catch (error) {
+      console.error('Telegram test error:', error);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося надіслати повідомлення. Перевірте Chat ID.",
+        variant: "destructive",
+      });
+    } finally {
+      setTestingTelegram(false);
+    }
+  };
+
+  const saveTelegramSettings = async () => {
     if (!telegramChatId.trim()) {
       toast({
         title: "Помилка",
@@ -142,12 +190,42 @@ export function NotificationSettings() {
       });
       return;
     }
-    
-    toast({
-      title: "Збережено!",
-      description: "Telegram інтеграція налаштована. Ви отримуватимете сповіщення.",
-    });
-    setTelegramEnabled(true);
+
+    if (!user) return;
+
+    setSavingTelegram(true);
+    try {
+      const { error } = await supabase
+        .from('notification_settings')
+        .update({ 
+          telegram_chat_id: telegramChatId.trim(),
+          telegram_enabled: true 
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTelegramEnabled(true);
+      setSettings(prev => prev ? { 
+        ...prev, 
+        telegram_chat_id: telegramChatId.trim(),
+        telegram_enabled: true 
+      } : null);
+
+      toast({
+        title: "Збережено!",
+        description: "Telegram інтеграція налаштована. Ви отримуватимете сповіщення.",
+      });
+    } catch (error) {
+      console.error('Save telegram error:', error);
+      toast({
+        title: "Помилка",
+        description: "Не вдалося зберегти налаштування",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingTelegram(false);
+    }
   };
 
   if (loading) {
@@ -276,32 +354,35 @@ export function NotificationSettings() {
             <div className="flex gap-2">
               <Button 
                 variant="outline"
-                onClick={() => {
-                  if (!telegramChatId.trim()) {
-                    toast({
-                      title: "Помилка",
-                      description: "Спочатку введіть Chat ID",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  toast({
-                    title: "Тестування...",
-                    description: "Надсилаємо 'Привіт' у Telegram. Перевірте бота!",
-                  });
-                }}
-                disabled={!telegramChatId.trim()}
+                onClick={testTelegramConnection}
+                disabled={!telegramChatId.trim() || testingTelegram}
                 className="flex-1"
               >
-                Тест з'єднання
+                {testingTelegram ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Надсилаємо...
+                  </>
+                ) : (
+                  'Тест з\'єднання'
+                )}
               </Button>
               <Button 
                 onClick={saveTelegramSettings} 
                 className="flex-1"
-                disabled={!telegramChatId.trim()}
+                disabled={!telegramChatId.trim() || savingTelegram}
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                {telegramEnabled ? 'Оновити' : 'Підключити'}
+                {savingTelegram ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Збереження...
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    {telegramEnabled ? 'Оновити' : 'Підключити'}
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>
