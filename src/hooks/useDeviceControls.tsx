@@ -9,6 +9,9 @@ interface DeviceData {
   lastHum: number | null;
   lastSoilMoisture: number | null;
   lastSeenAt: string | null;
+  deviceName: string | null;
+  deviceType: string | null;
+  deviceUuid: string | null;
 }
 
 export function useDeviceControls(deviceId: string | null) {
@@ -18,6 +21,9 @@ export function useDeviceControls(deviceId: string | null) {
     lastHum: null,
     lastSoilMoisture: null,
     lastSeenAt: null,
+    deviceName: null,
+    deviceType: null,
+    deviceUuid: null,
   });
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,7 +35,7 @@ export function useDeviceControls(deviceId: string | null) {
     try {
       const { data, error } = await supabase
         .from('devices')
-        .select('settings, last_temp, last_hum, last_soil_moisture, last_seen_at')
+        .select('id, name, type, settings, last_temp, last_hum, last_soil_moisture, last_seen_at')
         .eq('device_id', deviceId)
         .single();
 
@@ -41,6 +47,9 @@ export function useDeviceControls(deviceId: string | null) {
         lastHum: data?.last_hum || null,
         lastSoilMoisture: data?.last_soil_moisture || null,
         lastSeenAt: data?.last_seen_at || null,
+        deviceName: data?.name || null,
+        deviceType: data?.type || null,
+        deviceUuid: data?.id || null,
       });
     } catch (error: any) {
       toast.error(`Помилка завантаження: ${error.message}`);
@@ -115,6 +124,9 @@ export function useDeviceControls(deviceId: string | null) {
       soilMoisture: deviceData.lastSoilMoisture,
     },
     lastSeenAt: deviceData.lastSeenAt,
+    deviceName: deviceData.deviceName,
+    deviceType: deviceData.deviceType,
+    deviceUuid: deviceData.deviceUuid,
     loading,
     isSaving,
     saveSettings,

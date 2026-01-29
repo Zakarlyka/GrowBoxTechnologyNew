@@ -14,6 +14,7 @@ import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAler
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoPilot } from "@/hooks/useAutoPilot";
+import { DemoSimulationPanel } from "@/components/DemoSimulationPanel";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -23,8 +24,11 @@ interface DeviceControlsProps {
 
 export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const { t } = useTranslation();
-  const { settings, sensorData, lastSeenAt, loading, isSaving, saveSettings, refetch } = useDeviceControls(deviceId);
+  const { settings, sensorData, lastSeenAt, deviceName, deviceType, deviceUuid, loading, isSaving, saveSettings, refetch } = useDeviceControls(deviceId);
   const { profile } = useAuth();
+
+  // Check if this is a demo device
+  const isDemoDevice = deviceType === 'demo' || deviceName === 'Demo Growbox';
 
   // Admin-controlled AI permission check
   const isAiAllowed = profile?.is_ai_allowed ?? false;
@@ -235,6 +239,11 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   return (
     <div className="relative space-y-4 pb-24 lg:pb-4">
+      {/* Demo Simulation Panel - Only for demo devices */}
+      {isDemoDevice && deviceUuid && (
+        <DemoSimulationPanel deviceId={deviceUuid} />
+      )}
+
       {/* 🤖 Smart AI Mode Toggle - Main Header */}
       <Card className={cn(
         "gradient-card border-2 transition-all",

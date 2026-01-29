@@ -9,9 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronDown, User, Settings, LogOut, Globe, Layers, HelpCircle, Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Navigation } from '@/components/Navigation';
+import { ChevronDown, User, Settings, LogOut, Globe, Layers, HelpCircle } from 'lucide-react';
 import { SmartHelp } from '@/components/ui/smart-help';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { cn } from '@/lib/utils';
@@ -65,37 +63,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 md:h-16 items-center justify-between px-3 md:px-6">
-        {/* Left side: Mobile menu + Logo */}
+        {/* Left side: Logo only - no hamburger menu on mobile (uses bottom nav) */}
         <div className="flex items-center gap-2">
-          {/* Mobile Hamburger Menu */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden h-10 w-10">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] p-0">
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b border-border/50">
-                  <Link to="/" className="flex items-center gap-2">
-                    <img 
-                      alt="Agro Hogwards Logo" 
-                      className="w-8 h-8 object-contain" 
-                      src="/lovable-uploads/b40bf314-fa68-43d6-b408-5682467b4f49.png" 
-                    />
-                    <span className="font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      Agro Hogwards
-                    </span>
-                  </Link>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  <Navigation />
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <img 
