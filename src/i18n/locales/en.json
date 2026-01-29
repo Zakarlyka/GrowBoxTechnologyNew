@@ -45,7 +45,12 @@
     "deviceStatus": "Device Status",
     "noDevices": "No Devices",
     "noDevicesDescription": "Add your first device to start monitoring",
-    "loadingDevices": "Loading devices..."
+    "loadingDevices": "Loading devices...",
+    "selectDevice": "Select a device",
+    "lastOnline": "Last online",
+    "noData": "No data",
+    "goToDevices": "Go to Devices",
+    "unknown": "Unknown"
   },
   "devices": {
     "title": "My Devices",
@@ -80,7 +85,11 @@
     "showQr": "Show QR / Reconnect",
     "manage": "Manage",
     "selectDevice": "Select device",
-    "selectDeviceDescription": "Select a device from the list to view and control"
+    "selectDeviceDescription": "Select a device from the list to view and control",
+    "demoGrowbox": "🛠️ Demo Growbox",
+    "createDemoDevice": "Create Demo Device",
+    "demoCreated": "Demo Growbox created",
+    "demoError": "Failed to create demo device"
   },
   "controls": {
     "lighting": "Lighting",
@@ -260,7 +269,10 @@
     "qrDescription": "Use this QR code to reconnect your device to the network",
     "deviceId": "Device ID",
     "clickLinkAfterWifi": "Click the link after connecting to GrowBox-Setup Wi-Fi network",
-    "orScanQr": "Or scan the QR code with your phone camera"
+    "orScanQr": "Or scan the QR code with your phone camera",
+    "deleteTitle": "Delete Device?",
+    "deleteDescription": "This action cannot be undone. Device \"{name}\" will be permanently deleted.",
+    "connectToWifi": "Connect to GrowBox-Setup Wi-Fi network, then scan the QR"
   },
   "help": {
     "hysteresis": "Allowable deviation. For example, 2°C means that with a target of 20°C, heating will turn on at 18°C.",
@@ -325,5 +337,46 @@
     "masterPlant": "Master Plant",
     "vpd": "VPD",
     "agroHogwards": "Agro Hogwards"
+  },
+  "plants": {
+    "title": "Plants",
+    "addPlant": "Add Plant",
+    "noPlants": "No plants in this growbox",
+    "noActivePlants": "No active plants",
+    "clickToAdd": "Click to add your first plant",
+    "lifecycle": "Lifecycle",
+    "overdue": "Overdue",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "inDays": "In {{days}}d",
+    "noStrain": "No strain assigned",
+    "dataMissing": "Data Missing",
+    "climateConflict": "Climate Conflict",
+    "masterUpdated": "Master Plant updated for this device",
+    "masterUpdateFailed": "Failed to update Master Plant",
+    "setAsMaster": "Set as Master Plant",
+    "editPlant": "Edit Plant",
+    "plantDetails": "Plant Details",
+    "unnamedPlant": "Unnamed Plant"
+  },
+  "stages": {
+    "seedling": "Seedling",
+    "vegetation": "Vegetation",
+    "flowering": "Flowering",
+    "flushing": "Flushing",
+    "drying": "Drying",
+    "harvested": "Harvested"
+  },
+  "demoSimulation": {
+    "title": "⚡ Sensor Simulation",
+    "description": "Test Telegram alerts by simulating sensor values",
+    "criticalTemp": "🔥 Critical Temp (45°C)",
+    "freezing": "❄️ Freezing (5°C)",
+    "drySoil": "💧 Dry Soil (10%)",
+    "resetNormal": "✅ Reset to Normal",
+    "simulating": "Simulating...",
+    "success": "Sensor data simulated",
+    "error": "Failed to simulate sensor data",
+    "watchdogNote": "The Watchdog trigger will detect these values and send notifications to Telegram"
   }
 }

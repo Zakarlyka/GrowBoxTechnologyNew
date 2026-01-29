@@ -75,14 +75,14 @@ export function Dashboard() {
       }).eq('id', selectedDevice.id);
       if (error) throw error;
       toast({
-        title: 'Успіх',
-        description: 'Назву пристрою оновлено'
+        title: t('status.success'),
+        description: t('deviceDetail.renameSuccess')
       });
       setIsEditingName(false);
       fetchDevices();
     } catch (error: any) {
       toast({
-        title: 'Помилка',
+        title: t('status.error'),
         description: error.message,
         variant: 'destructive'
       });
@@ -101,13 +101,13 @@ export function Dashboard() {
   }, [selectedDevice?.last_seen_at]);
 
   const getLastSeenText = () => {
-    if (!selectedDevice?.last_seen_at) return 'Невідомо';
+    if (!selectedDevice?.last_seen_at) return t('dashboard.unknown');
     const seconds = Math.floor((Date.now() - new Date(selectedDevice.last_seen_at).getTime()) / 1000);
-    if (seconds < 60) return `${seconds} сек тому`;
+    if (seconds < 60) return `${seconds} ${t('common.secsAgo')}`;
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} хв тому`;
+    if (minutes < 60) return `${minutes} ${t('common.minsAgo')}`;
     const hours = Math.floor(minutes / 60);
-    return `${hours} год тому`;
+    return `${hours} ${t('common.hoursAgo')}`;
   };
 
   const getLightMode = () => {
@@ -141,7 +141,7 @@ export function Dashboard() {
         <h2 className="text-xl font-semibold mb-2">{t('dashboard.noDevices')}</h2>
         <p className="text-muted-foreground text-center mb-4">{t('dashboard.noDevicesDescription')}</p>
         <Button onClick={() => navigate('/devices')} className="gradient-primary">
-          Перейти до пристроїв
+          {t('dashboard.goToDevices')}
         </Button>
       </div>
     );
@@ -161,7 +161,7 @@ export function Dashboard() {
 
         {/* Quick Access Grid */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Оберіть пристрій</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t('dashboard.selectDevice')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {devices.map(device => {
               const deviceIsOnline = device.last_seen_at && (Date.now() - new Date(device.last_seen_at).getTime()) < 40000;
@@ -208,7 +208,7 @@ export function Dashboard() {
                         </span>
                       )}
                       {device.last_temp === null && device.last_hum === null && (
-                        <span className="text-xs italic">Немає даних</span>
+                        <span className="text-xs italic">{t('dashboard.noData')}</span>
                       )}
                     </div>
                   </CardContent>
@@ -248,7 +248,7 @@ export function Dashboard() {
           <SmartHelp content={t('help.deleteDevice')} isText={false}>
             <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)} className="min-h-[44px]">
               <Trash2 className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Видалити</span>
+              <span className="hidden sm:inline">{t('common.delete')}</span>
             </Button>
           </SmartHelp>
         </div>
@@ -307,7 +307,7 @@ export function Dashboard() {
 
           <div className="pt-2 border-t border-border/30">
             <p className="text-xs text-muted-foreground text-center">
-              Востаннє онлайн: {getLastSeenText()}
+              {t('dashboard.lastOnline')}: {getLastSeenText()}
             </p>
           </div>
         </CardContent>
@@ -326,15 +326,15 @@ export function Dashboard() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Видалити пристрій?</AlertDialogTitle>
+            <AlertDialogTitle>{t('deviceDetail.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Цю дію неможливо скасувати. Пристрій "{selectedDevice.name}" буде видалено назавжди.
+              {t('deviceDetail.deleteDescription', { name: selectedDevice.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Видалити
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -344,9 +344,9 @@ export function Dashboard() {
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>QR-код для перепідключення</DialogTitle>
+            <DialogTitle>{t('deviceDetail.qrTitle')}</DialogTitle>
             <DialogDescription>
-              Використовуйте цей QR-код для повторного підключення пристрою
+              {t('deviceDetail.qrDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -366,11 +366,11 @@ export function Dashboard() {
                 http://192.168.4.1/?token={selectedDevice.device_id}
               </a>
               <p className="text-xs text-muted-foreground">
-                Підключіться до Wi-Fi мережі GrowBox-Setup, потім відскануйте QR
+                {t('deviceDetail.connectToWifi')}
               </p>
             </div>
             <Button onClick={() => setQrDialogOpen(false)} className="w-full">
-              Закрити
+              {t('common.close')}
             </Button>
           </div>
         </DialogContent>

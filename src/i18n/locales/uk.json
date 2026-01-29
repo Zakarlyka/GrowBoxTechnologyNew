@@ -45,7 +45,12 @@
     "deviceStatus": "Статус пристроїв",
     "noDevices": "Немає пристроїв",
     "noDevicesDescription": "Додайте свій перший пристрій для моніторингу",
-    "loadingDevices": "Завантаження пристроїв..."
+    "loadingDevices": "Завантаження пристроїв...",
+    "selectDevice": "Оберіть пристрій",
+    "lastOnline": "Востаннє онлайн",
+    "noData": "Немає даних",
+    "goToDevices": "Перейти до пристроїв",
+    "unknown": "Невідомо"
   },
   "devices": {
     "title": "Мої пристрої",
@@ -80,7 +85,11 @@
     "showQr": "Показати QR / Перепідключити",
     "manage": "Керувати",
     "selectDevice": "Оберіть пристрій",
-    "selectDeviceDescription": "Оберіть пристрій зі списку для перегляду та керування"
+    "selectDeviceDescription": "Оберіть пристрій зі списку для перегляду та керування",
+    "demoGrowbox": "🛠️ Demo Growbox",
+    "createDemoDevice": "Створити Demo Growbox",
+    "demoCreated": "Demo Growbox створено",
+    "demoError": "Помилка створення demo пристрою"
   },
   "controls": {
     "lighting": "Освітлення",
@@ -182,7 +191,7 @@
     "error": "Помилка"
   },
   "units": {
-    "sec": "sec",
+    "sec": "сек",
     "percent": "%"
   },
   "auth": {
@@ -260,7 +269,10 @@
     "qrDescription": "Використовуйте цей QR-код для повторного підключення пристрою до мережі",
     "deviceId": "ID пристрою",
     "clickLinkAfterWifi": "Натисніть на посилання після підключення до Wi-Fi мережі GrowBox-Setup",
-    "orScanQr": "Або відскануйте QR-код через додаток або камеру"
+    "orScanQr": "Або відскануйте QR-код через додаток або камеру",
+    "deleteTitle": "Видалити пристрій?",
+    "deleteDescription": "Цю дію неможливо скасувати. Пристрій \"{name}\" буде видалено назавжди.",
+    "connectToWifi": "Підключіться до Wi-Fi мережі GrowBox-Setup, потім відскануйте QR"
   },
   "help": {
     "hysteresis": "Допустиме відхилення. Наприклад, 2°C означає, що при цілі 20°C обігрів увімкнеться при 18°C.",
@@ -315,8 +327,8 @@
     "labWaterMixing": "Калькулятор для змішування води різних температур."
   },
   "header": {
-    "allDevices": "Усі пристрої",
-    "all": "Усі"
+    "allDevices": "Всі пристрої",
+    "all": "Всі"
   },
   "protected": {
     "online": "Online",
@@ -325,5 +337,46 @@
     "masterPlant": "Master Plant",
     "vpd": "VPD",
     "agroHogwards": "Agro Hogwards"
+  },
+  "plants": {
+    "title": "Рослини",
+    "addPlant": "Додати рослину",
+    "noPlants": "Немає рослин в цьому гроубоксі",
+    "noActivePlants": "Немає активних рослин",
+    "clickToAdd": "Натисніть, щоб додати першу рослину",
+    "lifecycle": "Життєвий цикл",
+    "overdue": "Прострочено",
+    "today": "Сьогодні",
+    "tomorrow": "Завтра",
+    "inDays": "Через {{days}}д",
+    "noStrain": "Немає сорту",
+    "dataMissing": "Дані відсутні",
+    "climateConflict": "Конфлікт клімату",
+    "masterUpdated": "Master Plant оновлено для цього пристрою",
+    "masterUpdateFailed": "Не вдалось оновити Master Plant",
+    "setAsMaster": "Встановити як Master Plant",
+    "editPlant": "Редагувати рослину",
+    "plantDetails": "Деталі рослини",
+    "unnamedPlant": "Без назви"
+  },
+  "stages": {
+    "seedling": "Сходи",
+    "vegetation": "Вегетація",
+    "flowering": "Цвітіння",
+    "flushing": "Промивка",
+    "drying": "Сушіння",
+    "harvested": "Зібрано"
+  },
+  "demoSimulation": {
+    "title": "⚡ Симуляція Сенсорів",
+    "description": "Тестуйте Telegram-сповіщення симулюючи значення сенсорів",
+    "criticalTemp": "🔥 Критична Темп. (45°C)",
+    "freezing": "❄️ Заморозки (5°C)",
+    "drySoil": "💧 Сухий Ґрунт (10%)",
+    "resetNormal": "✅ Повернути Норму",
+    "simulating": "Симуляція...",
+    "success": "Дані сенсорів симульовано",
+    "error": "Помилка симуляції даних сенсорів",
+    "watchdogNote": "Watchdog-тригер виявить ці значення та надішле сповіщення в Telegram"
   }
 }

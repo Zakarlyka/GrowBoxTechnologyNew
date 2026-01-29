@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,13 +12,14 @@ interface DemoSimulationPanelProps {
 }
 
 export function DemoSimulationPanel({ deviceId }: DemoSimulationPanelProps) {
+  const { t } = useTranslation();
   const [isSending, setIsSending] = useState<string | null>(null);
 
   const simulateSensor = async (
-    label: string,
+    id: string,
     data: { temperature?: number; humidity?: number; soil_moisture?: number }
   ) => {
-    setIsSending(label);
+    setIsSending(id);
     
     try {
       const { error } = await supabase
@@ -32,12 +34,12 @@ export function DemoSimulationPanel({ deviceId }: DemoSimulationPanelProps) {
 
       if (error) throw error;
 
-      toast.success(`⚡ Симуляція: ${label}`, {
-        description: 'Дані відправлено. Перевірте сповіщення в Telegram!'
+      toast.success(t('demoSimulation.success'), {
+        description: t('demoSimulation.watchdogNote')
       });
     } catch (error: any) {
       console.error('Simulation error:', error);
-      toast.error('Помилка симуляції', { description: error.message });
+      toast.error(t('demoSimulation.error'), { description: error.message });
     } finally {
       setIsSending(null);
     }
@@ -46,28 +48,28 @@ export function DemoSimulationPanel({ deviceId }: DemoSimulationPanelProps) {
   const simulations = [
     {
       id: 'critical_temp',
-      label: '🔥 Критична температура (45°C)',
+      labelKey: 'demoSimulation.criticalTemp',
       icon: Flame,
       data: { temperature: 45, humidity: 30 },
       color: 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
     },
     {
       id: 'freezing',
-      label: '❄️ Заморозки (5°C)',
+      labelKey: 'demoSimulation.freezing',
       icon: Snowflake,
       data: { temperature: 5, humidity: 80 },
       color: 'bg-blue-500 hover:bg-blue-600 text-white'
     },
     {
       id: 'dry_soil',
-      label: '💧 Сухий ґрунт (10%)',
+      labelKey: 'demoSimulation.drySoil',
       icon: Droplets,
       data: { temperature: 24, humidity: 50, soil_moisture: 10 },
       color: 'bg-warning hover:bg-warning/90 text-warning-foreground'
     },
     {
       id: 'normal',
-      label: '✅ Норма (24°C, 60%)',
+      labelKey: 'demoSimulation.resetNormal',
       icon: CheckCircle,
       data: { temperature: 24, humidity: 60, soil_moisture: 60 },
       color: 'bg-success hover:bg-success/90 text-success-foreground'
@@ -79,7 +81,7 @@ export function DemoSimulationPanel({ deviceId }: DemoSimulationPanelProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Zap className="w-5 h-5 text-warning" />
-          ⚡ Панель Симуляції Сенсорів
+          {t('demoSimulation.title')}
           <Badge variant="outline" className="ml-auto border-warning text-warning">
             Demo Mode
           </Badge>
@@ -87,8 +89,7 @@ export function DemoSimulationPanel({ deviceId }: DemoSimulationPanelProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Натисніть кнопку, щоб згенерувати тестові дані сенсорів. 
-          Якщо порогові значення перевищено, ви отримаєте сповіщення в Telegram.
+          {t('demoSimulation.description')}
         </p>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -96,19 +97,19 @@ export function DemoSimulationPanel({ deviceId }: DemoSimulationPanelProps) {
             <Button
               key={sim.id}
               className={`h-auto py-3 px-4 flex items-center gap-2 justify-start ${sim.color}`}
-              onClick={() => simulateSensor(sim.label, sim.data)}
+              onClick={() => simulateSensor(sim.id, sim.data)}
               disabled={isSending !== null}
             >
               <sim.icon className="w-5 h-5 shrink-0" />
               <span className="text-left text-sm">
-                {isSending === sim.label ? 'Відправка...' : sim.label}
+                {isSending === sim.id ? t('demoSimulation.simulating') : t(sim.labelKey)}
               </span>
             </Button>
           ))}
         </div>
         
         <p className="text-xs text-muted-foreground pt-2 border-t border-border/50">
-          💡 Переконайтесь, що Telegram підключено в налаштуваннях акаунту та встановлено порогові значення.
+          💡 {t('demoSimulation.watchdogNote')}
         </p>
       </CardContent>
     </Card>

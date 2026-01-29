@@ -6,9 +6,11 @@
     "remoteControl": "Удалённое управление",
     "analytics": "Аналитика",
     "settings": "Настройки",
+    "adminSettings": "Системные Настройки",
     "library": "Библиотека",
     "laboratory": "Лаборатория",
     "admin": "Админ-панель",
+    "myAccount": "Мой Аккаунт",
     "logout": "Выйти"
   },
   "laboratory": {
@@ -43,7 +45,12 @@
     "deviceStatus": "Статус устройств",
     "noDevices": "Нет устройств",
     "noDevicesDescription": "Добавьте своё первое устройство для мониторинга",
-    "loadingDevices": "Загрузка устройств..."
+    "loadingDevices": "Загрузка устройств...",
+    "selectDevice": "Выберите устройство",
+    "lastOnline": "Последняя активность",
+    "noData": "Нет данных",
+    "goToDevices": "Перейти к устройствам",
+    "unknown": "Неизвестно"
   },
   "devices": {
     "title": "Мои устройства",
@@ -78,7 +85,11 @@
     "showQr": "Показать QR / Переподключить",
     "manage": "Управлять",
     "selectDevice": "Выберите устройство",
-    "selectDeviceDescription": "Выберите устройство из списка для просмотра и управления"
+    "selectDeviceDescription": "Выберите устройство из списка для просмотра и управления",
+    "demoGrowbox": "🛠️ Demo Growbox",
+    "createDemoDevice": "Создать Demo Growbox",
+    "demoCreated": "Demo Growbox создан",
+    "demoError": "Ошибка создания demo устройства"
   },
   "controls": {
     "lighting": "Освещение",
@@ -180,7 +191,7 @@
     "error": "Ошибка"
   },
   "units": {
-    "sec": "sec",
+    "sec": "сек",
     "percent": "%"
   },
   "auth": {
@@ -258,7 +269,10 @@
     "qrDescription": "Используйте этот QR-код для повторного подключения устройства к сети",
     "deviceId": "ID устройства",
     "clickLinkAfterWifi": "Нажмите на ссылку после подключения к Wi-Fi сети GrowBox-Setup",
-    "orScanQr": "Или отсканируйте QR-код камерой телефона"
+    "orScanQr": "Или отсканируйте QR-код камерой телефона",
+    "deleteTitle": "Удалить устройство?",
+    "deleteDescription": "Это действие нельзя отменить. Устройство \"{name}\" будет удалено навсегда.",
+    "connectToWifi": "Подключитесь к Wi-Fi сети GrowBox-Setup, затем отсканируйте QR"
   },
   "help": {
     "hysteresis": "Допустимое отклонение. Например, 2°C означает, что при цели 20°C обогрев включится при 18°C.",
@@ -274,6 +288,7 @@
     "navLibrary": "База знаний. Энциклопедия сортов, статьи о выращивании и настройки паспортов растений.",
     "navAdmin": "Административная панель для управления пользователями и настройками системы.",
     "navSettings": "Ваш профиль, настройки уведомлений и параметры аккаунта.",
+    "navAccount": "Личный кабинет: профиль, подписка, уведомления и настройки.",
     "connectionStatus": "Статус подключения устройства к серверу.",
     "deleteDevice": "Необратимое удаление устройства из вашего аккаунта.",
     "climateCard": "Блок настройки температуры и влажности.",
@@ -322,5 +337,46 @@
     "masterPlant": "Master Plant",
     "vpd": "VPD",
     "agroHogwards": "Agro Hogwards"
+  },
+  "plants": {
+    "title": "Растения",
+    "addPlant": "Добавить растение",
+    "noPlants": "Нет растений в этом гроубоксе",
+    "noActivePlants": "Нет активных растений",
+    "clickToAdd": "Нажмите, чтобы добавить первое растение",
+    "lifecycle": "Жизненный цикл",
+    "overdue": "Просрочено",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "inDays": "Через {{days}}д",
+    "noStrain": "Нет сорта",
+    "dataMissing": "Данные отсутствуют",
+    "climateConflict": "Конфликт климата",
+    "masterUpdated": "Master Plant обновлён для этого устройства",
+    "masterUpdateFailed": "Не удалось обновить Master Plant",
+    "setAsMaster": "Установить как Master Plant",
+    "editPlant": "Редактировать растение",
+    "plantDetails": "Детали растения",
+    "unnamedPlant": "Без названия"
+  },
+  "stages": {
+    "seedling": "Всходы",
+    "vegetation": "Вегетация",
+    "flowering": "Цветение",
+    "flushing": "Промывка",
+    "drying": "Сушка",
+    "harvested": "Собрано"
+  },
+  "demoSimulation": {
+    "title": "⚡ Симуляция Сенсоров",
+    "description": "Тестируйте Telegram-уведомления симулируя значения сенсоров",
+    "criticalTemp": "🔥 Критич. Темп. (45°C)",
+    "freezing": "❄️ Заморозки (5°C)",
+    "drySoil": "💧 Сухая Почва (10%)",
+    "resetNormal": "✅ Вернуть Норму",
+    "simulating": "Симуляция...",
+    "success": "Данные сенсоров симулированы",
+    "error": "Ошибка симуляции данных сенсоров",
+    "watchdogNote": "Watchdog-триггер обнаружит эти значения и отправит уведомление в Telegram"
   }
 }
