@@ -71,14 +71,14 @@ export function Devices() {
         console.warn('Failed to create mock plant:', plantError);
       }
 
-      toast.success('🛠️ Demo Growbox створено!', {
-        description: 'Використовуйте панель симуляції для тестування сповіщень'
+      toast.success(t('devices.demoCreated'), {
+        description: t('demoSimulation.watchdogNote')
       });
 
       fetchDevices();
     } catch (error: any) {
       console.error('Demo device creation error:', error);
-      toast.error('Помилка створення Demo пристрою', {
+      toast.error(t('devices.demoError'), {
         description: error.message
       });
     } finally {
@@ -118,7 +118,7 @@ export function Devices() {
         <div className="flex gap-2 flex-wrap">
           {/* Demo Device Button */}
           {!hasDemoDevice && (
-            <SmartHelp content="Створіть тестовий пристрій для перевірки сповіщень Telegram" isText={false}>
+            <SmartHelp content={t('demoSimulation.description')} isText={false}>
               <Button 
                 variant="outline" 
                 className="min-h-[44px] border-warning/50 text-warning hover:bg-warning/10"
@@ -126,7 +126,7 @@ export function Devices() {
                 disabled={isCreatingDemo}
               >
                 <Beaker className="mr-2 h-4 w-4" />
-                {isCreatingDemo ? 'Створення...' : '🛠️ Demo Growbox'}
+                {isCreatingDemo ? t('demoSimulation.simulating') : t('devices.demoGrowbox')}
               </Button>
             </SmartHelp>
           )}

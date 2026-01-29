@@ -151,10 +151,10 @@ export const ActiveGrowsSection = () => {
       queryClient.invalidateQueries({ queryKey: ['plants-with-strains'] });
       queryClient.invalidateQueries({ queryKey: ['main-plant'] });
       queryClient.invalidateQueries({ queryKey: ['master-plants'] });
-      toast.success('Master plant updated for this device');
+      toast.success(t('plants.masterUpdated'));
     },
     onError: () => {
-      toast.error('Failed to update master plant');
+      toast.error(t('plants.masterUpdateFailed'));
     },
   });
 
@@ -208,10 +208,10 @@ export const ActiveGrowsSection = () => {
           <CardContent className="flex flex-col items-center justify-center py-6 md:py-8 text-center">
             <Plus className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/50 mb-2 md:mb-3" />
             <p className="text-sm md:text-base text-muted-foreground">
-              {selectedDeviceStringId ? 'Немає рослин в цьому гроубоксі' : 'Немає активних рослин'}
+              {selectedDeviceStringId ? t('plants.noPlants') : t('plants.noActivePlants')}
             </p>
             <p className="text-xs md:text-sm text-muted-foreground/70">
-              Натисніть, щоб додати першу рослину
+              {t('plants.clickToAdd')}
             </p>
           </CardContent>
         </Card>
@@ -287,7 +287,7 @@ export const ActiveGrowsSection = () => {
                   <Crown className="h-4 w-4 text-amber-500 shrink-0" />
                 )}
                 <h4 className="font-bold text-base md:text-lg text-foreground truncate leading-tight">
-                  {plant.custom_name || 'Unnamed Plant'}
+                  {plant.custom_name || t('plants.unnamedPlant')}
                 </h4>
               </div>
               {plant.strain_name && (
@@ -312,7 +312,7 @@ export const ActiveGrowsSection = () => {
             </span>
             {smartStageInfo.isOverdue && (
               <Badge variant="destructive" className="text-[9px] px-1 py-0">
-                Overdue
+                {t('plants.overdue')}
               </Badge>
             )}
           </div>
@@ -328,7 +328,7 @@ export const ActiveGrowsSection = () => {
           {hasMissingData && (
             <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 mb-2">
               <AlertTriangle className="h-3.5 w-3.5 text-yellow-400" />
-              <span className="text-xs text-yellow-300">⚠️ {!plant.strain_id ? 'Немає сорту' : 'Дані відсутні'}</span>
+              <span className="text-xs text-yellow-300">⚠️ {!plant.strain_id ? t('plants.noStrain') : t('plants.dataMissing')}</span>
             </div>
           )}
 
@@ -336,7 +336,7 @@ export const ActiveGrowsSection = () => {
           {isConflict && !isMaster && !hasMissingData && (
             <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-red-500/10 border border-red-500/20 mb-2">
               <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
-              <span className="text-xs text-red-300">⚠️ Climate Conflict</span>
+              <span className="text-xs text-red-300">⚠️ {t('plants.climateConflict')}</span>
             </div>
           )}
 
@@ -349,7 +349,7 @@ export const ActiveGrowsSection = () => {
                 e.stopPropagation();
                 setEditingPlant(plant);
               }}
-              title="Edit Plant"
+              title={t('plants.editPlant')}
             >
               <Pencil className="h-3.5 w-3.5 text-primary" />
             </button>
@@ -362,7 +362,7 @@ export const ActiveGrowsSection = () => {
                   e.stopPropagation();
                   setMasterMutation.mutate(plant.id);
                 }}
-                title="Set as Master Plant"
+                title={t('plants.setAsMaster')}
               >
                 <Crown className="h-3.5 w-3.5 text-amber-500" />
               </button>
@@ -376,9 +376,9 @@ export const ActiveGrowsSection = () => {
           {progress && (
             <div className="space-y-1 md:space-y-1.5 mb-2 md:mb-3">
               <div className="flex justify-between text-[10px] md:text-xs">
-                <span className="text-muted-foreground">Lifecycle</span>
+                <span className="text-muted-foreground">{t('plants.lifecycle')}</span>
                 <span className="font-bold text-foreground">
-                  Day {Math.min(progress.currentDay, progress.totalDays)} / {progress.totalDays}
+                  {t('growHistory.day')} {Math.min(progress.currentDay, progress.totalDays)} / {progress.totalDays}
                   {progress.currentDay > progress.totalDays && ' ✓'}
                 </span>
               </div>
@@ -397,9 +397,9 @@ export const ActiveGrowsSection = () => {
               <Bell className="h-3 w-3 md:h-3.5 md:w-3.5 text-amber-400 shrink-0" />
               <span className="text-amber-200 truncate">
                 <span className="font-semibold">
-                  {nextAlert.daysUntil === 0 ? '🔔 Today' : 
-                   nextAlert.daysUntil === 1 ? '📅 Tomorrow' : 
-                   `⏰ In ${nextAlert.daysUntil}d`}:
+                  {nextAlert.daysUntil === 0 ? `🔔 ${t('plants.today')}` : 
+                   nextAlert.daysUntil === 1 ? `📅 ${t('plants.tomorrow')}` : 
+                   `⏰ ${t('plants.inDays', { days: nextAlert.daysUntil })}`}:
                 </span>{' '}
                 {nextAlert.message}
               </span>
@@ -438,7 +438,7 @@ export const ActiveGrowsSection = () => {
             <div className="p-4 rounded-full bg-primary/10 mb-3">
               <Plus className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Додати рослину</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('plants.addPlant')}</p>
           </CardContent>
         </Card>
         
