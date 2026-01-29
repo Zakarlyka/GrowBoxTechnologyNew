@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +28,7 @@ interface Profile {
 
 export default function Account() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, role, signOut, loading: authLoading } = useAuth();
@@ -38,7 +39,26 @@ export default function Account() {
   const [updating, setUpdating] = useState(false);
   const [fullName, setFullName] = useState('');
   const [units, setUnits] = useState<'metric' | 'imperial'>('metric');
-  const [activeTab, setActiveTab] = useState('profile');
+  
+  // Read tab from URL params, default to 'profile'
+  const tabFromUrl = searchParams.get('tab');
+  const validTabs = ['profile', 'billing', 'notifications', 'preferences'];
+  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : 'profile';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sync tab with URL
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value });
+  };
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && validTabs.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -271,7 +291,7 @@ export default function Account() {
           Мій Акаунт
         </h1>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-4 max-w-2xl mb-6">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
