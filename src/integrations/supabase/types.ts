@@ -460,6 +460,8 @@ export type Database = {
           humidity_min: number | null
           id: string
           push_enabled: boolean | null
+          telegram_chat_id: string | null
+          telegram_enabled: boolean | null
           temperature_max: number | null
           temperature_min: number | null
           updated_at: string | null
@@ -472,6 +474,8 @@ export type Database = {
           humidity_min?: number | null
           id?: string
           push_enabled?: boolean | null
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean | null
           temperature_max?: number | null
           temperature_min?: number | null
           updated_at?: string | null
@@ -484,6 +488,8 @@ export type Database = {
           humidity_min?: number | null
           id?: string
           push_enabled?: boolean | null
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean | null
           temperature_max?: number | null
           temperature_min?: number | null
           updated_at?: string | null
