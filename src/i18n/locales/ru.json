@@ -127,7 +127,13 @@
     "saving": "Сохранение...",
     "watering": "Полив...",
     "wateringSeconds": "сек",
-    "advancedSettings": "Расширенные настройки"
+    "advancedSettings": "Расширенные настройки",
+    "aiModeActive": "Активный",
+    "aiLoadingProfile": "Загрузка профиля растения...",
+    "aiNoMasterPlant": "Не найдено Master Plant для AI",
+    "aiEnableDescription": "Включите для автоматического управления",
+    "aiAccessBlocked": "AI доступ заблокирован. Обратитесь к Администратору.",
+    "contactAdmin": "Обратитесь к Администратору для активации AI"
   },
   "sensorTooltips": {
     "temperature": "Текущая температура воздуха в боксе.",
@@ -212,7 +218,9 @@
     "account": "Аккаунт",
     "devices": "Устройства",
     "cabinet": "Кабинет",
-    "manageDevicesAndProfile": "Управляйте своими устройствами и профилем"
+    "manageDevicesAndProfile": "Управляйте своими устройствами и профилем",
+    "helpModeOn": "Режим Обучения: ON — Выключить",
+    "helpModeOff": "Включить Режим Обучения"
   },
   "common": {
     "save": "Сохранить",
@@ -378,5 +386,66 @@
     "success": "Данные сенсоров симулированы",
     "error": "Ошибка симуляции данных сенсоров",
     "watchdogNote": "Watchdog-триггер обнаружит эти значения и отправит уведомление в Telegram"
+  },
+  "library": {
+    "title": "Библиотека",
+    "subtitle": "Сорта и база знаний",
+    "global": "Глобальная",
+    "myStrains": "Мои сорта",
+    "knowledgeBase": "База знаний",
+    "growThisStrain": "Выращивать этот сорт",
+    "addStrain": "Добавить сорт",
+    "searchPlaceholder": "Поиск по названию или бридеру...",
+    "noStrainsFound": "Сортов не найдено",
+    "emptyLibrary": "Библиотека сортов пуста",
+    "deleteStrain": "Удалить сорт?",
+    "deleteStrainConfirm": "Вы уверены, что хотите удалить \"{name}\"? Это действие нельзя отменить.",
+    "strainDeleted": "Сорт \"{name}\" удалён",
+    "private": "Приватный",
+    "days": "дней",
+    "articles": "статей",
+    "article": "статья",
+    "categories": "Категории",
+    "recentArticles": "Новые статьи",
+    "searchResults": "Результаты поиска",
+    "searchArticles": "Поиск статей...",
+    "noArticlesInCategory": "В этой категории пока нет статей",
+    "nothingFound": "Ничего не найдено по запросу \"{query}\"",
+    "back": "Назад",
+    "germination": "Проращивание",
+    "vegetation": "Вегетация",
+    "flowering": "Цветение",
+    "troubleshooting": "Решение проблем",
+    "nutrients": "Питание"
+  },
+  "strainDetails": {
+    "morphology": "Морфология",
+    "stretchRatio": "Коэф. Растяжения",
+    "budDensity": "Плотность Шишек",
+    "odorIntensity": "Интенсивность Запаха",
+    "resistance": "Устойчивость",
+    "timeline": "Таймлайн",
+    "environment": "Среда",
+    "aiWatchdog": "AI Watchdog",
+    "wiki": "Вики",
+    "resistanceMatrix": "Матрица Устойчивости",
+    "highStretch": "Высокий стретч",
+    "moderate": "Умеренный",
+    "lowStretch": "Низкий стретч",
+    "morphologyNotAvailable": "Данные морфологии недоступны",
+    "indoor": "Indoor",
+    "mold": "Плесень",
+    "pests": "Вредители",
+    "cold": "Холод",
+    "heat": "Жара",
+    "drought": "Засуха",
+    "stageStart": "Начало"
+  },
+  "admin": {
+    "title": "Админ-панель",
+    "users": "Пользователи",
+    "strains": "Сорта",
+    "articles": "Статьи",
+    "system": "Система"
   }
 }

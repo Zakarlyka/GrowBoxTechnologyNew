@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Leaf, Clock, Thermometer, Droplets, Sun, FlaskConical, 
   Dna, TrendingUp, AlertTriangle, Ruler, Activity, Zap,
@@ -117,6 +118,7 @@ export function StrainDetailsDialog({
   strain,
   onGrowThis,
 }: StrainDetailsDialogProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('resistance');
 
   // ========== DATA EXTRACTION (before any early returns) ==========
@@ -143,13 +145,13 @@ export function StrainDetailsDialog({
   const radarData = useMemo(() => {
     if (!resistanceRating) return [];
     return [
-      { subject: 'Mold', value: resistanceRating.mold || 0, fullMark: 5 },
-      { subject: 'Pests', value: resistanceRating.pests || 0, fullMark: 5 },
-      { subject: 'Cold', value: resistanceRating.cold || 0, fullMark: 5 },
-      { subject: 'Heat', value: resistanceRating.heat || 0, fullMark: 5 },
-      { subject: 'Drought', value: resistanceRating.drought || 0, fullMark: 5 },
+      { subject: t('strainDetails.mold'), value: resistanceRating.mold || 0, fullMark: 5 },
+      { subject: t('strainDetails.pests'), value: resistanceRating.pests || 0, fullMark: 5 },
+      { subject: t('strainDetails.cold'), value: resistanceRating.cold || 0, fullMark: 5 },
+      { subject: t('strainDetails.heat'), value: resistanceRating.heat || 0, fullMark: 5 },
+      { subject: t('strainDetails.drought'), value: resistanceRating.drought || 0, fullMark: 5 },
     ].filter(item => item.value > 0);
-  }, [resistanceRating]);
+  }, [resistanceRating, t]);
 
   // Build Smart Timeline - combine stages with alerts
   const smartTimeline = useMemo(() => {
@@ -316,7 +318,7 @@ export function StrainDetailsDialog({
               <CardHeader className="py-3 px-4">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                   <Gauge className="h-4 w-4 text-cyan-400" />
-                  📊 Морфологія
+                  📊 {t('strainDetails.morphology')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
@@ -326,14 +328,14 @@ export function StrainDetailsDialog({
                     <div className="p-3 rounded-lg bg-background/50 border border-border/50">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="h-4 w-4 text-green-400" />
-                        <span className="text-xs text-muted-foreground">Stretch Ratio</span>
+                        <span className="text-xs text-muted-foreground">{t('strainDetails.stretchRatio')}</span>
                       </div>
                       <div className="text-2xl font-bold text-green-400">
                         x{morphology.stretch_ratio || 'N/A'}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {morphology.stretch_ratio >= 2.5 ? 'High stretch' : 
-                         morphology.stretch_ratio >= 1.5 ? 'Moderate' : 'Low stretch'}
+                        {morphology.stretch_ratio >= 2.5 ? t('strainDetails.highStretch') : 
+                         morphology.stretch_ratio >= 1.5 ? t('strainDetails.moderate') : t('strainDetails.lowStretch')}
                       </p>
                     </div>
                     
@@ -341,7 +343,7 @@ export function StrainDetailsDialog({
                     <div className="p-3 rounded-lg bg-background/50 border border-border/50">
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="h-4 w-4 text-purple-400" />
-                        <span className="text-xs text-muted-foreground">Bud Density</span>
+                        <span className="text-xs text-muted-foreground">{t('strainDetails.budDensity')}</span>
                       </div>
                       <div className="text-lg font-bold text-purple-400 capitalize">
                         {morphology.bud_density || 'N/A'}
@@ -352,7 +354,7 @@ export function StrainDetailsDialog({
                     <div className="p-3 rounded-lg bg-background/50 border border-border/50">
                       <div className="flex items-center gap-2 mb-2">
                         <Wind className="h-4 w-4 text-pink-400" />
-                        <span className="text-xs text-muted-foreground">Odor Intensity</span>
+                        <span className="text-xs text-muted-foreground">{t('strainDetails.odorIntensity')}</span>
                       </div>
                       {morphology.odor_intensity !== undefined ? (
                         <IntensityBar value={morphology.odor_intensity} max={10} color="purple" />
@@ -364,7 +366,7 @@ export function StrainDetailsDialog({
                 ) : (
                   <div className="text-center py-4 text-muted-foreground">
                     <Gauge className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">Morphology data not available</p>
+                    <p className="text-sm">{t('strainDetails.morphologyNotAvailable')}</p>
                   </div>
                 )}
 
@@ -398,23 +400,23 @@ export function StrainDetailsDialog({
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="resistance" className="gap-1 text-xs">
               <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Resistance</span>
+              <span className="hidden sm:inline">{t('strainDetails.resistance')}</span>
             </TabsTrigger>
             <TabsTrigger value="timeline" className="gap-1 text-xs">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Timeline</span>
+              <span className="hidden sm:inline">{t('strainDetails.timeline')}</span>
             </TabsTrigger>
             <TabsTrigger value="environment" className="gap-1 text-xs">
               <Thermometer className="h-4 w-4" />
-              <span className="hidden sm:inline">Environment</span>
+              <span className="hidden sm:inline">{t('strainDetails.environment')}</span>
             </TabsTrigger>
             <TabsTrigger value="watchdog" className="gap-1 text-xs">
               <Cpu className="h-4 w-4" />
-              <span className="hidden sm:inline">AI Watchdog</span>
+              <span className="hidden sm:inline">{t('strainDetails.aiWatchdog')}</span>
             </TabsTrigger>
             <TabsTrigger value="wiki" className="gap-1 text-xs">
               <GraduationCap className="h-4 w-4" />
-              <span className="hidden sm:inline">Wiki</span>
+              <span className="hidden sm:inline">{t('strainDetails.wiki')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -426,7 +428,7 @@ export function StrainDetailsDialog({
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Shield className="h-4 w-4 text-green-400" />
-                    🛡️ Resistance Matrix
+                    🛡️ {t('strainDetails.resistanceMatrix')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-4 pt-0">

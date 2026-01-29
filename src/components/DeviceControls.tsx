@@ -173,7 +173,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   // Toggle global AI mode - requires admin permission
   const toggleAiMode = (newMode: boolean) => {
     if (!isAiAllowed) {
-      toast.error("AI доступ заблокований. Зверніться до Адміністратора.");
+      toast.error(t('controls.aiAccessBlocked'));
       return;
     }
     setAiMode(newMode ? 1 : 0);
@@ -266,7 +266,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   {isAiActive && (
                     <Badge className="bg-yellow-500 text-black text-xs">
                       <Sparkles className="w-3 h-3 mr-1" />
-                      Активний
+                      {t('controls.aiModeActive')}
                     </Badge>
                   )}
                 </div>
@@ -285,12 +285,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     )}
                   </div>
                 ) : isAiActive && aiLoading ? (
-                  <p className="text-sm text-muted-foreground">Завантаження профілю рослини...</p>
+                  <p className="text-sm text-muted-foreground">{t('controls.aiLoadingProfile')}</p>
                 ) : isAiActive && !masterPlant ? (
-                  <p className="text-sm text-amber-500">⚠️ Не знайдено Master Plant для AI</p>
+                  <p className="text-sm text-amber-500">⚠️ {t('controls.aiNoMasterPlant')}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Увімкніть для автоматичного керування
+                    {t('controls.aiEnableDescription')}
                   </p>
                 )}
               </div>
@@ -315,7 +315,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </TooltipTrigger>
                 {!isAiAllowed && (
                   <TooltipContent side="left">
-                    <p>🔒 Зверніться до Адміністратора для активації AI</p>
+                    <p>🔒 {t('controls.contactAdmin')}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
