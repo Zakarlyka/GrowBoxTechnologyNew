@@ -12,6 +12,7 @@ import { SmartTooltip } from "@/components/ui/smart-tooltip";
 import { SmartHelp } from "@/components/ui/smart-help";
 import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
+import { useRelayStatus } from "@/hooks/useRelayStatus";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoPilot } from "@/hooks/useAutoPilot";
 import { DemoSimulationPanel } from "@/components/DemoSimulationPanel";
@@ -25,6 +26,7 @@ interface DeviceControlsProps {
 export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const { t } = useTranslation();
   const { settings, sensorData, lastSeenAt, deviceName, deviceType, deviceUuid, loading, isSaving, saveSettings, refetch } = useDeviceControls(deviceId);
+  const { relayStatus } = useRelayStatus(deviceId);
   const { profile } = useAuth();
 
   // Check if this is a demo device
@@ -329,49 +331,55 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card A: Lighting 💡 */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
-            <SmartHelp content={t('help.lightingCard')}>
-              <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                <Lightbulb className="w-5 h-5" />
-                {t('controls.lighting')}
-              </CardTitle>
-            </SmartHelp>
+            <div className="flex items-center justify-between">
+              <SmartHelp content={t('help.lightingCard')}>
+                <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                  <Lightbulb className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    relayStatus?.light === 1 
+                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      : "text-muted-foreground"
+                  )} />
+                  {t('controls.lighting')}
+                  {relayStatus?.light === 1 && (
+                    <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">
+                      {t('controls.active')}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </SmartHelp>
+              {/* Mode Toggle Switch */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">
+                        {lightMode === 1 ? t('controls.auto') : t('controls.off')}
+                      </span>
+                      <Switch
+                        checked={lightMode === 1}
+                        onCheckedChange={(checked) => {
+                          setLightMode(checked ? 1 : 0);
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                        className={cn(
+                          "data-[state=checked]:bg-primary",
+                          isAiActive && "opacity-50"
+                        )}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{lightMode === 1 ? t('controls.autoSchedule') : t('controls.systemDisabled')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {/* Button Group: OFF | ON */}
-            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
-              <SmartHelp content={t('help.lightSwitch')} isText={false}>
-                <Button
-                  variant={lightMode === 0 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all h-10", lightMode === 0 && "bg-destructive text-destructive-foreground")}
-                  onClick={() => {
-                    setLightMode(0);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive}
-                >
-                  {t('controls.off')}
-                </Button>
-              </SmartHelp>
-              <SmartHelp content={t('help.lightSwitch')} isText={false}>
-                <Button
-                  variant={lightMode === 1 ? "default" : "outline"}
-                  className={cn(
-                    "flex-1 transition-all h-10",
-                    lightMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
-                  )}
-                  onClick={() => {
-                    setLightMode(1);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive}
-                >
-                  {t('controls.on')}
-                </Button>
-              </SmartHelp>
-            </div>
-
             {/* Time Inputs - Main content area (grows to fill) */}
-            <div className="flex-1 space-y-4 pt-2 border-t border-border/30">
+            <div className="flex-1 space-y-4">
               {(lightMode === 1 || isAiActive) && (
                 <>
                   {/* Group 1: Start Time */}
@@ -503,46 +511,53 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card B: Climate Control 🌡️ */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
-            <SmartHelp content={t('help.climateCard')}>
-              <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                <Thermometer className="w-5 h-5" />
-                {t('controls.climate')}
-              </CardTitle>
-            </SmartHelp>
+            <div className="flex items-center justify-between">
+              <SmartHelp content={t('help.climateCard')}>
+                <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                  <Thermometer className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    relayStatus?.clim === 1 
+                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      : "text-muted-foreground"
+                  )} />
+                  {t('controls.climate')}
+                  {relayStatus?.clim === 1 && (
+                    <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">
+                      {t('controls.active')}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </SmartHelp>
+              {/* Mode Toggle Switch */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">
+                        {climateMode === 1 ? t('controls.on') : t('controls.off')}
+                      </span>
+                      <Switch
+                        checked={climateMode === 1}
+                        onCheckedChange={(checked) => {
+                          setClimateMode(checked ? 1 : 0);
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                        className={cn(
+                          "data-[state=checked]:bg-primary",
+                          isAiActive && "opacity-50"
+                        )}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{climateMode === 1 ? t('controls.systemEnabled') : t('controls.systemDisabled')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {/* Button Group: OFF | ON */}
-            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
-              <SmartHelp content={t('help.climateSwitch')} isText={false}>
-                <Button
-                  variant={climateMode === 0 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all h-10", climateMode === 0 && "bg-destructive text-destructive-foreground")}
-                  onClick={() => {
-                    setClimateMode(0);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive}
-                >
-                  {t('controls.off')}
-                </Button>
-              </SmartHelp>
-              <SmartHelp content={t('help.climateSwitch')} isText={false}>
-                <Button
-                  variant={climateMode === 1 ? "default" : "outline"}
-                  className={cn(
-                    "flex-1 transition-all h-10",
-                    climateMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
-                  )}
-                  onClick={() => {
-                    setClimateMode(1);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive}
-                >
-                  {t('controls.on')}
-                </Button>
-              </SmartHelp>
-            </div>
 
             {/* Seasonal Toggle */}
             <div className="flex gap-2 pt-2 border-t border-border/30">
@@ -729,46 +744,53 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card C: Irrigation 💧 */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
-            <SmartHelp content={t('help.irrigationCard')}>
-              <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                <Droplets className="w-5 h-5" />
-                {t('controls.irrigation')}
-              </CardTitle>
-            </SmartHelp>
+            <div className="flex items-center justify-between">
+              <SmartHelp content={t('help.irrigationCard')}>
+                <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                  <Droplets className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    relayStatus?.pump === 1 
+                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      : "text-muted-foreground"
+                  )} />
+                  {t('controls.irrigation')}
+                  {relayStatus?.pump === 1 && (
+                    <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">
+                      {t('controls.active')}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </SmartHelp>
+              {/* Mode Toggle Switch - Note: For pump, 0=Auto, 2=Off */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">
+                        {pumpMode === 0 ? t('controls.auto') : t('controls.off')}
+                      </span>
+                      <Switch
+                        checked={pumpMode === 0}
+                        onCheckedChange={(checked) => {
+                          setPumpMode(checked ? 0 : 2);
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive || isWatering}
+                        className={cn(
+                          "data-[state=checked]:bg-primary",
+                          (isAiActive || isWatering) && "opacity-50"
+                        )}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{pumpMode === 0 ? t('controls.autoMode') : t('controls.manualOff')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {/* Button Group: OFF | ON */}
-            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
-              <SmartHelp content={t('help.irrigationSwitch')} isText={false}>
-                <Button
-                  variant={pumpMode === 2 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all h-10", pumpMode === 2 && "bg-destructive text-destructive-foreground")}
-                  onClick={() => {
-                    setPumpMode(2);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive || isWatering}
-                >
-                  {t('controls.off')}
-                </Button>
-              </SmartHelp>
-              <SmartHelp content={t('help.irrigationSwitch')} isText={false}>
-                <Button
-                  variant={pumpMode === 0 ? "default" : "outline"}
-                  className={cn(
-                    "flex-1 transition-all h-10",
-                    pumpMode === 0 && "bg-green-600 hover:bg-green-700 text-white",
-                  )}
-                  onClick={() => {
-                    setPumpMode(0);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive || isWatering}
-                >
-                  {t('controls.on')}
-                </Button>
-              </SmartHelp>
-            </div>
 
             {/* Separator between toggle and Water Now */}
             <div className="border-t border-border/30 my-2" />
@@ -857,46 +879,53 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card D: Ventilation 💨 */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
-            <SmartHelp content={t('help.ventilationCard')}>
-              <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                <Wind className="w-5 h-5" />
-                {t('controls.ventilation')}
-              </CardTitle>
-            </SmartHelp>
+            <div className="flex items-center justify-between">
+              <SmartHelp content={t('help.ventilationCard')}>
+                <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                  <Wind className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    relayStatus?.vent === 1 
+                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      : "text-muted-foreground"
+                  )} />
+                  {t('controls.ventilation')}
+                  {relayStatus?.vent === 1 && (
+                    <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">
+                      {t('controls.active')}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </SmartHelp>
+              {/* Mode Toggle Switch */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">
+                        {ventMode === 1 ? t('controls.auto') : t('controls.off')}
+                      </span>
+                      <Switch
+                        checked={ventMode === 1}
+                        onCheckedChange={(checked) => {
+                          setVentMode(checked ? 1 : 0);
+                          setHasChanges(true);
+                        }}
+                        disabled={isAiActive}
+                        className={cn(
+                          "data-[state=checked]:bg-primary",
+                          isAiActive && "opacity-50"
+                        )}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{ventMode === 1 ? t('controls.autoMode') : t('controls.systemDisabled')}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {/* Button Group: OFF | ON */}
-            <div className={cn("flex gap-2", isAiActive && "opacity-50 pointer-events-none")}>
-              <SmartHelp content={t('help.ventSwitch')} isText={false}>
-                <Button
-                  variant={ventMode === 0 ? "destructive" : "outline"}
-                  className={cn("flex-1 transition-all h-10", ventMode === 0 && "bg-destructive text-destructive-foreground")}
-                  onClick={() => {
-                    setVentMode(0);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive}
-                >
-                  {t('controls.off')}
-                </Button>
-              </SmartHelp>
-              <SmartHelp content={t('help.ventSwitch')} isText={false}>
-                <Button
-                  variant={ventMode === 1 ? "default" : "outline"}
-                  className={cn(
-                    "flex-1 transition-all h-10",
-                    ventMode === 1 && "bg-green-600 hover:bg-green-700 text-white",
-                  )}
-                  onClick={() => {
-                    setVentMode(1);
-                    setHasChanges(true);
-                  }}
-                  disabled={isAiActive}
-                >
-                  {t('controls.on')}
-                </Button>
-              </SmartHelp>
-            </div>
 
             {/* Ventilation Inputs - Main content area (grows to fill) */}
             <div className="flex-1 space-y-3 pt-2 border-t border-border/30">

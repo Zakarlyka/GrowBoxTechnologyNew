@@ -133,7 +133,13 @@
     "aiNoMasterPlant": "Не найдено Master Plant для AI",
     "aiEnableDescription": "Включите для автоматического управления",
     "aiAccessBlocked": "AI доступ заблокирован. Обратитесь к Администратору.",
-    "contactAdmin": "Обратитесь к Администратору для активации AI"
+    "contactAdmin": "Обратитесь к Администратору для активации AI",
+    "active": "Работает",
+    "autoSchedule": "Авто расписание активно",
+    "systemEnabled": "Система включена",
+    "systemDisabled": "Система отключена",
+    "autoMode": "Авто режим",
+    "manualOff": "Выключено вручную"
   },
   "sensorTooltips": {
     "temperature": "Текущая температура воздуха в боксе.",
