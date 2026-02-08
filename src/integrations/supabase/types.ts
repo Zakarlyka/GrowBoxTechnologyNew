@@ -198,6 +198,7 @@ export type Database = {
           light_cycle_hours: number | null
           light_level: number | null
           metric: string | null
+          relays: Json | null
           soil_moisture: number | null
           temp: number | null
           user_id: string | null
@@ -213,6 +214,7 @@ export type Database = {
           light_cycle_hours?: number | null
           light_level?: number | null
           metric?: string | null
+          relays?: Json | null
           soil_moisture?: number | null
           temp?: number | null
           user_id?: string | null
@@ -228,6 +230,7 @@ export type Database = {
           light_cycle_hours?: number | null
           light_level?: number | null
           metric?: string | null
+          relays?: Json | null
           soil_moisture?: number | null
           temp?: number | null
           user_id?: string | null
@@ -335,6 +338,7 @@ export type Database = {
           last_temp: number | null
           location: string | null
           name: string
+          relay_status: Json | null
           settings: Json | null
           status: string
           type: string
@@ -354,6 +358,7 @@ export type Database = {
           last_temp?: number | null
           location?: string | null
           name?: string
+          relay_status?: Json | null
           settings?: Json | null
           status?: string
           type?: string
@@ -373,6 +378,7 @@ export type Database = {
           last_temp?: number | null
           location?: string | null
           name?: string
+          relay_status?: Json | null
           settings?: Json | null
           status?: string
           type?: string
