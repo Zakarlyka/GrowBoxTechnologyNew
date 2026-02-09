@@ -139,7 +139,9 @@
     "systemEnabled": "System Enabled",
     "systemDisabled": "System Disabled",
     "autoMode": "Auto Mode",
-    "manualOff": "Manual Off"
+    "manualOff": "Manual Off",
+    "noWater": "No Water",
+    "pumpDryLocked": "Pump Locked — No Water"
   },
   "sensorTooltips": {
     "temperature": "Current air temperature inside the box.",

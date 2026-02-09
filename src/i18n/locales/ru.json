@@ -139,7 +139,9 @@
     "systemEnabled": "Система включена",
     "systemDisabled": "Система отключена",
     "autoMode": "Авто режим",
-    "manualOff": "Выключено вручную"
+    "manualOff": "Выключено вручную",
+    "noWater": "Нет воды",
+    "pumpDryLocked": "Помпа заблокирована — нет воды"
   },
   "sensorTooltips": {
     "temperature": "Текущая температура воздуха в боксе.",

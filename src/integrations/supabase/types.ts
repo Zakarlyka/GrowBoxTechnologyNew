@@ -192,6 +192,8 @@ export type Database = {
           created_at: string | null
           device_id: string
           device_id_uuid: string | null
+          error: string | null
+          error_code: string | null
           hum: number | null
           id: string
           irrigation_time: string | null
@@ -208,6 +210,8 @@ export type Database = {
           created_at?: string | null
           device_id: string
           device_id_uuid?: string | null
+          error?: string | null
+          error_code?: string | null
           hum?: number | null
           id?: string
           irrigation_time?: string | null
@@ -224,6 +228,8 @@ export type Database = {
           created_at?: string | null
           device_id?: string
           device_id_uuid?: string | null
+          error?: string | null
+          error_code?: string | null
           hum?: number | null
           id?: string
           irrigation_time?: string | null
@@ -467,6 +473,7 @@ export type Database = {
           id: string
           language: string | null
           push_enabled: boolean | null
+          soil_min: number | null
           telegram_chat_id: string | null
           telegram_enabled: boolean | null
           temperature_max: number | null
@@ -482,6 +489,7 @@ export type Database = {
           id?: string
           language?: string | null
           push_enabled?: boolean | null
+          soil_min?: number | null
           telegram_chat_id?: string | null
           telegram_enabled?: boolean | null
           temperature_max?: number | null
@@ -497,6 +505,7 @@ export type Database = {
           id?: string
           language?: string | null
           push_enabled?: boolean | null
+          soil_min?: number | null
           telegram_chat_id?: string | null
           telegram_enabled?: boolean | null
           temperature_max?: number | null
