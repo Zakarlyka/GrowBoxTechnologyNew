@@ -65,8 +65,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   // 💧 Irrigation
   const [pumpMode, setPumpMode] = useState(0);
-  const [soilMin, setSoilMin] = useState(30);
-  const [soilMax, setSoilMax] = useState(80);
+  const [soilMin, setSoilMin] = useState<number | string>(30);
+  const [soilMax, setSoilMax] = useState<number | string>(80);
   const [isWatering, setIsWatering] = useState(false);
 
   // Pump dry lock error detection
@@ -74,8 +74,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   // 🌬️ Ventilation
   const [ventMode, setVentMode] = useState(0);
-  const [ventDurationSec, setVentDurationSec] = useState(60);
-  const [ventIntervalSec, setVentIntervalSec] = useState(300);
+  const [ventDurationSec, setVentDurationSec] = useState<number | string>(60);
+  const [ventIntervalSec, setVentIntervalSec] = useState<number | string>(300);
 
   // Modified state tracking
   const [hasChanges, setHasChanges] = useState(false);
@@ -143,10 +143,14 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
   const handleSave = async () => {
     // Ensure all values are numbers before saving
-    const safeTargetTemp = typeof targetTemp === 'number' ? targetTemp : (targetTemp === '' ? 25 : Number(targetTemp));
-    const safeTempHyst = typeof tempHyst === 'number' ? tempHyst : (tempHyst === '' ? 2 : Number(tempHyst));
-    const safeTargetHum = typeof targetHum === 'number' ? targetHum : (targetHum === '' ? 60 : Number(targetHum));
-    const safeHumHyst = typeof humHyst === 'number' ? humHyst : (humHyst === '' ? 5 : Number(humHyst));
+    const safeTargetTemp = targetTemp === '' ? 25 : Number(targetTemp);
+    const safeTempHyst = tempHyst === '' ? 2 : Number(tempHyst);
+    const safeTargetHum = targetHum === '' ? 60 : Number(targetHum);
+    const safeHumHyst = humHyst === '' ? 5 : Number(humHyst);
+    const safeSoilMin = soilMin === '' ? 30 : Number(soilMin);
+    const safeSoilMax = soilMax === '' ? 80 : Number(soilMax);
+    const safeVentDuration = ventDurationSec === '' ? 60 : Number(ventDurationSec);
+    const safeVentInterval = ventIntervalSec === '' ? 300 : Number(ventIntervalSec);
     
     const patch = {
       // Global AI
@@ -166,12 +170,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       hum_hyst: safeHumHyst,
       // Irrigation
       pump_mode: pumpMode,
-      soil_min: soilMin,
-      soil_max: soilMax,
+      soil_min: safeSoilMin,
+      soil_max: safeSoilMax,
       // Ventilation
       vent_mode: ventMode,
-      vent_duration_sec: ventDurationSec,
-      vent_interval_sec: ventIntervalSec,
+      vent_duration_sec: safeVentDuration,
+      vent_interval_sec: safeVentInterval,
     };
     await saveSettings(patch);
     setHasChanges(false);
@@ -342,7 +346,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   <Lightbulb className={cn(
                     "w-5 h-5 transition-all duration-300",
                     relayStatus?.light === 1 
-                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      ? "text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]" 
                       : "text-muted-foreground"
                   )} />
                   {t('controls.lighting')}
@@ -358,9 +362,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {lightMode === 1 ? t('controls.auto') : t('controls.off')}
-                      </span>
                       <Switch
                         checked={lightMode === 1}
                         onCheckedChange={(checked) => {
@@ -522,7 +523,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   <Thermometer className={cn(
                     "w-5 h-5 transition-all duration-300",
                     relayStatus?.clim === 1 
-                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      ? "text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]" 
                       : "text-muted-foreground"
                   )} />
                   {t('controls.climate')}
@@ -538,9 +539,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {climateMode === 1 ? t('controls.on') : t('controls.off')}
-                      </span>
                       <Switch
                         checked={climateMode === 1}
                         onCheckedChange={(checked) => {
@@ -760,7 +758,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     isPumpDryLock
                       ? "text-destructive animate-pulse drop-shadow-[0_0_8px_hsl(var(--destructive))]"
                       : relayStatus?.pump === 1 
-                        ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                        ? "text-blue-400 animate-pulse drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]" 
                         : "text-muted-foreground"
                   )} />
                   {t('controls.irrigation')}
@@ -781,9 +779,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {pumpMode === 0 ? t('controls.auto') : t('controls.off')}
-                      </span>
                       <Switch
                         checked={pumpMode === 0}
                         onCheckedChange={(checked) => {
@@ -843,10 +838,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={soilMin || ''}
+                        value={soilMin ?? ''}
                         onChange={(e) => {
                           const v = e.target.value;
-                          setSoilMin(v === '' ? 0 : Number(v));
+                          setSoilMin(v === '' ? '' as any : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -872,10 +867,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={soilMax || ''}
+                        value={soilMax ?? ''}
                         onChange={(e) => {
                           const v = e.target.value;
-                          setSoilMax(v === '' ? 0 : Number(v));
+                          setSoilMax(v === '' ? '' as any : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -903,7 +898,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   <Wind className={cn(
                     "w-5 h-5 transition-all duration-300",
                     relayStatus?.vent === 1 
-                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                      ? "text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.8)]" 
                       : "text-muted-foreground"
                   )} />
                   {t('controls.ventilation')}
@@ -919,9 +914,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {ventMode === 1 ? t('controls.auto') : t('controls.off')}
-                      </span>
                       <Switch
                         checked={ventMode === 1}
                         onCheckedChange={(checked) => {
@@ -964,10 +956,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={ventDurationSec || ''}
+                        value={ventDurationSec ?? ''}
                         onChange={(e) => {
                           const v = e.target.value;
-                          setVentDurationSec(v === '' ? 0 : Number(v));
+                          setVentDurationSec(v === '' ? '' as any : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -992,10 +984,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={ventIntervalSec || ''}
+                        value={ventIntervalSec ?? ''}
                         onChange={(e) => {
                           const v = e.target.value;
-                          setVentIntervalSec(v === '' ? 0 : Number(v));
+                          setVentIntervalSec(v === '' ? '' as any : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
