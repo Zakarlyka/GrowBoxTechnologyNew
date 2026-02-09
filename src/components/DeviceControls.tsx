@@ -380,9 +380,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             )}
             {/* Time Inputs - Main content area (grows to fill) */}
             <div className="flex-1 space-y-4">
-              {(lightMode === 1 || isAiActive) && (
-                <>
-                  {/* Group 1: Start Time */}
+              {/* Always visible regardless of toggle state */}
+              <>
+                {/* Group 1: Start Time */}
                   <div>
                     <SmartHelp content={t('help.lightStartTime')}>
                       <Label className="text-sm font-medium text-muted-foreground mb-2 block">☀️ {t('controls.startTime')}</Label>
@@ -496,8 +496,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     </div>
                   </div>
 
-                </>
-              )}
+              </>
             </div>
           </CardContent>
         </Card>
