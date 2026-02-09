@@ -94,10 +94,19 @@ export function Dashboard() {
     setIsEditingName(false);
   };
 
-  // Calculate online status
-  const isOnline = useMemo(() => {
-    if (!selectedDevice?.last_seen_at) return false;
-    return (Date.now() - new Date(selectedDevice.last_seen_at).getTime()) < 40000;
+  // Real-time online status with 1s timer
+  const [isOnline, setIsOnline] = useState(false);
+  useEffect(() => {
+    const calculate = () => {
+      if (!selectedDevice?.last_seen_at) {
+        setIsOnline(false);
+        return;
+      }
+      setIsOnline((Date.now() - new Date(selectedDevice.last_seen_at).getTime()) < 40000);
+    };
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
   }, [selectedDevice?.last_seen_at]);
 
   const getLastSeenText = () => {
