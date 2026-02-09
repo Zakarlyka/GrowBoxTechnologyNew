@@ -182,13 +182,31 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   };
 
   // Toggle global AI mode - requires admin permission
-  const toggleAiMode = (newMode: boolean) => {
+  // Writes directly to devices.ai_mode column AND settings JSON
+  const toggleAiMode = async (newMode: boolean) => {
     if (!isAiAllowed) {
       toast.error(t('controls.aiAccessBlocked'));
       return;
     }
-    setAiMode(newMode ? 1 : 0);
+    const newVal = newMode ? 1 : 0;
+    setAiMode(newVal);
     setHasChanges(true);
+
+    // Immediately persist ai_mode to the devices table column
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase
+        .from('devices')
+        .update({ ai_mode: newMode })
+        .eq('device_id', deviceId);
+
+      if (error) throw error;
+      toast.success(newMode ? '🤖 AI Mode Enabled' : '🤖 AI Mode Disabled');
+    } catch (err: any) {
+      toast.error(`AI Mode update failed: ${err.message}`);
+      // Revert on failure
+      setAiMode(newMode ? 0 : 1);
+    }
   };
 
   // Force Water Now (Pulse logic using pump_pulse trigger)
@@ -340,6 +358,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card A: Lighting 💡 */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 mb-1">
+                <Sparkles className="w-3 h-3" />
+                <span>✨ {t('controls.aiManagesSchedule')}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <SmartHelp content={t('help.lightingCard')}>
                 <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
@@ -372,12 +396,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {isAiActive && (
-              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
-                <Sparkles className="w-3 h-3" />
-                <span>{t('controls.aiManagesSchedule')}</span>
-              </div>
-            )}
             {/* Time Inputs - Main content area (grows to fill) */}
             <div className="flex-1 space-y-4">
               {/* Always visible regardless of toggle state */}
@@ -504,6 +522,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card B: Climate Control 🌡️ */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 mb-1">
+                <Sparkles className="w-3 h-3" />
+                <span>✨ {t('controls.aiManagesClimate')}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <SmartHelp content={t('help.climateCard')}>
                 <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
@@ -536,12 +560,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {isAiActive && (
-              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
-                <Sparkles className="w-3 h-3" />
-                <span>{t('controls.aiManagesClimate')}</span>
-              </div>
-            )}
 
             {/* Seasonal Toggle */}
             <div className="flex gap-2 pt-2 border-t border-border/30">
@@ -725,53 +743,17 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
           isPumpDryLock && "border-destructive/50"
         )}>
           <CardHeader className="pb-3 px-5 pt-5">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 mb-1">
+                <Sparkles className="w-3 h-3" />
+                <span>✨ {t('controls.aiManagesIrrigation')}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
-              <SmartHelp content={t('help.irrigationCard')}>
-                <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                  <Droplets className={cn(
-                    "w-5 h-5 transition-all duration-300",
-                    isPumpDryLock
-                      ? "text-destructive animate-pulse drop-shadow-[0_0_8px_hsl(var(--destructive))]"
-                      : relayStatus?.pump === 1 
-                        ? "text-blue-400 animate-pulse drop-shadow-[0_0_10px_rgba(96,165,250,0.8)]" 
-                        : "text-muted-foreground"
-                  )} />
-                  {t('controls.irrigation')}
-                  {isPumpDryLock ? (
-                    <div className="flex items-center gap-1 ml-2">
-                      <AlertTriangle className="w-4 h-4 text-destructive animate-pulse" />
-                      <span className="text-xs font-bold text-destructive uppercase">{t('controls.noWater')}</span>
-                    </div>
-                  ) : relayStatus?.pump === 1 ? (
-                    <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">
-                      {t('controls.active')}
-                    </Badge>
-                  ) : null}
-                </CardTitle>
-              </SmartHelp>
-              {/* Pump: ON = pump_mode 0 (Auto), OFF = pump_mode 2 (Manual Off) */}
-              <Switch
-                checked={pumpMode === 0}
-                onCheckedChange={(checked) => {
-                  setPumpMode(checked ? 0 : 2);
-                  setHasChanges(true);
-                }}
-                disabled={isAiActive}
-                className={cn(
-                  "data-[state=checked]:bg-primary",
-                  isPumpDryLock && "data-[state=checked]:bg-destructive",
-                  isAiActive && "opacity-50"
-                )}
-              />
+...
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {isAiActive && (
-              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
-                <Sparkles className="w-3 h-3" />
-                <span>{t('controls.aiManagesIrrigation')}</span>
-              </div>
-            )}
 
             {/* Separator between toggle and Water Now */}
             <div className="border-t border-border/30 my-2" />
@@ -856,6 +838,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card D: Ventilation 💨 */}
         <Card className="gradient-card border-border/50 h-full flex flex-col">
           <CardHeader className="pb-3 px-5 pt-5">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 mb-1">
+                <Sparkles className="w-3 h-3" />
+                <span>✨ {t('controls.aiManagesVentilation')}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <SmartHelp content={t('help.ventilationCard')}>
                 <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
@@ -888,12 +876,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
-            {isAiActive && (
-              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
-                <Sparkles className="w-3 h-3" />
-                <span>{t('controls.aiManagesVentilation')}</span>
-              </div>
-            )}
 
             {/* Ventilation Inputs - Main content area (grows to fill) */}
             <div className="flex-1 space-y-3 pt-2 border-t border-border/30">
