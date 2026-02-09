@@ -332,6 +332,7 @@ export type Database = {
       }
       devices: {
         Row: {
+          ai_mode: boolean | null
           created_at: string
           device_id: string
           group_id: string | null
@@ -352,6 +353,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_mode?: boolean | null
           created_at?: string
           device_id: string
           group_id?: string | null
@@ -372,6 +374,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_mode?: boolean | null
           created_at?: string
           device_id?: string
           group_id?: string | null
