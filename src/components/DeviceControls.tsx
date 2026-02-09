@@ -383,6 +383,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
+                <Sparkles className="w-3 h-3" />
+                <span>{t('controls.aiManagesSchedule')}</span>
+              </div>
+            )}
             {/* Time Inputs - Main content area (grows to fill) */}
             <div className="flex-1 space-y-4">
               {(lightMode === 1 || isAiActive) && (
@@ -501,12 +507,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     </div>
                   </div>
 
-                  {isAiActive && (
-                    <div className="flex items-center gap-1 text-xs text-yellow-600">
-                      <Sparkles className="w-3 h-3" />
-                      <span>{t('controls.aiManagesSchedule')}</span>
-                    </div>
-                  )}
                 </>
               )}
             </div>
@@ -563,6 +563,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
+                <Sparkles className="w-3 h-3" />
+                <span>{t('controls.aiManagesClimate')}</span>
+              </div>
+            )}
 
             {/* Seasonal Toggle */}
             <div className="flex gap-2 pt-2 border-t border-border/30">
@@ -736,12 +742,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </div>
               )}
 
-              {isAiActive && (
-                <div className="flex items-center gap-1 text-xs text-yellow-600">
-                  <Sparkles className="w-3 h-3" />
-                  <span>{t('controls.aiManagesClimate')}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -790,11 +790,11 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                           setPumpMode(checked ? 0 : 2);
                           setHasChanges(true);
                         }}
-                        disabled={isAiActive || isWatering}
+                        disabled={isAiActive}
                         className={cn(
                           "data-[state=checked]:bg-primary",
                           isPumpDryLock && "data-[state=checked]:bg-destructive",
-                          (isAiActive || isWatering) && "opacity-50"
+                          isAiActive && "opacity-50"
                         )}
                       />
                     </div>
@@ -807,6 +807,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
+                <Sparkles className="w-3 h-3" />
+                <span>{t('controls.aiManagesIrrigation')}</span>
+              </div>
+            )}
 
             {/* Separator between toggle and Water Now */}
             <div className="border-t border-border/30 my-2" />
@@ -837,9 +843,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={soilMin}
+                        value={soilMin || ''}
                         onChange={(e) => {
-                          setSoilMin(Number(e.target.value));
+                          const v = e.target.value;
+                          setSoilMin(v === '' ? 0 : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -865,9 +872,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={soilMax}
+                        value={soilMax || ''}
                         onChange={(e) => {
-                          setSoilMax(Number(e.target.value));
+                          const v = e.target.value;
+                          setSoilMax(v === '' ? 0 : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -882,12 +890,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </SmartHelp>
                 </div>
               </div>
-              {isAiActive && (
-                <div className="flex items-center gap-1 text-xs text-yellow-600">
-                  <Sparkles className="w-3 h-3" />
-                  <span>{t('controls.aiManagesIrrigation')}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -942,6 +944,12 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
+            {isAiActive && (
+              <div className="flex items-center gap-1 text-xs text-yellow-600 pt-1">
+                <Sparkles className="w-3 h-3" />
+                <span>{t('controls.aiManagesVentilation')}</span>
+              </div>
+            )}
 
             {/* Ventilation Inputs - Main content area (grows to fill) */}
             <div className="flex-1 space-y-3 pt-2 border-t border-border/30">
@@ -956,9 +964,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={ventDurationSec}
+                        value={ventDurationSec || ''}
                         onChange={(e) => {
-                          setVentDurationSec(Number(e.target.value));
+                          const v = e.target.value;
+                          setVentDurationSec(v === '' ? 0 : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -983,9 +992,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     <div className="relative flex-1">
                       <Input
                         type="number"
-                        value={ventIntervalSec}
+                        value={ventIntervalSec || ''}
                         onChange={(e) => {
-                          setVentIntervalSec(Number(e.target.value));
+                          const v = e.target.value;
+                          setVentIntervalSec(v === '' ? 0 : Number(v));
                           setHasChanges(true);
                         }}
                         min="0"
@@ -999,12 +1009,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </SmartHelp>
                 </div>
               </div>
-              {isAiActive && (
-                <div className="flex items-center gap-1 text-xs text-yellow-600">
-                  <Sparkles className="w-3 h-3" />
-                  <span>{t('controls.aiManagesVentilation')}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
