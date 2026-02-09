@@ -93,23 +93,49 @@ export function useDevices() {
     // Check status every 10 seconds
     const statusInterval = setInterval(updateDevicesStatus, 10000);
 
-    // Subscribe to realtime changes
+    // Subscribe to realtime changes for immediate UI updates
     const channel = supabase
-      .channel('devices-changes')
+      .channel('devices-realtime')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'devices',
           filter: `user_id=eq.${user?.id}`,
         },
         (payload) => {
-          console.log('Device change received:', payload);
-          fetchDevices();
+          console.log('Device realtime update:', payload.new);
+          setDevices(prev => prev.map(d => 
+            d.id === (payload.new as Device).id 
+              ? { ...(payload.new as Device), status: calculateDeviceStatus((payload.new as Device).last_seen_at) }
+              : d
+          ));
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'devices',
+          filter: `user_id=eq.${user?.id}`,
+        },
+        () => fetchDevices()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'devices',
+          filter: `user_id=eq.${user?.id}`,
+        },
+        () => fetchDevices()
+      )
+      .subscribe((status) => {
+        console.log('Devices channel status:', status);
+      });
 
     return () => {
       clearInterval(statusInterval);
