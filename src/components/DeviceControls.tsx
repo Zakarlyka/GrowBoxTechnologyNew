@@ -357,30 +357,18 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   )}
                 </CardTitle>
               </SmartHelp>
-              {/* Mode Toggle Switch */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={lightMode === 1}
-                        onCheckedChange={(checked) => {
-                          setLightMode(checked ? 1 : 0);
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                        className={cn(
-                          "data-[state=checked]:bg-primary",
-                          isAiActive && "opacity-50"
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{lightMode === 1 ? t('controls.autoSchedule') : t('controls.systemDisabled')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Switch
+                checked={lightMode === 1}
+                onCheckedChange={(checked) => {
+                  setLightMode(checked ? 1 : 0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+                className={cn(
+                  "data-[state=checked]:bg-primary",
+                  isAiActive && "opacity-50"
+                )}
+              />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
@@ -534,30 +522,18 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   )}
                 </CardTitle>
               </SmartHelp>
-              {/* Mode Toggle Switch */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={climateMode === 1}
-                        onCheckedChange={(checked) => {
-                          setClimateMode(checked ? 1 : 0);
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                        className={cn(
-                          "data-[state=checked]:bg-primary",
-                          isAiActive && "opacity-50"
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{climateMode === 1 ? t('controls.systemEnabled') : t('controls.systemDisabled')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Switch
+                checked={climateMode === 1}
+                onCheckedChange={(checked) => {
+                  setClimateMode(checked ? 1 : 0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+                className={cn(
+                  "data-[state=checked]:bg-primary",
+                  isAiActive && "opacity-50"
+                )}
+              />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
@@ -774,31 +750,20 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   ) : null}
                 </CardTitle>
               </SmartHelp>
-              {/* Mode Toggle Switch - Note: For pump, 0=Auto, 2=Off */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={pumpMode === 0}
-                        onCheckedChange={(checked) => {
-                          setPumpMode(checked ? 0 : 2);
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                        className={cn(
-                          "data-[state=checked]:bg-primary",
-                          isPumpDryLock && "data-[state=checked]:bg-destructive",
-                          isAiActive && "opacity-50"
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{pumpMode === 0 ? t('controls.autoMode') : t('controls.manualOff')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              {/* Pump: ON = pump_mode 0 (Auto), OFF = pump_mode 2 (Manual Off) */}
+              <Switch
+                checked={pumpMode === 0}
+                onCheckedChange={(checked) => {
+                  setPumpMode(checked ? 0 : 2);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+                className={cn(
+                  "data-[state=checked]:bg-primary",
+                  isPumpDryLock && "data-[state=checked]:bg-destructive",
+                  isAiActive && "opacity-50"
+                )}
+              />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
@@ -909,30 +874,18 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   )}
                 </CardTitle>
               </SmartHelp>
-              {/* Mode Toggle Switch */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={ventMode === 1}
-                        onCheckedChange={(checked) => {
-                          setVentMode(checked ? 1 : 0);
-                          setHasChanges(true);
-                        }}
-                        disabled={isAiActive}
-                        className={cn(
-                          "data-[state=checked]:bg-primary",
-                          isAiActive && "opacity-50"
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{ventMode === 1 ? t('controls.autoMode') : t('controls.systemDisabled')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Switch
+                checked={ventMode === 1}
+                onCheckedChange={(checked) => {
+                  setVentMode(checked ? 1 : 0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+                className={cn(
+                  "data-[state=checked]:bg-primary",
+                  isAiActive && "opacity-50"
+                )}
+              />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
