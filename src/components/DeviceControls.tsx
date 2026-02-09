@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SmartTooltip } from "@/components/ui/smart-tooltip";
 import { SmartHelp } from "@/components/ui/smart-help";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useRelayStatus } from "@/hooks/useRelayStatus";
+import { useDeviceError } from "@/hooks/useDeviceError";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoPilot } from "@/hooks/useAutoPilot";
 import { DemoSimulationPanel } from "@/components/DemoSimulationPanel";
@@ -27,6 +28,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const { t } = useTranslation();
   const { settings, sensorData, lastSeenAt, deviceName, deviceType, deviceUuid, loading, isSaving, saveSettings, refetch } = useDeviceControls(deviceId);
   const { relayStatus } = useRelayStatus(deviceId);
+  const { error: deviceError } = useDeviceError(deviceId);
   const { profile } = useAuth();
 
   // Check if this is a demo device
@@ -66,6 +68,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [soilMin, setSoilMin] = useState(30);
   const [soilMax, setSoilMax] = useState(80);
   const [isWatering, setIsWatering] = useState(false);
+
+  // Pump dry lock error detection
+  const isPumpDryLock = deviceError === 'PUMP_DRY_LOCK';
 
   // 🌬️ Ventilation
   const [ventMode, setVentMode] = useState(0);
@@ -742,23 +747,33 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
 
         {/* Card C: Irrigation 💧 */}
-        <Card className="gradient-card border-border/50 h-full flex flex-col">
+        <Card className={cn(
+          "gradient-card border-border/50 h-full flex flex-col",
+          isPumpDryLock && "border-destructive/50"
+        )}>
           <CardHeader className="pb-3 px-5 pt-5">
             <div className="flex items-center justify-between">
               <SmartHelp content={t('help.irrigationCard')}>
                 <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
                   <Droplets className={cn(
                     "w-5 h-5 transition-all duration-300",
-                    relayStatus?.pump === 1 
-                      ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
-                      : "text-muted-foreground"
+                    isPumpDryLock
+                      ? "text-destructive animate-pulse drop-shadow-[0_0_8px_hsl(var(--destructive))]"
+                      : relayStatus?.pump === 1 
+                        ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" 
+                        : "text-muted-foreground"
                   )} />
                   {t('controls.irrigation')}
-                  {relayStatus?.pump === 1 && (
+                  {isPumpDryLock ? (
+                    <div className="flex items-center gap-1 ml-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive animate-pulse" />
+                      <span className="text-xs font-bold text-destructive uppercase">{t('controls.noWater')}</span>
+                    </div>
+                  ) : relayStatus?.pump === 1 ? (
                     <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">
                       {t('controls.active')}
                     </Badge>
-                  )}
+                  ) : null}
                 </CardTitle>
               </SmartHelp>
               {/* Mode Toggle Switch - Note: For pump, 0=Auto, 2=Off */}
@@ -778,6 +793,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         disabled={isAiActive || isWatering}
                         className={cn(
                           "data-[state=checked]:bg-primary",
+                          isPumpDryLock && "data-[state=checked]:bg-destructive",
                           (isAiActive || isWatering) && "opacity-50"
                         )}
                       />
@@ -801,10 +817,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 size="lg"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 h-10"
                 onClick={handleWaterNow}
-                disabled={isWatering}
+                disabled={isWatering || isPumpDryLock}
               >
                 <Droplets className={cn("w-5 h-5 mr-2", isWatering && "animate-pulse")} />
-                {isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
+                {isPumpDryLock ? t('controls.pumpDryLocked') : isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
               </Button>
             </SmartHelp>
 

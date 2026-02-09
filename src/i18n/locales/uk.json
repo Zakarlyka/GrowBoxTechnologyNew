@@ -139,7 +139,9 @@
     "systemEnabled": "Систему ввімкнено",
     "systemDisabled": "Систему вимкнено",
     "autoMode": "Авто режим",
-    "manualOff": "Вимкнено вручну"
+    "manualOff": "Вимкнено вручну",
+    "noWater": "Немає води",
+    "pumpDryLocked": "Помпу заблоковано — немає води"
   },
   "sensorTooltips": {
     "temperature": "Поточна температура повітря в боксі.",
