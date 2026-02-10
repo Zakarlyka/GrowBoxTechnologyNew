@@ -750,7 +750,34 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </div>
             )}
             <div className="flex items-center justify-between">
-...
+              <SmartHelp content={t('help.irrigationCard')}>
+                <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+                  <Droplets className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    relayStatus?.pump === 1 
+                      ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)] animate-pulse" 
+                      : "text-muted-foreground"
+                  )} />
+                  {t('controls.irrigation')}
+                  {relayStatus?.pump === 1 && (
+                    <Badge variant="outline" className="ml-2 text-xs border-blue-500/50 text-blue-400">
+                      {t('controls.active')}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </SmartHelp>
+              <Switch
+                checked={pumpMode === 1}
+                onCheckedChange={(checked) => {
+                  setPumpMode(checked ? 1 : 0);
+                  setHasChanges(true);
+                }}
+                disabled={isAiActive}
+                className={cn(
+                  "data-[state=checked]:bg-primary",
+                  isAiActive && "opacity-50"
+                )}
+              />
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col px-5 pb-5 pt-0 space-y-4">
