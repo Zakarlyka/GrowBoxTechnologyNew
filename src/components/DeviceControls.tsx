@@ -10,7 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SmartTooltip } from "@/components/ui/smart-tooltip";
 import { SmartHelp } from "@/components/ui/smart-help";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, Loader2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useDeviceControls } from "@/hooks/useDeviceControls";
 import { useRelayStatus } from "@/hooks/useRelayStatus";
 import { useDeviceError } from "@/hooks/useDeviceError";
@@ -76,6 +80,27 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [ventMode, setVentMode] = useState(0);
   const [ventDurationSec, setVentDurationSec] = useState<number | string>(60);
   const [ventIntervalSec, setVentIntervalSec] = useState<number | string>(300);
+
+  // Reboot
+  const [isRebooting, setIsRebooting] = useState(false);
+
+  const handleReboot = async () => {
+    setIsRebooting(true);
+    try {
+      await saveSettings({ reboot_cmd: true });
+      toast.info('📡 Sending reboot signal...');
+      setTimeout(async () => {
+        try {
+          await saveSettings({ reboot_cmd: false });
+        } catch {}
+        setIsRebooting(false);
+        toast.success('🔄 Device is rebooting. Back online in ~15 seconds.');
+      }, 6000);
+    } catch (err: any) {
+      toast.error(`Reboot failed: ${err.message}`);
+      setIsRebooting(false);
+    }
+  };
 
   // Modified state tracking
   const [hasChanges, setHasChanges] = useState(false);
@@ -352,6 +377,32 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reboot Device */}
+      <div className="flex justify-end">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" disabled={isRebooting} className="gap-2">
+              {isRebooting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              {isRebooting ? 'Rebooting…' : 'Reboot Device'}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reboot Device?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to reboot the controller? The device will be offline for approximately 15 seconds.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleReboot} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Confirm Reboot
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
 
       {/* 4-Card Grid - Unified Layout */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 items-stretch">
