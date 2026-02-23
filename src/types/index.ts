@@ -32,6 +32,7 @@ export interface DeviceSettings {
   
   // 🤖 AI Features (Global AI Pilot)
   ai_mode?: number;           // 0: User Control, 1: AI Pilot (Premium)
+  reboot_cmd?: boolean;        // true: trigger ESP reboot, auto-reset to false
   
   // Deprecated (для зворотної сумісності)
   is_ac_installed?: boolean;
