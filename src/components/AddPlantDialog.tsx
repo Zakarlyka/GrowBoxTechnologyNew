@@ -40,7 +40,7 @@ import { useDevices } from '@/hooks/useDevices';
 import { toast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Назва обов\'язкова'),
+  name: z.string().optional().default(''),
   strainId: z.string().optional(),
   startDate: z.date().default(() => new Date()),
   isMain: z.boolean().default(true),
@@ -269,10 +269,12 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
       console.log('[AddPlantDialog] Auto-calculated stage:', calculatedStage, 'for date:', data.startDate);
 
       // Insert the new plant with explicit photo_url
+      const finalName = data.name?.trim() ? data.name.trim() : (selectedStrain?.name || 'Нова рослина');
+
       const insertPayload = {
         device_id: data.deviceId,
         user_id: user.id,
-        custom_name: data.name,
+        custom_name: finalName,
         strain_id: data.strainId ? parseInt(data.strainId) : null,
         current_stage: calculatedStage,
         start_date: format(data.startDate, 'yyyy-MM-dd'),
@@ -287,7 +289,7 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
 
       toast({
         title: '🌱 Успішно посаджено!',
-        description: `"${data.name}" готова до вирощування`,
+        description: `"${finalName}" готова до вирощування`,
       });
 
       // Invalidate all plant-related queries to force refresh
@@ -411,7 +413,7 @@ export function AddPlantDialog({ open, onOpenChange, deviceId: initialDeviceId, 
               <Label htmlFor="name">Назва рослини</Label>
               <Input
                 id="name"
-                placeholder="Наприклад: My Auto #1"
+                placeholder="Введіть назву (або залиште порожнім — буде назва сорту)"
                 {...form.register('name')}
                 className="bg-background/50"
               />
