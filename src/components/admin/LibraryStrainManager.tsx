@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Loader2, Library, Search, Crown, Users, ArrowUpCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, Library, Search, Crown, Users, ArrowUpCircle, ArrowUpDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { LibraryStrainEditor } from './LibraryStrainEditor';
 import {
@@ -56,6 +57,19 @@ export function LibraryStrainManager() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('system');
   const [isPromoting, setIsPromoting] = useState(false);
+  const [sortBy, setSortBy] = useState('name-asc');
+
+  const sortStrains = <T extends LibraryStrain>(strains: T[]): T[] => {
+    const sorted = [...strains];
+    switch (sortBy) {
+      case 'name-asc': return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc': return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'type': return sorted.sort((a, b) => (a.type || '').localeCompare(b.type || ''));
+      case 'thc-desc': return sorted.sort((a, b) => (b.thc_percent || 0) - (a.thc_percent || 0));
+      case 'flowering-asc': return sorted.sort((a, b) => (a.flowering_days || 999) - (b.flowering_days || 999));
+      default: return sorted;
+    }
+  };
 
   const fetchStrains = async () => {
     setLoading(true);
@@ -122,20 +136,20 @@ export function LibraryStrainManager() {
   const filteredSystemStrains = useMemo(() => {
     if (!searchQuery.trim()) return systemStrains;
     const query = searchQuery.toLowerCase();
-    return systemStrains.filter(s => 
+    return sortStrains(systemStrains.filter(s => 
       s.name?.toLowerCase().includes(query) || 
       s.breeder?.toLowerCase().includes(query)
-    );
+    ));
   }, [systemStrains, searchQuery]);
 
   const filteredUserStrains = useMemo(() => {
     if (!searchQuery.trim()) return userStrains;
     const query = searchQuery.toLowerCase();
-    return userStrains.filter(s => 
+    return sortStrains(userStrains.filter(s => 
       s.name?.toLowerCase().includes(query) || 
       s.breeder?.toLowerCase().includes(query) ||
       s.user_email?.toLowerCase().includes(query)
-    );
+    ));
   }, [userStrains, searchQuery]);
 
   const handleAdd = () => {
@@ -304,15 +318,30 @@ export function LibraryStrainManager() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Пошук за назвою або бридером..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          {/* Search & Sort Bar */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Пошук за назвою або бридером..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px] gap-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                <SelectItem value="type">Type</SelectItem>
+                <SelectItem value="thc-desc">THC (High→Low)</SelectItem>
+                <SelectItem value="flowering-asc">Flowering (Short→Long)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Tabs */}
