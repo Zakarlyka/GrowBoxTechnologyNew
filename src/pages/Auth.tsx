@@ -2,17 +2,23 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import logo from '@/assets/logo-agro-hogwards.png';
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -82,6 +88,22 @@ const Auth = () => {
       setIsOAuthLoading(null);
     }
   };
+  const handleResetPassword = async () => {
+    if (!resetEmail) return;
+    setIsResetting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: window.location.origin + '/auth/update-password',
+    });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Перевірте вашу електронну пошту для посилання на скидання пароля.');
+      setResetDialogOpen(false);
+      setResetEmail('');
+    }
+    setIsResetting(false);
+  };
+
   const renderOAuthButtons = () => <div className="space-y-3">
       <Button type="button" variant="outline" className="w-full" onClick={() => handleOAuthSignIn('google')} disabled={isOAuthLoading !== null}>
         {isOAuthLoading === 'google' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -144,10 +166,15 @@ const Auth = () => {
                     <Label htmlFor="signin-email">{t('auth.email')}</Label>
                     <Input id="signin-email" type="email" placeholder="name@example.com" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} required className="transition-all duration-200 focus:ring-primary/20" />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">{t('auth.password')}</Label>
-                    <Input id="signin-password" type="password" value={formData.password} onChange={e => handleInputChange('password', e.target.value)} required className="transition-all duration-200 focus:ring-primary/20" />
-                  </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="signin-password">{t('auth.password')}</Label>
+                     <Input id="signin-password" type="password" value={formData.password} onChange={e => handleInputChange('password', e.target.value)} required className="transition-all duration-200 focus:ring-primary/20" />
+                   </div>
+                   <div className="flex justify-end">
+                     <Button type="button" variant="link" size="sm" className="px-0 text-xs text-muted-foreground" onClick={() => { setResetEmail(formData.email); setResetDialogOpen(true); }}>
+                       Забули пароль?
+                     </Button>
+                   </div>
                   <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={isLoading}>
                     {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {t('auth.signIn')}
@@ -183,6 +210,38 @@ const Auth = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Скидання пароля</DialogTitle>
+            <DialogDescription>
+              Введіть вашу електронну пошту, і ми надішлемо посилання для скидання пароля.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="name@example.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
+            </div>
+            <Button
+              className="w-full"
+              disabled={isResetting || !resetEmail}
+              onClick={handleResetPassword}
+            >
+              {isResetting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Надіслати посилання
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default Auth;
