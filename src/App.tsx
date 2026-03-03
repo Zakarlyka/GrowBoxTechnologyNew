@@ -16,6 +16,7 @@ import LaboratoryPage from "./pages/LaboratoryPage";
 import DeviceDetail from "./pages/DeviceDetail";
 import { RemoteControlPage } from "./pages/RemoteControlPage";
 import Auth from "./pages/Auth";
+import UpdatePassword from "./pages/UpdatePassword";
 import Account from "./pages/Account";
 import AdminPage from "./pages/AdminPage";
 import LibraryPage from "./pages/LibraryPage";
@@ -175,6 +176,10 @@ const AppRoutes = () => {
       <Route 
         path="/auth" 
         element={user ? <Navigate to="/dashboard" replace /> : <Auth />} 
+      />
+      <Route
+        path="/auth/update-password"
+        element={<UpdatePassword />}
       />
       <Route
         path="/"
