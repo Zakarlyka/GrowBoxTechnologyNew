@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Search, Plus, Leaf, Clock, FlaskConical, BookOpen, Globe, User, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Leaf, Clock, FlaskConical, BookOpen, Globe, User, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { OptimizedImage } from '@/components/ui/optimized-image';
+import { getOptimizedImageUrl } from '@/lib/imageUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { AddPlantDialog } from '@/components/AddPlantDialog';
 import { useDevices } from '@/hooks/useDevices';
@@ -49,6 +52,7 @@ export default function LibraryPage() {
   const [myStrains, setMyStrains] = useState<LibraryStrain[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name-asc');
   const [selectedStrain, setSelectedStrain] = useState<LibraryStrain | null>(null);
   const [addPlantOpen, setAddPlantOpen] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
@@ -108,11 +112,24 @@ export default function LibraryPage() {
     }
   };
 
+  const sortStrains = (strains: LibraryStrain[]) => {
+    const sorted = [...strains];
+    switch (sortBy) {
+      case 'name-asc': return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc': return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'type': return sorted.sort((a, b) => (a.type || '').localeCompare(b.type || ''));
+      case 'thc-desc': return sorted.sort((a, b) => ((b as any).thc_percent || 0) - ((a as any).thc_percent || 0));
+      case 'flowering-asc': return sorted.sort((a, b) => (a.flowering_days || 999) - (b.flowering_days || 999));
+      default: return sorted;
+    }
+  };
+
   const getFilteredStrains = (strains: LibraryStrain[]) => {
-    return strains.filter((strain) =>
+    const filtered = strains.filter((strain) =>
       strain.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       strain.breeder?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    return sortStrains(filtered);
   };
 
   const handleGrowThis = (strain: LibraryStrain) => {
@@ -199,21 +216,21 @@ export default function LibraryPage() {
     }
   };
 
-  // Helper to add cache busting to Supabase Storage URLs only
-  const getImageUrl = (url: string | null) => {
-    if (!url) return null;
-    // Only add cache busting for Supabase Storage URLs
-    if (url.includes('supabase')) {
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}t=${Date.now()}`;
-    }
-    return url;
-  };
-
-  // Handle image load error - fallback to placeholder
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = '/placeholder.svg';
-  };
+  const renderSortDropdown = () => (
+    <Select value={sortBy} onValueChange={setSortBy}>
+      <SelectTrigger className="w-[180px] gap-2">
+        <ArrowUpDown className="h-4 w-4" />
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="name-asc">{t('library.sortNameAZ', 'Name (A-Z)')}</SelectItem>
+        <SelectItem value="name-desc">{t('library.sortNameZA', 'Name (Z-A)')}</SelectItem>
+        <SelectItem value="type">{t('library.sortType', 'Type')}</SelectItem>
+        <SelectItem value="thc-desc">{t('library.sortTHC', 'THC (High→Low)')}</SelectItem>
+        <SelectItem value="flowering-asc">{t('library.sortFlowering', 'Flowering (Short→Long)')}</SelectItem>
+      </SelectContent>
+    </Select>
+  );
 
   const renderStrainCard = (strain: LibraryStrain, showActions: boolean = false) => (
     <Card
@@ -226,11 +243,15 @@ export default function LibraryPage() {
         onClick={() => handleOpenDetails(strain)}
       >
         {strain.photo_url ? (
-          <img
-            src={getImageUrl(strain.photo_url) || ''}
+          <OptimizedImage
+            src={getOptimizedImageUrl(strain.photo_url, { width: 400, height: 250, quality: 60 }) || ''}
             alt={strain.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={handleImageError}
+            fallback={
+              <div className="w-full h-full flex items-center justify-center">
+                <Leaf className="h-16 w-16 text-primary/30" />
+              </div>
+            }
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -389,14 +410,15 @@ export default function LibraryPage() {
                   className="pl-10 bg-background/50"
                 />
               </div>
+              {renderSortDropdown()}
             </div>
             {renderStrainsGrid(globalStrains, false)}
           </TabsContent>
 
           {/* My Strains Tab */}
           <TabsContent value="my-strains" className="space-y-6">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
+            <div className="flex gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={t('library.searchPlaceholder')}
@@ -405,6 +427,7 @@ export default function LibraryPage() {
                   className="pl-10 bg-background/50"
                 />
               </div>
+              {renderSortDropdown()}
               <Button onClick={handleAddStrain} className="gap-2">
                 <Plus className="h-4 w-4" />
                 {t('library.addStrain')}

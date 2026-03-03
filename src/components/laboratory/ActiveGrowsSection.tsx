@@ -97,17 +97,34 @@ export const ActiveGrowsSection = () => {
   // Filter plants by selected device OR group by device if "All Devices"
   const { filteredPlants, plantsByDevice, isAllDevices } = useMemo(() => {
     if (!selectedDeviceStringId) {
-      // "All Devices" mode - group by device
+      // "All Devices" mode - group by device with proper ordering
       const grouped: Record<string, { deviceName: string; plants: PlantWithStrain[] }> = {};
+      const unassigned: PlantWithStrain[] = [];
+      
       allPlants.forEach(plant => {
-        const deviceId = plant.device_id || 'unassigned';
+        if (!plant.device_id) {
+          unassigned.push(plant);
+          return;
+        }
+        const deviceId = plant.device_id;
         const deviceName = plant.device?.name || 'Unknown Device';
         if (!grouped[deviceId]) {
           grouped[deviceId] = { deviceName, plants: [] };
         }
         grouped[deviceId].plants.push(plant);
       });
-      return { filteredPlants: allPlants, plantsByDevice: grouped, isAllDevices: true };
+
+      // Build ordered result: devices first, then unassigned
+      const orderedGroups: Record<string, { deviceName: string; plants: PlantWithStrain[] }> = {};
+      Object.entries(grouped)
+        .sort(([, a], [, b]) => a.deviceName.localeCompare(b.deviceName))
+        .forEach(([key, val]) => { orderedGroups[key] = val; });
+      
+      if (unassigned.length > 0) {
+        orderedGroups['__unassigned__'] = { deviceName: '📦 Без пристрою', plants: unassigned };
+      }
+
+      return { filteredPlants: allPlants, plantsByDevice: orderedGroups, isAllDevices: true };
     }
     
     // Filter to specific device
@@ -418,12 +435,16 @@ export const ActiveGrowsSection = () => {
       <div className="space-y-6">
         {Object.entries(plantsByDevice).map(([deviceId, { deviceName, plants }]) => (
           <div key={deviceId} className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Layers className="h-4 w-4" />
-              <span className="font-medium">{deviceName}</span>
-              <Badge variant="outline" className="text-xs">{plants.length} plants</Badge>
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <Layers className="h-4 w-4 text-primary" />
+                </div>
+                <span className="font-semibold text-sm text-foreground">{deviceId === '__unassigned__' ? '📦 Без пристрою' : `🌱 ${deviceName}`}</span>
+                <Badge variant="outline" className="text-xs">{plants.length}</Badge>
+              </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pl-1 border-l-2 border-primary/20 ml-3">
               {plants.map(renderPlantCard)}
             </div>
           </div>
