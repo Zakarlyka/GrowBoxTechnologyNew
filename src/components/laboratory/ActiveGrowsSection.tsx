@@ -436,7 +436,7 @@ export const ActiveGrowsSection = () => {
     return (
       <div className="space-y-6">
         {Object.entries(plantsByDevice).map(([deviceId, { deviceName, plants }]) =>
-        <div key={deviceId} className="border border-border/20 rounded-xl p-4 md:p-6 bg-muted">
+        <div key={deviceId} className="border rounded-xl p-4 md:p-6 bg-muted border-inherit">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-primary/10">
                 {deviceId === '__unassigned__' ?
@@ -462,7 +462,7 @@ export const ActiveGrowsSection = () => {
         
         {/* Add Plant Card */}
         <Card
-          className="group cursor-pointer transition-all hover:shadow-xl border-dashed border-2 border-muted-foreground/20 hover:border-primary/50 min-h-[180px] md:min-h-[200px] flex items-center justify-center"
+          className="group cursor-pointer transition-all hover:shadow-xl border-dashed border-2 border-muted-foreground/20 hover:border-primary/50 min-h-[180px] md:min-h-[200px] flex items-center justify-center bg-muted"
           onClick={() => setAddPlantOpen(true)}>
           
           <CardContent className="flex flex-col items-center justify-center text-center p-4">
