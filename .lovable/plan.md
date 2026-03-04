@@ -1,48 +1,35 @@
 
 
-## Device Reboot Functionality
+## Refine Laboratory UI - Visual Grouping & Polish
 
-### Overview
-Add a "Reboot Device" button with confirmation dialog to the DeviceControls dashboard. The reboot uses a `reboot_cmd` flag in the device's `settings` JSON column (same pattern as `pump_pulse`).
+### Changes in `src/components/laboratory/ActiveGrowsSection.tsx`
 
-### Changes
+**1. Containerize each GrowBox group (lines 436-450)**
 
-#### 1. `src/components/DeviceControls.tsx`
-
-**Add state and handler:**
-- Add `isRebooting` state (`useState(false)`)
-- Add `rebootDialogOpen` state (`useState(false)`)
-- Add `handleReboot` async function:
-  1. Set `isRebooting = true`
-  2. Call `saveSettings({ reboot_cmd: true })`
-  3. Show toast: "Sending reboot signal..."
-  4. `setTimeout` 6 seconds, then `saveSettings({ reboot_cmd: false })`, set `isRebooting = false`, show success toast: "Device is rebooting. Back online in ~15 seconds."
-
-**Add UI elements (after the AI Mode card, before the 4-card grid):**
-- Add a "Reboot Device" button in the device header area (red/destructive style, with `RotateCcw` or `Power` icon)
-- Add an `AlertDialog` confirmation modal:
-  - Title: "Reboot Device?"
-  - Description: "Are you sure you want to reboot the controller? The device will be offline for approximately 15 seconds."
-  - Cancel / Confirm buttons
-  - Confirm triggers `handleReboot()`
-- Button is disabled while `isRebooting` is true (shows spinner/loading state)
-
-**Add import:**
-- Import `RotateCcw` from `lucide-react`
-
-#### 2. No Database Migration Needed
-The `reboot_cmd` field lives inside the existing `devices.settings` JSONB column, just like `pump_pulse`. No schema changes required.
-
-### Technical Details
-
-```text
-User clicks "Reboot" -> AlertDialog opens
-  -> Confirms -> saveSettings({ reboot_cmd: true })
-  -> Toast: "Sending reboot signal..."
-  -> setTimeout(6000)
-  -> saveSettings({ reboot_cmd: false })
-  -> Toast: "Device is rebooting..."
-  -> isRebooting = false
+Replace the current `space-y-3` wrapper with a styled container:
+```
+border border-white/10 bg-card/30 rounded-xl p-4 md:p-6
 ```
 
-The ESP8266 polls `get_device_settings()` and will see `reboot_cmd: true` in the settings JSON, triggering `ESP.restart()`. The 6-second auto-reset prevents bootloop on reconnect.
+**2. Improve section headers (lines 438-446)**
+
+- Import `Separator` from `@/components/ui/separator`
+- Make header text `text-base md:text-lg font-bold`
+- Use accent-colored `Layers` icon (`text-primary`) for devices, `Package` icon for unassigned
+- Add `<Separator className="mt-3" />` below the header, inside the container
+
+**3. Fix grid layout (line 447)**
+
+Replace current grid + border-left styling with clean responsive grid:
+```
+grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4
+```
+Remove the `pl-1 border-l-2 border-primary/20 ml-3` classes.
+
+**4. Empty state per group**
+
+Add a conditional: if `plants.length === 0`, render a muted text "No plants active" instead of the grid.
+
+### Files Modified
+- `src/components/laboratory/ActiveGrowsSection.tsx` — restyle the grouped view section (lines 434-508)
+
