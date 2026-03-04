@@ -17,9 +17,11 @@ import {
   AlertTriangle,
   Plus,
   Layers,
+  Package,
   Pencil,
   CheckCircle
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   usePlantsWithStrains,
@@ -434,19 +436,27 @@ export const ActiveGrowsSection = () => {
     return (
       <div className="space-y-6">
         {Object.entries(plantsByDevice).map(([deviceId, { deviceName, plants }]) => (
-          <div key={deviceId} className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="flex items-center gap-2 flex-1">
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <Layers className="h-4 w-4 text-primary" />
-                </div>
-                <span className="font-semibold text-sm text-foreground">{deviceId === '__unassigned__' ? '📦 Без пристрою' : `🌱 ${deviceName}`}</span>
-                <Badge variant="outline" className="text-xs">{plants.length}</Badge>
+          <div key={deviceId} className="border border-border/20 bg-card/30 rounded-xl p-4 md:p-6">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                {deviceId === '__unassigned__' 
+                  ? <Package className="h-4 w-4 text-primary" />
+                  : <Layers className="h-4 w-4 text-primary" />
+                }
               </div>
+              <span className="text-base md:text-lg font-bold text-foreground">
+                {deviceId === '__unassigned__' ? '📦 Без пристрою' : `🌱 ${deviceName}`}
+              </span>
+              <Badge variant="outline" className="text-xs">{plants.length}</Badge>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pl-1 border-l-2 border-primary/20 ml-3">
-              {plants.map(renderPlantCard)}
-            </div>
+            <Separator className="mt-3" />
+            {plants.length === 0 ? (
+              <p className="text-sm text-muted-foreground mt-4">{t('plants.noActivePlants')}</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {plants.map(renderPlantCard)}
+              </div>
+            )}
           </div>
         ))}
         
