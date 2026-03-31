@@ -324,7 +324,7 @@ export const ActiveGrowsSection = () => {
           <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm mb-2 md:mb-3">
             <Clock className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground" />
             <span className={`font-semibold capitalize ${stageTextColor}`}>
-              {smartStageInfo.stageName}
+              {t(`stages.${displayStageName}`, smartStageInfo.stageName)}
             </span>
             <span className="text-muted-foreground">
               {smartStageInfo.dayLabel}
