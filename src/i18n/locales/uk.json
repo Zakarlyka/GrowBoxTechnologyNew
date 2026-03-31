@@ -141,7 +141,12 @@
     "autoMode": "Авто режим",
     "manualOff": "Вимкнено вручну",
     "noWater": "Немає води",
-    "pumpDryLocked": "Помпу заблоковано — немає води"
+    "pumpDryLocked": "Помпу заблоковано — немає води",
+    "pumpLocked": "Заблоковано",
+    "unlockPump": "Розблокувати помпу",
+    "unlockingPump": "Надсилаємо сигнал розблокування...",
+    "timezone": "Часовий пояс",
+    "selectTimezone": "Оберіть часовий пояс"
   },
   "sensorTooltips": {
     "temperature": "Поточна температура повітря в боксі.",

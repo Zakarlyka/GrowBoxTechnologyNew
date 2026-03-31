@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SmartTooltip } from "@/components/ui/smart-tooltip";
 import { SmartHelp } from "@/components/ui/smart-help";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, Loader2 } from "lucide-react";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, Loader2, Lock, Unlock, Globe } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -81,6 +81,18 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [ventDurationSec, setVentDurationSec] = useState<number | string>(60);
   const [ventIntervalSec, setVentIntervalSec] = useState<number | string>(300);
 
+  // 🌍 Timezone
+  const [timezone, setTimezone] = useState('EET-2EEST,M3.5.0/3,M10.5.0/4');
+
+  const TIMEZONE_OPTIONS = [
+    { label: 'Київ (EET/EEST)', value: 'EET-2EEST,M3.5.0/3,M10.5.0/4' },
+    { label: 'Варшава (CET/CEST)', value: 'CET-1CEST,M3.5.0/2,M10.5.0/3' },
+    { label: 'Лондон (GMT/BST)', value: 'GMT0BST,M3.5.0/1,M10.5.0/2' },
+    { label: 'Берлін (CET/CEST)', value: 'CET-1CEST,M3.5.0/2,M10.5.0/3' },
+    { label: 'Москва (MSK)', value: 'MSK-3' },
+    { label: 'Стамбул (TRT)', value: 'TRT-3' },
+  ];
+
   // Reboot
   const [isRebooting, setIsRebooting] = useState(false);
 
@@ -141,6 +153,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setVentMode(settings.vent_mode ?? 0);
       setVentDurationSec(settings.vent_duration_sec ?? 60);
       setVentIntervalSec(settings.vent_interval_sec ?? 300);
+
+      // Timezone
+      setTimezone((settings as any).timezone ?? 'EET-2EEST,M3.5.0/3,M10.5.0/4');
       setHasChanges(false);
     }
   }, [settings]);
@@ -201,6 +216,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       vent_mode: ventMode,
       vent_duration_sec: safeVentDuration,
       vent_interval_sec: safeVentInterval,
+      // Timezone
+      timezone,
     };
     await saveSettings(patch);
     setHasChanges(false);
@@ -791,10 +808,17 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card C: Irrigation 💧 */}
         <Card className={cn(
           "gradient-card border-border/50 h-full flex flex-col",
-          isPumpDryLock && "border-destructive/50"
+          isPumpDryLock && "border-destructive/50 animate-pulse"
         )}>
           <CardHeader className="pb-3 px-5 pt-5">
-            {isAiActive && (
+            {/* Pump Lock Warning */}
+            {isPumpDryLock && (
+              <div className="flex items-center gap-2 text-xs text-destructive mb-1 font-semibold">
+                <Lock className="w-4 h-4 animate-pulse" />
+                <span>🔒 {t('controls.noWater')}</span>
+              </div>
+            )}
+            {isAiActive && !isPumpDryLock && (
               <div className="flex items-center gap-1 text-xs text-yellow-600 mb-1">
                 <Sparkles className="w-3 h-3" />
                 <span>✨ {t('controls.aiManagesIrrigation')}</span>
@@ -803,14 +827,18 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="flex items-center justify-between">
               <SmartHelp content={t('help.irrigationCard')}>
                 <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                  <Droplets className={cn(
-                    "w-5 h-5 transition-all duration-300",
-                    relayStatus?.pump === 1 
-                      ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)] animate-pulse" 
-                      : "text-muted-foreground"
-                  )} />
-                  {t('controls.irrigation')}
-                  {relayStatus?.pump === 1 && (
+                  {isPumpDryLock ? (
+                    <Lock className="w-5 h-5 text-destructive animate-pulse" />
+                  ) : (
+                    <Droplets className={cn(
+                      "w-5 h-5 transition-all duration-300",
+                      relayStatus?.pump === 1 
+                        ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)] animate-pulse" 
+                        : "text-muted-foreground"
+                    )} />
+                  )}
+                  {isPumpDryLock ? t('controls.pumpLocked') : t('controls.irrigation')}
+                  {!isPumpDryLock && relayStatus?.pump === 1 && (
                     <Badge variant="outline" className="ml-2 text-xs border-blue-500/50 text-blue-400">
                       {t('controls.active')}
                     </Badge>
@@ -818,8 +846,14 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </CardTitle>
               </SmartHelp>
               <Switch
-                checked={pumpMode === 1}
+                checked={!isPumpDryLock && pumpMode === 1}
                 onCheckedChange={(checked) => {
+                  if (isPumpDryLock) {
+                    // Reset pump lock by sending pump_mode: 1 momentarily
+                    saveSettings({ pump_mode: 1 });
+                    toast.info(t('controls.unlockingPump'));
+                    return;
+                  }
                   setPumpMode(checked ? 1 : 0);
                   setHasChanges(true);
                 }}
@@ -835,6 +869,21 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
             {/* Separator between toggle and Water Now */}
             <div className="border-t border-border/30 my-2" />
+
+            {/* Unlock Button (only when locked) */}
+            {isPumpDryLock && (
+              <Button
+                variant="outline"
+                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 h-10"
+                onClick={async () => {
+                  await saveSettings({ pump_mode: 1 });
+                  toast.info(t('controls.unlockingPump'));
+                }}
+              >
+                <Unlock className="w-4 h-4 mr-2" />
+                {t('controls.unlockPump')}
+              </Button>
+            )}
 
             {/* Large Force Water Button */}
             <SmartHelp content={t('help.waterNow')} isText={false}>
@@ -1018,7 +1067,36 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
       </div>
 
-      {/* Global Save Action Bar - Separate container OUTSIDE the grid */}
+      {/* Timezone Selector */}
+      <Card className="gradient-card border-border/50">
+        <CardHeader className="pb-3 px-5 pt-5">
+          <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
+            <Globe className="w-5 h-5 text-muted-foreground" />
+            {t('controls.timezone')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-5 pt-0">
+          <Select
+            value={timezone}
+            onValueChange={(val) => {
+              setTimezone(val);
+              setHasChanges(true);
+            }}
+          >
+            <SelectTrigger className="h-10 bg-input">
+              <SelectValue placeholder={t('controls.selectTimezone')} />
+            </SelectTrigger>
+            <SelectContent>
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <SelectItem key={tz.value} value={tz.value}>
+                  {tz.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
       <div className="mt-6 flex justify-end">
         <SmartHelp content={t('help.saveButton')} isText={false}>
           <Button 

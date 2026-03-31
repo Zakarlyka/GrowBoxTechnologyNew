@@ -141,7 +141,12 @@
     "autoMode": "Auto Mode",
     "manualOff": "Manual Off",
     "noWater": "No Water",
-    "pumpDryLocked": "Pump Locked — No Water"
+    "pumpDryLocked": "Pump Locked — No Water",
+    "pumpLocked": "Lock",
+    "unlockPump": "Unlock Pump",
+    "unlockingPump": "Sending unlock signal...",
+    "timezone": "Timezone",
+    "selectTimezone": "Select timezone"
   },
   "sensorTooltips": {
     "temperature": "Current air temperature inside the box.",
