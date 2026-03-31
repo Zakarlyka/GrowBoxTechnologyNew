@@ -216,6 +216,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       vent_mode: ventMode,
       vent_duration_sec: safeVentDuration,
       vent_interval_sec: safeVentInterval,
+      // Timezone
+      timezone,
     };
     await saveSettings(patch);
     setHasChanges(false);
