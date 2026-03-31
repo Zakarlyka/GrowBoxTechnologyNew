@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SmartTooltip } from "@/components/ui/smart-tooltip";
 import { SmartHelp } from "@/components/ui/smart-help";
-import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, Loader2 } from "lucide-react";
+import { Save, Lightbulb, Thermometer, Droplets, Wind, Sparkles, Bot, ShieldAlert, Leaf, Settings2, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, Loader2, Lock, Unlock, Globe } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
