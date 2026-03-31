@@ -153,6 +153,9 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setVentMode(settings.vent_mode ?? 0);
       setVentDurationSec(settings.vent_duration_sec ?? 60);
       setVentIntervalSec(settings.vent_interval_sec ?? 300);
+
+      // Timezone
+      setTimezone((settings as any).timezone ?? 'EET-2EEST,M3.5.0/3,M10.5.0/4');
       setHasChanges(false);
     }
   }, [settings]);
