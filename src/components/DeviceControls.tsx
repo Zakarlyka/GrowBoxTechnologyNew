@@ -791,10 +791,17 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         {/* Card C: Irrigation 💧 */}
         <Card className={cn(
           "gradient-card border-border/50 h-full flex flex-col",
-          isPumpDryLock && "border-destructive/50"
+          isPumpDryLock && "border-destructive/50 animate-pulse"
         )}>
           <CardHeader className="pb-3 px-5 pt-5">
-            {isAiActive && (
+            {/* Pump Lock Warning */}
+            {isPumpDryLock && (
+              <div className="flex items-center gap-2 text-xs text-destructive mb-1 font-semibold">
+                <Lock className="w-4 h-4 animate-pulse" />
+                <span>🔒 {t('controls.noWater')}</span>
+              </div>
+            )}
+            {isAiActive && !isPumpDryLock && (
               <div className="flex items-center gap-1 text-xs text-yellow-600 mb-1">
                 <Sparkles className="w-3 h-3" />
                 <span>✨ {t('controls.aiManagesIrrigation')}</span>
@@ -803,14 +810,18 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
             <div className="flex items-center justify-between">
               <SmartHelp content={t('help.irrigationCard')}>
                 <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-                  <Droplets className={cn(
-                    "w-5 h-5 transition-all duration-300",
-                    relayStatus?.pump === 1 
-                      ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)] animate-pulse" 
-                      : "text-muted-foreground"
-                  )} />
-                  {t('controls.irrigation')}
-                  {relayStatus?.pump === 1 && (
+                  {isPumpDryLock ? (
+                    <Lock className="w-5 h-5 text-destructive animate-pulse" />
+                  ) : (
+                    <Droplets className={cn(
+                      "w-5 h-5 transition-all duration-300",
+                      relayStatus?.pump === 1 
+                        ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.8)] animate-pulse" 
+                        : "text-muted-foreground"
+                    )} />
+                  )}
+                  {isPumpDryLock ? t('controls.pumpLocked') : t('controls.irrigation')}
+                  {!isPumpDryLock && relayStatus?.pump === 1 && (
                     <Badge variant="outline" className="ml-2 text-xs border-blue-500/50 text-blue-400">
                       {t('controls.active')}
                     </Badge>
@@ -818,8 +829,14 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </CardTitle>
               </SmartHelp>
               <Switch
-                checked={pumpMode === 1}
+                checked={!isPumpDryLock && pumpMode === 1}
                 onCheckedChange={(checked) => {
+                  if (isPumpDryLock) {
+                    // Reset pump lock by sending pump_mode: 1 momentarily
+                    saveSettings({ pump_mode: 1 });
+                    toast.info(t('controls.unlockingPump'));
+                    return;
+                  }
                   setPumpMode(checked ? 1 : 0);
                   setHasChanges(true);
                 }}
@@ -835,6 +852,21 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
             {/* Separator between toggle and Water Now */}
             <div className="border-t border-border/30 my-2" />
+
+            {/* Unlock Button (only when locked) */}
+            {isPumpDryLock && (
+              <Button
+                variant="outline"
+                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 h-10"
+                onClick={async () => {
+                  await saveSettings({ pump_mode: 1 });
+                  toast.info(t('controls.unlockingPump'));
+                }}
+              >
+                <Unlock className="w-4 h-4 mr-2" />
+                {t('controls.unlockPump')}
+              </Button>
+            )}
 
             {/* Large Force Water Button */}
             <SmartHelp content={t('help.waterNow')} isText={false}>
