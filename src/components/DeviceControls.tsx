@@ -261,7 +261,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       // Step 1: Trigger pump pulse (pump_pulse: 1)
       await saveSettings({ pump_pulse: 1 });
 
-      // Step 2: Wait 10 seconds
+      // Step 2: Wait 2 seconds (momentary pulse), then auto-reset
       setTimeout(async () => {
         try {
           // Step 3: Reset pulse trigger (pump_pulse: 0)
@@ -271,7 +271,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
           toast.error(`${t('common.error')}: ${error.message}`);
           setIsWatering(false);
         }
-      }, 10000);
+      }, 2000);
     } catch (error: any) {
       toast.error(`${t('common.error')}: ${error.message}`);
       setIsWatering(false);
