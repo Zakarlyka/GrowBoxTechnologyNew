@@ -176,6 +176,9 @@ export function Header() {
             </SmartHelp>
           )}
 
+          {/* Clock & Timezone Widget */}
+          <ClockTimezoneWidget />
+
           {/* Notification Center Bell */}
           <NotificationCenter />
 

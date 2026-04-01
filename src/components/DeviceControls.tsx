@@ -1059,35 +1059,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
       </div>
 
-      {/* Timezone Selector */}
-      <Card className="gradient-card border-border/50">
-        <CardHeader className="pb-3 px-5 pt-5">
-          <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-            <Globe className="w-5 h-5 text-muted-foreground" />
-            {t('controls.timezone')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-5 pb-5 pt-0">
-          <Select
-            value={timezone}
-            onValueChange={(val) => {
-              setTimezone(val);
-              setHasChanges(true);
-            }}
-          >
-            <SelectTrigger className="h-10 bg-input">
-              <SelectValue placeholder={t('controls.selectTimezone')} />
-            </SelectTrigger>
-            <SelectContent>
-              {TIMEZONE_OPTIONS.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>
-                  {tz.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+      {/* Timezone is now managed by the Header ClockTimezoneWidget */}
 
       <div className="mt-6 flex justify-end">
         <SmartHelp content={t('help.saveButton')} isText={false}>
