@@ -28,9 +28,11 @@ export function useDeviceControls(deviceId: string | null) {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const isInitialLoad = useState({ current: true })[0];
+
+  const fetchData = useCallback(async (silent = false) => {
     if (!deviceId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     
     try {
       const { data, error } = await supabase
@@ -43,27 +45,28 @@ export function useDeviceControls(deviceId: string | null) {
       
       setDeviceData({
         settings: (data?.settings as any) || null,
-        lastTemp: data?.last_temp || null,
-        lastHum: data?.last_hum || null,
-        lastSoilMoisture: data?.last_soil_moisture || null,
+        lastTemp: data?.last_temp ?? null,
+        lastHum: data?.last_hum ?? null,
+        lastSoilMoisture: data?.last_soil_moisture ?? null,
         lastSeenAt: data?.last_seen_at || null,
         deviceName: data?.name || null,
         deviceType: data?.type || null,
         deviceUuid: data?.id || null,
       });
     } catch (error: any) {
-      toast.error(`Помилка завантаження: ${error.message}`);
+      if (!silent) toast.error(`Помилка завантаження: ${error.message}`);
     } finally {
       setLoading(false);
+      isInitialLoad.current = false;
     }
-  }, [deviceId]);
+  }, [deviceId, isInitialLoad]);
 
   useEffect(() => {
     fetchData();
 
     if (!deviceId) return;
 
-    // Subscribe to settings changes
+    // Subscribe to realtime changes (silent updates)
     const channel = supabase
       .channel(`device-${deviceId}`)
       .on(
@@ -75,7 +78,7 @@ export function useDeviceControls(deviceId: string | null) {
           filter: `device_id=eq.${deviceId}`,
         },
         () => {
-          fetchData();
+          fetchData(true);
         }
       )
       .subscribe();

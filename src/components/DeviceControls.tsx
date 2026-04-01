@@ -81,17 +81,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [ventDurationSec, setVentDurationSec] = useState<number | string>(60);
   const [ventIntervalSec, setVentIntervalSec] = useState<number | string>(300);
 
-  // 🌍 Timezone
+  // 🌍 Timezone (now managed by Header ClockTimezoneWidget, kept for save compatibility)
   const [timezone, setTimezone] = useState('EET-2EEST,M3.5.0/3,M10.5.0/4');
-
-  const TIMEZONE_OPTIONS = [
-    { label: 'Київ (EET/EEST)', value: 'EET-2EEST,M3.5.0/3,M10.5.0/4' },
-    { label: 'Варшава (CET/CEST)', value: 'CET-1CEST,M3.5.0/2,M10.5.0/3' },
-    { label: 'Лондон (GMT/BST)', value: 'GMT0BST,M3.5.0/1,M10.5.0/2' },
-    { label: 'Берлін (CET/CEST)', value: 'CET-1CEST,M3.5.0/2,M10.5.0/3' },
-    { label: 'Москва (MSK)', value: 'MSK-3' },
-    { label: 'Стамбул (TRT)', value: 'TRT-3' },
-  ];
 
   // Reboot
   const [isRebooting, setIsRebooting] = useState(false);
@@ -1068,35 +1059,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </Card>
       </div>
 
-      {/* Timezone Selector */}
-      <Card className="gradient-card border-border/50">
-        <CardHeader className="pb-3 px-5 pt-5">
-          <CardTitle className="flex items-center gap-2 text-base lg:text-lg">
-            <Globe className="w-5 h-5 text-muted-foreground" />
-            {t('controls.timezone')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-5 pb-5 pt-0">
-          <Select
-            value={timezone}
-            onValueChange={(val) => {
-              setTimezone(val);
-              setHasChanges(true);
-            }}
-          >
-            <SelectTrigger className="h-10 bg-input">
-              <SelectValue placeholder={t('controls.selectTimezone')} />
-            </SelectTrigger>
-            <SelectContent>
-              {TIMEZONE_OPTIONS.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>
-                  {tz.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+      {/* Timezone is now managed by the Header ClockTimezoneWidget */}
 
       <div className="mt-6 flex justify-end">
         <SmartHelp content={t('help.saveButton')} isText={false}>
