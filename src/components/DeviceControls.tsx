@@ -846,7 +846,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </CardTitle>
               </SmartHelp>
               <Switch
-                checked={!isPumpDryLock && pumpMode === 1}
+                checked={!isPumpDryLock && pumpMode !== 2}
                 onCheckedChange={(checked) => {
                   if (isPumpDryLock) {
                     // Reset pump lock by sending pump_mode: 1 momentarily
@@ -854,7 +854,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     toast.info(t('controls.unlockingPump'));
                     return;
                   }
-                  setPumpMode(checked ? 1 : 0);
+                  // Auto (ON) = pump_mode: 0, Forced OFF = pump_mode: 2
+                  setPumpMode(checked ? 0 : 2);
                   setHasChanges(true);
                 }}
                 disabled={isAiActive}
