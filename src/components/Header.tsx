@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ChevronDown, User, Settings, LogOut, Globe, Layers, HelpCircle } from 'lucide-react';
 import { SmartHelp } from '@/components/ui/smart-help';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { ClockTimezoneWidget } from '@/components/ClockTimezoneWidget';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
