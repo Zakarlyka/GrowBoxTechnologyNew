@@ -895,7 +895,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={isWatering || isPumpDryLock}
               >
                 <Droplets className={cn("w-5 h-5 mr-2", isWatering && "animate-pulse")} />
-                {isPumpDryLock ? t('controls.pumpDryLocked') : isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
+                {isPumpDryLock ? t('controls.pumpDryLocked') : isWatering ? `${t('controls.watering')}...` : t('devices.waterNow')}
               </Button>
             </SmartHelp>
 
