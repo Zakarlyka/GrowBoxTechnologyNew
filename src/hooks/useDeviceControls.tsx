@@ -66,7 +66,7 @@ export function useDeviceControls(deviceId: string | null) {
 
     if (!deviceId) return;
 
-    // Subscribe to settings changes
+    // Subscribe to realtime changes (silent updates)
     const channel = supabase
       .channel(`device-${deviceId}`)
       .on(
@@ -78,7 +78,7 @@ export function useDeviceControls(deviceId: string | null) {
           filter: `device_id=eq.${deviceId}`,
         },
         () => {
-          fetchData();
+          fetchData(true);
         }
       )
       .subscribe();
