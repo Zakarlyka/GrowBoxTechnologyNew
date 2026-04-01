@@ -146,7 +146,8 @@
     "unlockPump": "Unlock Pump",
     "unlockingPump": "Sending unlock signal...",
     "timezone": "Timezone",
-    "selectTimezone": "Select timezone"
+    "selectTimezone": "Select timezone",
+    "searchTimezone": "Search city..."
   },
   "sensorTooltips": {
     "temperature": "Current air temperature inside the box.",

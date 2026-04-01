@@ -146,7 +146,8 @@
     "unlockPump": "Розблокувати помпу",
     "unlockingPump": "Надсилаємо сигнал розблокування...",
     "timezone": "Часовий пояс",
-    "selectTimezone": "Оберіть часовий пояс"
+    "selectTimezone": "Оберіть часовий пояс",
+    "searchTimezone": "Пошук міста..."
   },
   "sensorTooltips": {
     "temperature": "Поточна температура повітря в боксі.",
