@@ -81,17 +81,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [ventDurationSec, setVentDurationSec] = useState<number | string>(60);
   const [ventIntervalSec, setVentIntervalSec] = useState<number | string>(300);
 
-  // 🌍 Timezone
+  // 🌍 Timezone (now managed by Header ClockTimezoneWidget, kept for save compatibility)
   const [timezone, setTimezone] = useState('EET-2EEST,M3.5.0/3,M10.5.0/4');
-
-  const TIMEZONE_OPTIONS = [
-    { label: 'Київ (EET/EEST)', value: 'EET-2EEST,M3.5.0/3,M10.5.0/4' },
-    { label: 'Варшава (CET/CEST)', value: 'CET-1CEST,M3.5.0/2,M10.5.0/3' },
-    { label: 'Лондон (GMT/BST)', value: 'GMT0BST,M3.5.0/1,M10.5.0/2' },
-    { label: 'Берлін (CET/CEST)', value: 'CET-1CEST,M3.5.0/2,M10.5.0/3' },
-    { label: 'Москва (MSK)', value: 'MSK-3' },
-    { label: 'Стамбул (TRT)', value: 'TRT-3' },
-  ];
 
   // Reboot
   const [isRebooting, setIsRebooting] = useState(false);
