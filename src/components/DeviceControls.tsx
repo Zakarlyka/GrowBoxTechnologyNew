@@ -261,7 +261,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       // Step 1: Trigger pump pulse (pump_pulse: 1)
       await saveSettings({ pump_pulse: 1 });
 
-      // Step 2: Wait 10 seconds
+      // Step 2: Wait 2 seconds (momentary pulse), then auto-reset
       setTimeout(async () => {
         try {
           // Step 3: Reset pulse trigger (pump_pulse: 0)
@@ -271,7 +271,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
           toast.error(`${t('common.error')}: ${error.message}`);
           setIsWatering(false);
         }
-      }, 10000);
+      }, 2000);
     } catch (error: any) {
       toast.error(`${t('common.error')}: ${error.message}`);
       setIsWatering(false);
@@ -846,7 +846,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </CardTitle>
               </SmartHelp>
               <Switch
-                checked={!isPumpDryLock && pumpMode === 1}
+                checked={!isPumpDryLock && pumpMode !== 2}
                 onCheckedChange={(checked) => {
                   if (isPumpDryLock) {
                     // Reset pump lock by sending pump_mode: 1 momentarily
@@ -854,7 +854,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                     toast.info(t('controls.unlockingPump'));
                     return;
                   }
-                  setPumpMode(checked ? 1 : 0);
+                  // Auto (ON) = pump_mode: 0, Forced OFF = pump_mode: 2
+                  setPumpMode(checked ? 0 : 2);
                   setHasChanges(true);
                 }}
                 disabled={isAiActive}
@@ -894,7 +895,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 disabled={isWatering || isPumpDryLock}
               >
                 <Droplets className={cn("w-5 h-5 mr-2", isWatering && "animate-pulse")} />
-                {isPumpDryLock ? t('controls.pumpDryLocked') : isWatering ? `${t('controls.watering')} (10 ${t('controls.seconds')})` : t('devices.waterNow')}
+                {isPumpDryLock ? t('controls.pumpDryLocked') : isWatering ? `${t('controls.watering')}...` : t('devices.waterNow')}
               </Button>
             </SmartHelp>
 
