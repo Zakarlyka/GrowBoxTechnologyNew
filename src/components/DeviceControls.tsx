@@ -68,7 +68,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [humHyst, setHumHyst] = useState<number | string>(5);
 
   // 💧 Irrigation
-  const [pumpMode, setPumpMode] = useState(0);
+  const [pumpMode, setPumpMode] = useState(1);
   const [soilMin, setSoilMin] = useState<number | string>(30);
   const [soilMax, setSoilMax] = useState<number | string>(80);
   const [isWatering, setIsWatering] = useState(false);
