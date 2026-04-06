@@ -135,8 +135,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setTargetHum(settings.target_hum ?? 60);
       setHumHyst(settings.hum_hyst ?? 5);
 
-      // Irrigation
-      setPumpMode(settings.pump_mode ?? 0);
+      // Irrigation (1 = ON/Auto, 0 = OFF)
+      setPumpMode(settings.pump_mode ?? 1);
       setSoilMin(settings.soil_min ?? 30);
       setSoilMax(settings.soil_max ?? 80);
 
