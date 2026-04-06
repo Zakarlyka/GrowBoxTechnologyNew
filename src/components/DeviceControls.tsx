@@ -68,7 +68,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [humHyst, setHumHyst] = useState<number | string>(5);
 
   // 💧 Irrigation
-  const [pumpMode, setPumpMode] = useState(0);
+  const [pumpMode, setPumpMode] = useState(1);
   const [soilMin, setSoilMin] = useState<number | string>(30);
   const [soilMax, setSoilMax] = useState<number | string>(80);
   const [isWatering, setIsWatering] = useState(false);
@@ -135,8 +135,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setTargetHum(settings.target_hum ?? 60);
       setHumHyst(settings.hum_hyst ?? 5);
 
-      // Irrigation
-      setPumpMode(settings.pump_mode ?? 0);
+      // Irrigation (1 = ON/Auto, 0 = OFF)
+      setPumpMode(settings.pump_mode ?? 1);
       setSoilMin(settings.soil_min ?? 30);
       setSoilMax(settings.soil_max ?? 80);
 
@@ -169,6 +169,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       // Ensure modes are ON when AI is active
       setClimateMode(1);
       setLightMode(1);
+      setPumpMode(1);
+      setVentMode(1);
     }
   }, [isAiActive, aiTargets]);
 
@@ -837,17 +839,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                 </CardTitle>
               </SmartHelp>
               <Switch
-                checked={!isPumpDryLock && pumpMode !== 2}
+                checked={isAiActive ? true : (!isPumpDryLock && pumpMode === 1)}
                 onCheckedChange={(checked) => {
-                  if (isPumpDryLock) {
-                    // Reset pump lock by sending pump_mode: 1 momentarily
+                  const newMode = checked ? 1 : 0;
+                  setPumpMode(newMode);
+                  setHasChanges(true);
+                  if (isPumpDryLock && checked) {
+                    // Turning ON clears the hardware lock
                     saveSettings({ pump_mode: 1 });
                     toast.info(t('controls.unlockingPump'));
-                    return;
                   }
-                  // Auto (ON) = pump_mode: 0, Forced OFF = pump_mode: 2
-                  setPumpMode(checked ? 0 : 2);
-                  setHasChanges(true);
                 }}
                 disabled={isAiActive}
                 className={cn(
