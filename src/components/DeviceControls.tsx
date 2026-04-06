@@ -169,6 +169,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       // Ensure modes are ON when AI is active
       setClimateMode(1);
       setLightMode(1);
+      setPumpMode(1);
+      setVentMode(1);
     }
   }, [isAiActive, aiTargets]);
 
