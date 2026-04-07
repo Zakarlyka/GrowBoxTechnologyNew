@@ -71,6 +71,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [pumpMode, setPumpMode] = useState(1);
   const [soilMin, setSoilMin] = useState<number | string>(30);
   const [soilMax, setSoilMax] = useState<number | string>(80);
+  const [pumpTimeSec, setPumpTimeSec] = useState<number | string>(10);
+  const [soakTimeSec, setSoakTimeSec] = useState<number | string>(30);
   const [isWatering, setIsWatering] = useState(false);
 
   // Pump dry lock error detection
@@ -139,6 +141,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setPumpMode(settings.pump_mode ?? 1);
       setSoilMin(settings.soil_min ?? 30);
       setSoilMax(settings.soil_max ?? 80);
+      setPumpTimeSec((settings as any).pump_time_sec ?? 10);
+      setSoakTimeSec((settings as any).soak_time_sec ?? 30);
 
       // Ventilation
       setVentMode(settings.vent_mode ?? 0);
@@ -182,6 +186,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
     const safeHumHyst = humHyst === '' ? 5 : Number(humHyst);
     const safeSoilMin = soilMin === '' ? 30 : Number(soilMin);
     const safeSoilMax = soilMax === '' ? 80 : Number(soilMax);
+    const safePumpTimeSec = pumpTimeSec === '' ? 10 : Number(pumpTimeSec);
+    const safeSoakTimeSec = soakTimeSec === '' ? 30 : Number(soakTimeSec);
     const safeVentDuration = ventDurationSec === '' ? 60 : Number(ventDurationSec);
     const safeVentInterval = ventIntervalSec === '' ? 300 : Number(ventIntervalSec);
     
@@ -205,6 +211,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       pump_mode: pumpMode,
       soil_min: safeSoilMin,
       soil_max: safeSoilMax,
+      pump_time_sec: safePumpTimeSec,
+      soak_time_sec: safeSoakTimeSec,
       // Ventilation
       vent_mode: ventMode,
       vent_duration_sec: safeVentDuration,
