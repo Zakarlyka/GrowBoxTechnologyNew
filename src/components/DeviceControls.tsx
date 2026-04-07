@@ -955,7 +955,71 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
                       </span>
+
+
+              {/* Advanced: Pump Work/Soak Time */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedSoil(!showAdvancedSoil)}
+                className="w-full justify-between text-xs text-muted-foreground hover:text-foreground h-8"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings2 className="w-3 h-3" />
+                  {t('controls.advancedSettings', 'Розширені налаштування')}
+                </span>
+                {showAdvancedSoil ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </Button>
+
+              {showAdvancedSoil && (
+                <div className="grid grid-cols-2 gap-2 animate-fade-in">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      ⏱️ {t('controls.pumpTimeSec', 'Робота (сек)')}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={pumpTimeSec ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPumpTimeSec(v === '' ? '' : Number(v));
+                          setHasChanges(true);
+                        }}
+                        min="1"
+                        max="300"
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
+                        placeholder="10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">s</span>
                     </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      💤 {t('controls.soakTimeSec', 'Пауза (сек)')}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={soakTimeSec ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSoakTimeSec(v === '' ? '' : Number(v));
+                          setHasChanges(true);
+                        }}
+                        min="1"
+                        max="3600"
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
+                        placeholder="30"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">s</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
                   </SmartHelp>
                 </div>
               </div>
