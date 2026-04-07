@@ -71,6 +71,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
   const [pumpMode, setPumpMode] = useState(1);
   const [soilMin, setSoilMin] = useState<number | string>(30);
   const [soilMax, setSoilMax] = useState<number | string>(80);
+  const [pumpTimeSec, setPumpTimeSec] = useState<number | string>(10);
+  const [soakTimeSec, setSoakTimeSec] = useState<number | string>(30);
   const [isWatering, setIsWatering] = useState(false);
 
   // Pump dry lock error detection
@@ -139,6 +141,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       setPumpMode(settings.pump_mode ?? 1);
       setSoilMin(settings.soil_min ?? 30);
       setSoilMax(settings.soil_max ?? 80);
+      setPumpTimeSec((settings as any).pump_time_sec ?? 10);
+      setSoakTimeSec((settings as any).soak_time_sec ?? 30);
 
       // Ventilation
       setVentMode(settings.vent_mode ?? 0);
@@ -182,6 +186,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
     const safeHumHyst = humHyst === '' ? 5 : Number(humHyst);
     const safeSoilMin = soilMin === '' ? 30 : Number(soilMin);
     const safeSoilMax = soilMax === '' ? 80 : Number(soilMax);
+    const safePumpTimeSec = pumpTimeSec === '' ? 10 : Number(pumpTimeSec);
+    const safeSoakTimeSec = soakTimeSec === '' ? 30 : Number(soakTimeSec);
     const safeVentDuration = ventDurationSec === '' ? 60 : Number(ventDurationSec);
     const safeVentInterval = ventIntervalSec === '' ? 300 : Number(ventIntervalSec);
     
@@ -205,6 +211,8 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
       pump_mode: pumpMode,
       soil_min: safeSoilMin,
       soil_max: safeSoilMax,
+      pump_time_sec: safePumpTimeSec,
+      soak_time_sec: safeSoakTimeSec,
       // Ventilation
       vent_mode: ventMode,
       vent_duration_sec: safeVentDuration,
@@ -947,7 +955,71 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
                       </span>
+
+
+              {/* Advanced: Pump Work/Soak Time */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvancedSoil(!showAdvancedSoil)}
+                className="w-full justify-between text-xs text-muted-foreground hover:text-foreground h-8"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings2 className="w-3 h-3" />
+                  {t('controls.advancedSettings', 'Розширені налаштування')}
+                </span>
+                {showAdvancedSoil ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </Button>
+
+              {showAdvancedSoil && (
+                <div className="grid grid-cols-2 gap-2 animate-fade-in">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      ⏱️ {t('controls.pumpTimeSec', 'Робота (сек)')}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={pumpTimeSec ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPumpTimeSec(v === '' ? '' : Number(v));
+                          setHasChanges(true);
+                        }}
+                        min="1"
+                        max="300"
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
+                        placeholder="10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">s</span>
                     </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-muted-foreground">
+                      💤 {t('controls.soakTimeSec', 'Пауза (сек)')}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={soakTimeSec ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSoakTimeSec(v === '' ? '' : Number(v));
+                          setHasChanges(true);
+                        }}
+                        min="1"
+                        max="3600"
+                        disabled={isAiActive}
+                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
+                        placeholder="30"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">s</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
                   </SmartHelp>
                 </div>
               </div>
