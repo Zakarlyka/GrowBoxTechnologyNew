@@ -28,12 +28,15 @@ export function useDeviceControls(deviceId: string | null) {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const isInitialLoad = useState({ current: true })[0];
+  // Stable ref — does not affect fetchData identity, prevents subscription tear-down
+  const isInitialLoadRef = useRef(true);
 
   const fetchData = useCallback(async (silent = false) => {
     if (!deviceId) return;
-    if (!silent) setLoading(true);
-    
+    // Only show the global loader on the very first fetch.
+    // Realtime/silent updates never flip loading=true, so the DOM doesn't remount.
+    if (!silent && isInitialLoadRef.current) setLoading(true);
+
     try {
       const { data, error } = await supabase
         .from('devices')
@@ -56,10 +59,12 @@ export function useDeviceControls(deviceId: string | null) {
     } catch (error: any) {
       if (!silent) toast.error(`Помилка завантаження: ${error.message}`);
     } finally {
-      setLoading(false);
-      isInitialLoad.current = false;
+      if (isInitialLoadRef.current) {
+        setLoading(false);
+        isInitialLoadRef.current = false;
+      }
     }
-  }, [deviceId, isInitialLoad]);
+  }, [deviceId]);
 
   useEffect(() => {
     fetchData();
