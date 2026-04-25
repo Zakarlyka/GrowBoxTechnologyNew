@@ -214,11 +214,11 @@ export function ClockTimezoneWidget() {
         <ScrollArea className="h-56">
           <div className="p-1">
             {filtered.map((tz) => {
-              const isSelected = selectedPosix === tz.posix;
+              const isSelected = selectedIana === tz.iana;
               return (
                 <button
-                  key={tz.city}
-                  onClick={() => handleSelect(tz.posix)}
+                  key={tz.iana}
+                  onClick={() => handleSelect(tz)}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors",
                     "hover:bg-accent/50 cursor-pointer",
