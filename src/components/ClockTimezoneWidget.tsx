@@ -141,8 +141,9 @@ export function ClockTimezoneWidget() {
     );
   }, [search]);
 
-  const handleSelect = async (posix: string) => {
-    setSelectedPosix(posix);
+  const handleSelect = async (tz: { city: string; iana: string; posix: string }) => {
+    setSelectedPosix(tz.posix);
+    setSelectedIana(tz.iana);
     setOpen(false);
     setSearch('');
 
@@ -160,13 +161,15 @@ export function ClockTimezoneWidget() {
     const currentSettings = (data?.settings as Record<string, unknown>) || {};
     const { error } = await supabase
       .from('devices')
-      .update({ settings: { ...currentSettings, timezone: posix } })
+      .update({
+        settings: { ...currentSettings, timezone: tz.posix, timezone_iana: tz.iana },
+      })
       .eq('id', activeDevice.id);
 
     if (error) {
       toast.error('Failed to save timezone');
     } else {
-      toast.success(`Timezone updated: ${TIMEZONE_MAP.find(tz => tz.posix === posix)?.city}`);
+      toast.success(`Timezone updated: ${tz.city}`);
     }
   };
 
