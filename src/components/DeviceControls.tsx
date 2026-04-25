@@ -955,7 +955,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                         %
                       </span>
-
+                    </div>
+                  </SmartHelp>
+                </div>
+              </div>
 
               {/* Advanced: Pump Work/Soak Time */}
               <Button
@@ -972,10 +975,10 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
               </Button>
 
               {showAdvancedSoil && (
-                <div className="grid grid-cols-2 gap-2 animate-fade-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 animate-fade-in">
                   <div className="space-y-1">
                     <Label className="text-sm font-medium text-muted-foreground">
-                      ⏱️ {t('controls.pumpTimeSec', 'Робота (сек)')}
+                      ⏱️ {t('controls.pumpTimeSec', 'Час поливу (сек)')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -989,7 +992,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="1"
                         max="300"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
+                        className={cn("pr-8 h-10 bg-input", isAiActive && "opacity-50")}
                         placeholder="10"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">s</span>
@@ -997,7 +1000,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-sm font-medium text-muted-foreground">
-                      💤 {t('controls.soakTimeSec', 'Пауза (сек)')}
+                      💤 {t('controls.soakTimeSec', 'Час паузи (сек)')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -1011,7 +1014,7 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                         min="1"
                         max="3600"
                         disabled={isAiActive}
-                        className={cn("pr-12 h-10 bg-input", isAiActive && "opacity-50")}
+                        className={cn("pr-8 h-10 bg-input", isAiActive && "opacity-50")}
                         placeholder="30"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">s</span>
@@ -1019,10 +1022,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
                   </div>
                 </div>
               )}
-            </div>
-                  </SmartHelp>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
