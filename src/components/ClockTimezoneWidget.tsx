@@ -86,6 +86,7 @@ export function ClockTimezoneWidget() {
   const [open, setOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [selectedPosix, setSelectedPosix] = useState('EET-2EEST,M3.5.0/3,M10.5.0/4');
+  const [selectedIana, setSelectedIana] = useState('Europe/Kyiv');
 
   const activeDeviceId = searchParams.get('device');
   const activeDevice = useMemo(() => {
@@ -102,16 +103,27 @@ export function ClockTimezoneWidget() {
         .eq('id', activeDevice.id)
         .single();
       if (data?.settings) {
-        const tz = (data.settings as any).timezone;
+        const s = data.settings as any;
+        const tz = s.timezone;
+        const iana = s.timezone_iana;
         if (tz) setSelectedPosix(tz);
+        if (iana) {
+          setSelectedIana(iana);
+        } else if (tz) {
+          // Fallback: resolve IANA from the persisted POSIX (first match)
+          const match = TIMEZONE_MAP.find(z => z.posix === tz);
+          if (match) setSelectedIana(match.iana);
+        }
       }
     };
     loadTz();
   }, [activeDevice?.id]);
 
   const selectedTz = useMemo(() =>
-    TIMEZONE_MAP.find(tz => tz.posix === selectedPosix) || TIMEZONE_MAP[0],
-  [selectedPosix]);
+    TIMEZONE_MAP.find(tz => tz.iana === selectedIana) ||
+    TIMEZONE_MAP.find(tz => tz.posix === selectedPosix) ||
+    TIMEZONE_MAP[0],
+  [selectedIana, selectedPosix]);
 
   useEffect(() => {
     const update = () => setCurrentTime(getTimeForIana(selectedTz.iana));
