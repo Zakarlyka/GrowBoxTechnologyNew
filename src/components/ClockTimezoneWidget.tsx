@@ -86,6 +86,7 @@ export function ClockTimezoneWidget() {
   const [open, setOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [selectedPosix, setSelectedPosix] = useState('EET-2EEST,M3.5.0/3,M10.5.0/4');
+  const [selectedIana, setSelectedIana] = useState('Europe/Kyiv');
 
   const activeDeviceId = searchParams.get('device');
   const activeDevice = useMemo(() => {
@@ -102,16 +103,27 @@ export function ClockTimezoneWidget() {
         .eq('id', activeDevice.id)
         .single();
       if (data?.settings) {
-        const tz = (data.settings as any).timezone;
+        const s = data.settings as any;
+        const tz = s.timezone;
+        const iana = s.timezone_iana;
         if (tz) setSelectedPosix(tz);
+        if (iana) {
+          setSelectedIana(iana);
+        } else if (tz) {
+          // Fallback: resolve IANA from the persisted POSIX (first match)
+          const match = TIMEZONE_MAP.find(z => z.posix === tz);
+          if (match) setSelectedIana(match.iana);
+        }
       }
     };
     loadTz();
   }, [activeDevice?.id]);
 
   const selectedTz = useMemo(() =>
-    TIMEZONE_MAP.find(tz => tz.posix === selectedPosix) || TIMEZONE_MAP[0],
-  [selectedPosix]);
+    TIMEZONE_MAP.find(tz => tz.iana === selectedIana) ||
+    TIMEZONE_MAP.find(tz => tz.posix === selectedPosix) ||
+    TIMEZONE_MAP[0],
+  [selectedIana, selectedPosix]);
 
   useEffect(() => {
     const update = () => setCurrentTime(getTimeForIana(selectedTz.iana));
@@ -129,8 +141,9 @@ export function ClockTimezoneWidget() {
     );
   }, [search]);
 
-  const handleSelect = async (posix: string) => {
-    setSelectedPosix(posix);
+  const handleSelect = async (tz: { city: string; iana: string; posix: string }) => {
+    setSelectedPosix(tz.posix);
+    setSelectedIana(tz.iana);
     setOpen(false);
     setSearch('');
 
@@ -148,13 +161,15 @@ export function ClockTimezoneWidget() {
     const currentSettings = (data?.settings as Record<string, unknown>) || {};
     const { error } = await supabase
       .from('devices')
-      .update({ settings: { ...currentSettings, timezone: posix } })
+      .update({
+        settings: { ...currentSettings, timezone: tz.posix, timezone_iana: tz.iana },
+      })
       .eq('id', activeDevice.id);
 
     if (error) {
       toast.error('Failed to save timezone');
     } else {
-      toast.success(`Timezone updated: ${TIMEZONE_MAP.find(tz => tz.posix === posix)?.city}`);
+      toast.success(`Timezone updated: ${tz.city}`);
     }
   };
 
@@ -199,11 +214,11 @@ export function ClockTimezoneWidget() {
         <ScrollArea className="h-56">
           <div className="p-1">
             {filtered.map((tz) => {
-              const isSelected = selectedPosix === tz.posix;
+              const isSelected = selectedIana === tz.iana;
               return (
                 <button
-                  key={tz.city}
-                  onClick={() => handleSelect(tz.posix)}
+                  key={tz.iana}
+                  onClick={() => handleSelect(tz)}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors",
                     "hover:bg-accent/50 cursor-pointer",
