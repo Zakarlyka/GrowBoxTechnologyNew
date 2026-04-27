@@ -23,14 +23,48 @@ export function calculatePhotoperiod(startH: number, endH: number): { dayHours: 
 }
 
 /**
- * Check if current time is within the light schedule
+ * Get current hours/minutes for a given IANA timezone (e.g. "Europe/Kyiv").
+ * Falls back to browser-local time if the timezone is invalid or missing.
  */
-export function isWithinLightSchedule(startH: number, startM: number, endH: number, endM: number): boolean {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+function getCurrentTimeInTimezone(timezone?: string | null): { hours: number; minutes: number } {
+  if (!timezone) {
+    const now = new Date();
+    return { hours: now.getHours(), minutes: now.getMinutes() };
+  }
+  try {
+    const fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const parts = fmt.formatToParts(new Date());
+    const hours = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
+    const minutes = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
+    return { hours, minutes };
+  } catch {
+    const now = new Date();
+    return { hours: now.getHours(), minutes: now.getMinutes() };
+  }
+}
+
+/**
+ * Check if current time is within the light schedule.
+ * Pass the device's IANA timezone (e.g. settings.timezone_iana) so the schedule
+ * is evaluated against the GROW SITE's local clock — not the viewer's browser.
+ */
+export function isWithinLightSchedule(
+  startH: number,
+  startM: number,
+  endH: number,
+  endM: number,
+  timezone?: string | null
+): boolean {
+  const { hours, minutes } = getCurrentTimeInTimezone(timezone);
+  const currentMinutes = hours * 60 + minutes;
   const startMinutes = startH * 60 + startM;
   const endMinutes = endH * 60 + endM;
-  
+
   if (startMinutes < endMinutes) {
     return currentMinutes >= startMinutes && currentMinutes < endMinutes;
   } else {

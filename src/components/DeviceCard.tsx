@@ -68,7 +68,8 @@ const DeviceCardBase = forwardRef<HTMLDivElement, DeviceCardProps>(function Devi
     const endM = (settings as any).light_end_m ?? 0;
 
     const { dayHours, nightHours } = calculatePhotoperiod(startH, endH);
-    const isDay = isWithinLightSchedule(startH, startM, endH, endM);
+    const tz: string | undefined = (settings as any).timezone_iana;
+    const isDay = isWithinLightSchedule(startH, startM, endH, endM, tz);
 
     return {
       isDay,
