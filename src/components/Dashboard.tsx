@@ -22,6 +22,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { calculatePhotoperiod, isWithinLightSchedule, formatTime } from '@/lib/utils';
 import { getVPDAnalysis } from '@/lib/vpd';
 import QRCode from 'react-qr-code';
