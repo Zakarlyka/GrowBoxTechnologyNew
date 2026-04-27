@@ -121,12 +121,16 @@ export function Dashboard() {
 
   const getLightMode = () => {
     if (!settings) return null;
-    const startH = (settings as any).light_start_h ?? 6;
-    const startM = (settings as any).light_start_m ?? 0;
-    const endH = (settings as any).light_end_h ?? 22;
-    const endM = (settings as any).light_end_m ?? 0;
+    const s: any = settings;
+    const startH = s.light_start_h ?? 6;
+    const startM = s.light_start_m ?? 0;
+    const endH = s.light_end_h ?? 22;
+    const endM = s.light_end_m ?? 0;
+    // Use the device's configured IANA timezone so the schedule reflects the
+    // grow site's local clock — not the viewer's browser/timezone.
+    const tz: string | undefined = s.timezone_iana;
     const { dayHours, nightHours } = calculatePhotoperiod(startH, endH);
-    const isDay = isWithinLightSchedule(startH, startM, endH, endM);
+    const isDay = isWithinLightSchedule(startH, startM, endH, endM, tz);
     return { isDay, dayHours, nightHours, startTime: formatTime(startH, startM), endTime: formatTime(endH, endM) };
   };
 
