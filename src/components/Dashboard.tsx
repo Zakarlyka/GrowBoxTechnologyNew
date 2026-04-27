@@ -354,7 +354,7 @@ export function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* QR Dialog */}
+      {/* QR Dialog — split into "Setup" (AP captive portal) and "Device ID" (cloud identity) */}
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -363,30 +363,71 @@ export function Dashboard() {
               {t('deviceDetail.qrDescription')}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex justify-center p-6 bg-white rounded-lg">
-              <QRCode value={`http://192.168.4.1/?token=${selectedDevice.device_id}`} size={200} />
-            </div>
-            <div className="text-center space-y-3">
-              <p className="text-sm text-muted-foreground">
-                ID: <span className="font-mono font-semibold">{selectedDevice.device_id}</span>
-              </p>
-              <a 
-                href={`http://192.168.4.1/?token=${selectedDevice.device_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-500 hover:text-blue-600 underline break-all block"
-              >
-                http://192.168.4.1/?token={selectedDevice.device_id}
-              </a>
-              <p className="text-xs text-muted-foreground">
-                {t('deviceDetail.connectToWifi')}
-              </p>
-            </div>
-            <Button onClick={() => setQrDialogOpen(false)} className="w-full">
-              {t('common.close')}
-            </Button>
-          </div>
+
+          <Tabs defaultValue="setup" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="setup">
+                {t('deviceDetail.qrTabSetup', 'Wi-Fi Setup')}
+              </TabsTrigger>
+              <TabsTrigger value="id">
+                {t('deviceDetail.qrTabId', 'Device ID')}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Setup QR — only useful when phone is on the device's "GrowBox-Setup" AP */}
+            <TabsContent value="setup" className="space-y-4">
+              <div className="flex justify-center p-6 bg-white rounded-lg">
+                <QRCode value={`http://192.168.4.1/?token=${selectedDevice.device_id}`} size={200} />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    'deviceDetail.qrSetupHint',
+                    "1) Підключіть телефон до Wi-Fi «GrowBox-Setup». 2) Скануйте код. 3) Введіть домашній Wi-Fi."
+                  )}
+                </p>
+                <a
+                  href={`http://192.168.4.1/?token=${selectedDevice.device_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:text-blue-600 underline break-all block"
+                >
+                  http://192.168.4.1/?token={selectedDevice.device_id}
+                </a>
+                <p className="text-[11px] text-muted-foreground italic">
+                  {t(
+                    'deviceDetail.qrSetupWarning',
+                    'Це посилання працює лише поки ви підключені до точки доступу пристрою.'
+                  )}
+                </p>
+              </div>
+            </TabsContent>
+
+            {/* Device ID — safe to scan/share from anywhere; identifies the cloud-paired device */}
+            <TabsContent value="id" className="space-y-4">
+              <div className="flex justify-center p-6 bg-white rounded-lg">
+                <QRCode value={selectedDevice.device_id} size={200} />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {t('deviceDetail.qrIdLabel', 'Device ID')}:{' '}
+                  <span className="font-mono font-semibold text-foreground">
+                    {selectedDevice.device_id}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    'deviceDetail.qrIdHint',
+                    'Поділіться цим кодом, щоб надати доступ до пристрою або підтвердити його ідентифікатор у підтримці.'
+                  )}
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <Button onClick={() => setQrDialogOpen(false)} className="w-full">
+            {t('common.close')}
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
