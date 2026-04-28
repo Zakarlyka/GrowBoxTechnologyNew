@@ -13,7 +13,9 @@ import { toast } from 'sonner';
 
 export function Devices() {
   const { t } = useTranslation();
-  const { devices, loading, fetchDevices } = useDevices();
+  const { devices: allDevices, loading, fetchDevices } = useDevices();
+  // Fleet view shows only active (non-archived) devices
+  const devices = allDevices.filter(d => d.lifecycle !== 'archived');
   const { user } = useAuth();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
