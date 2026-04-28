@@ -31,7 +31,9 @@ export function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { devices, loading, deleteDevice, fetchDevices } = useDevices();
+  const { devices: allDevices, loading, deleteDevice, fetchDevices } = useDevices();
+  // Dashboard works only with non-archived devices
+  const devices = useMemo(() => allDevices.filter(d => d.lifecycle !== 'archived'), [allDevices]);
 
   // Get selected device from URL or first device
   const selectedDeviceId = searchParams.get('device');

@@ -26,9 +26,10 @@ import { toast } from "sonner";
 
 interface DeviceControlsProps {
   deviceId: string;
+  isReadOnly?: boolean;
 }
 
-export function DeviceControls({ deviceId }: DeviceControlsProps) {
+export function DeviceControls({ deviceId, isReadOnly = false }: DeviceControlsProps) {
   const { t } = useTranslation();
   const { settings, sensorData, lastSeenAt, deviceName, deviceType, deviceUuid, loading, isSaving, saveSettings, refetch } = useDeviceControls(deviceId);
   const { relayStatus } = useRelayStatus(deviceId);
@@ -310,9 +311,16 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
 
   return (
-    <div className="relative space-y-4 pb-24 lg:pb-4">
+    <fieldset disabled={isReadOnly} className="contents">
+    <div className={cn("relative space-y-4 pb-24 lg:pb-4", isReadOnly && "opacity-90")}>
+      {isReadOnly && (
+        <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground flex items-center gap-2">
+          <Lock className="h-4 w-4" />
+          <span>{t('archive.readOnlyBanner', '🗄️ Архівний пристрій — лише перегляд. Відновіть, щоб вносити зміни.')}</span>
+        </div>
+      )}
       {/* Demo Simulation Panel - Only for demo devices */}
-      {isDemoDevice && deviceUuid && (
+      {isDemoDevice && deviceUuid && !isReadOnly && (
         <DemoSimulationPanel deviceId={deviceUuid} />
       )}
 
@@ -1133,22 +1141,24 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
 
       {/* Timezone is now managed by the Header ClockTimezoneWidget */}
 
-      <div className="mt-6 flex justify-end">
-        <SmartHelp content={t('help.saveButton')} isText={false}>
-          <Button 
-            size="lg" 
-            className="shadow-lg h-12 px-8" 
-            onClick={handleSave} 
-            disabled={!hasChanges || isSaving}
-          >
-            <Save className="w-5 h-5 mr-2" />
-            {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
-          </Button>
-        </SmartHelp>
-      </div>
+      {!isReadOnly && (
+        <div className="mt-6 flex justify-end">
+          <SmartHelp content={t('help.saveButton')} isText={false}>
+            <Button 
+              size="lg" 
+              className="shadow-lg h-12 px-8" 
+              onClick={handleSave} 
+              disabled={!hasChanges || isSaving}
+            >
+              <Save className="w-5 h-5 mr-2" />
+              {isSaving ? t('controls.saving') : t('controls.saveConfiguration')}
+            </Button>
+          </SmartHelp>
+        </div>
+      )}
 
       {/* Mobile Fixed Save Bar - Only shows on mobile when there are changes */}
-      {hasChanges && (
+      {!isReadOnly && hasChanges && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border/50 z-50 lg:hidden">
           <Button 
             size="lg" 
@@ -1162,5 +1172,6 @@ export function DeviceControls({ deviceId }: DeviceControlsProps) {
         </div>
       )}
     </div>
+    </fieldset>
   );
 }

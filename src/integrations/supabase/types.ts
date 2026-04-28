@@ -337,12 +337,14 @@ export type Database = {
           device_id: string
           group_id: string | null
           id: string
+          is_demo: boolean | null
           last_activity: string | null
           last_hum: number | null
           last_seen: string | null
           last_seen_at: string | null
           last_soil_moisture: number | null
           last_temp: number | null
+          lifecycle: string | null
           location: string | null
           name: string
           relay_status: Json | null
@@ -358,12 +360,14 @@ export type Database = {
           device_id: string
           group_id?: string | null
           id?: string
+          is_demo?: boolean | null
           last_activity?: string | null
           last_hum?: number | null
           last_seen?: string | null
           last_seen_at?: string | null
           last_soil_moisture?: number | null
           last_temp?: number | null
+          lifecycle?: string | null
           location?: string | null
           name?: string
           relay_status?: Json | null
@@ -379,12 +383,14 @@ export type Database = {
           device_id?: string
           group_id?: string | null
           id?: string
+          is_demo?: boolean | null
           last_activity?: string | null
           last_hum?: number | null
           last_seen?: string | null
           last_seen_at?: string | null
           last_soil_moisture?: number | null
           last_temp?: number | null
+          lifecycle?: string | null
           location?: string | null
           name?: string
           relay_status?: Json | null
@@ -733,7 +739,7 @@ export type Database = {
             columns: ["device_id"]
             isOneToOne: false
             referencedRelation: "devices"
-            referencedColumns: ["device_id"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plants_strain_id_fkey"
@@ -1007,32 +1013,46 @@ export type Database = {
       user_notifications: {
         Row: {
           created_at: string
+          device_id: string | null
           id: string
           is_read: boolean
           message: string
+          metadata: Json | null
           title: string
           type: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          device_id?: string | null
           id?: string
           is_read?: boolean
           message: string
+          metadata?: Json | null
           title: string
           type?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          device_id?: string | null
           id?: string
           is_read?: boolean
           message?: string
+          metadata?: Json | null
           title?: string
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "devices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
