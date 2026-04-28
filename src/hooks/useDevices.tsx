@@ -9,6 +9,8 @@ export interface Device {
   name: string;
   type: string;
   status: string;
+  lifecycle?: 'active' | 'archived';
+  is_demo?: boolean;
   location?: string | null;
   last_temp?: number | null;
   last_hum?: number | null;
@@ -143,23 +145,64 @@ export function useDevices() {
     };
   }, [user]);
 
+  /**
+   * Smart delete:
+   *   - demo device  → hard DELETE (no archive)
+   *   - active       → soft delete (lifecycle='archived'), keeps history
+   *   - archived     → hard DELETE (called from Archive view)
+   */
   const deleteDevice = async (deviceId: string) => {
+    const device = devices.find(d => d.id === deviceId);
+    const isDemo = device?.is_demo === true || device?.type === 'demo';
+    const isArchived = device?.lifecycle === 'archived';
+
     try {
-      const { error } = await supabase
-        .from('devices')
-        .delete()
-        .eq('id', deviceId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Пристрій видалено',
-        description: 'Пристрій успішно видалено з вашого облікового запису',
-      });
+      if (isDemo || isArchived) {
+        const { error } = await supabase.from('devices').delete().eq('id', deviceId);
+        if (error) throw error;
+        setDevices(prev => prev.filter(d => d.id !== deviceId));
+        toast({
+          title: 'Пристрій видалено',
+          description: 'Пристрій повністю видалено з вашого облікового запису',
+        });
+      } else {
+        const { error } = await supabase
+          .from('devices')
+          .update({ lifecycle: 'archived' } as any)
+          .eq('id', deviceId);
+        if (error) throw error;
+        setDevices(prev => prev.map(d => d.id === deviceId ? { ...d, lifecycle: 'archived' } : d));
+        toast({
+          title: 'Переміщено в архів',
+          description: 'Пристрій збережено в архіві. Історичні дані залишаються доступними.',
+        });
+      }
     } catch (error: any) {
       console.error('Error deleting device:', error);
       toast({
-        title: 'Помилка видалення',
+        title: 'Помилка',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const restoreDevice = async (deviceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('devices')
+        .update({ lifecycle: 'active' } as any)
+        .eq('id', deviceId);
+      if (error) throw error;
+      setDevices(prev => prev.map(d => d.id === deviceId ? { ...d, lifecycle: 'active' } : d));
+      toast({
+        title: 'Пристрій відновлено',
+        description: 'Пристрій повернуто з архіву та знову доступний для керування.',
+      });
+    } catch (error: any) {
+      console.error('Error restoring device:', error);
+      toast({
+        title: 'Помилка',
         description: error.message,
         variant: 'destructive',
       });
@@ -184,6 +227,7 @@ export function useDevices() {
     loading,
     fetchDevices,
     deleteDevice,
+    restoreDevice,
     updateDeviceStatus,
   };
 }
