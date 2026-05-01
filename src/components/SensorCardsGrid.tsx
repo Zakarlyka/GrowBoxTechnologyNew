@@ -134,43 +134,19 @@ export function SensorCardsGrid({ temperature, humidity, soilMoisture, lightMode
           </DraggableSensorCard>
         );
       case 'soil': {
-        // A reading of exactly 0 (with a value present) means the probe is
-        // disconnected / shorted — not genuinely 0% moisture. Show an "Offline"
-        // chip instead of a misleading "0%".
+        // Top info panel shows raw telemetry only — never substitute "Offline" for a 0 reading.
+        // Pump dry-lock visuals live exclusively in DeviceControls' Irrigation card.
         const hasReading = soilMoisture !== null && soilMoisture !== undefined;
-        const isOffline = hasReading && soilMoisture === 0;
-        const offlineTooltip = t(
-          'sensorTooltips.soilOffline',
-          'Датчик ґрунту повертає 0%. Перевірте кабель і контакт у субстраті.'
-        );
         return (
           <DraggableSensorCard key={id} id={id}>
-            <SmartHelp content={isOffline ? offlineTooltip : sensorTooltips.soil} isText={false}>
-              <div
-                className={`flex items-center justify-between p-3 rounded-lg border transition-colors h-full ${
-                  isOffline
-                    ? 'bg-muted/30 border-dashed border-muted-foreground/40'
-                    : 'bg-green-500/10 border-green-500/30'
-                }`}
-              >
+            <SmartHelp content={sensorTooltips.soil} isText={false}>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/30 h-full">
                 <div className="flex items-center space-x-2">
-                  {isOffline ? (
-                    <Unplug className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Sprout className="h-4 w-4 text-green-500" />
-                  )}
+                  <Sprout className="h-4 w-4 text-green-500" />
                   <span className="text-sm text-muted-foreground">{t('sensors.soil', 'Ґрунт')}</span>
                 </div>
-                <span
-                  className={`text-lg font-semibold ${
-                    isOffline ? 'text-muted-foreground italic' : 'text-foreground'
-                  }`}
-                >
-                  {isOffline
-                    ? t('sensors.offline', 'Offline')
-                    : hasReading
-                      ? `${soilMoisture!.toFixed(0)}%`
-                      : '-- %'}
+                <span className="text-lg font-semibold text-foreground">
+                  {hasReading ? `${soilMoisture!.toFixed(0)}%` : '-- %'}
                 </span>
               </div>
             </SmartHelp>
