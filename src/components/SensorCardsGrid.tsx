@@ -15,7 +15,7 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Thermometer, Droplets, Sprout, Sun, Moon, Wind, Unplug } from 'lucide-react';
+import { Thermometer, Droplets, Sprout, Sun, Moon, Wind } from 'lucide-react';
 import { DraggableSensorCard } from './DraggableSensorCard';
 import { SmartHelp } from '@/components/ui/smart-help';
 
