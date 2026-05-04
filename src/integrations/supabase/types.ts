@@ -337,6 +337,7 @@ export type Database = {
           device_id: string
           group_id: string | null
           id: string
+          is_archived: boolean | null
           is_demo: boolean | null
           last_activity: string | null
           last_hum: number | null
@@ -360,6 +361,7 @@ export type Database = {
           device_id: string
           group_id?: string | null
           id?: string
+          is_archived?: boolean | null
           is_demo?: boolean | null
           last_activity?: string | null
           last_hum?: number | null
@@ -383,6 +385,7 @@ export type Database = {
           device_id?: string
           group_id?: string | null
           id?: string
+          is_archived?: boolean | null
           is_demo?: boolean | null
           last_activity?: string | null
           last_hum?: number | null
