@@ -125,9 +125,24 @@ export function NotificationSettings() {
   };
 
   const sendTestNotification = async () => {
+    if (!user) return;
+    const { error } = await supabase.from('user_notifications').insert({
+      user_id: user.id,
+      title: '🔔 Тестове сповіщення',
+      message: 'Якщо ви бачите це у дзвіночку (та Telegram, якщо підключений) — ланцюжок сповіщень працює.',
+      type: 'info',
+    });
+    if (error) {
+      toast({
+        title: 'Помилка',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
     toast({
-      title: "Тестове сповіщення",
-      description: "Це тестове сповіщення для перевірки налаштувань",
+      title: 'Надіслано',
+      description: 'Перевірте дзвіночок у шапці та Telegram.',
     });
   };
 
