@@ -1,159 +1,55 @@
-## Notification System Fix — Final (Cascade Delete EXCLUDED)
+# План: повний пакет передачі проекту Agro Hogwards (Grow Box)
 
-Per your instruction, **Step 5 (`trg_cascade_delete_device_data`) is omitted**. We keep soft-delete/archive intact. Database Webhook on `user_notifications` INSERT handles Telegram delivery, so triggers only need to write rows.
+Мета: створити набір документів, з якими будь-яка людина або будь-який ШІ-асистент (Claude, GPT, Gemini, Cursor тощо) зможе без попереднього контексту зрозуміти проект і продовжити роботу.
 
----
+## Що буде створено
 
-### Priority 1 — SQL migration (`supabase/migrations/..._notification_triggers.sql`)
+Нова папка `docs/handover/` у корені проекту + один головний вхідний файл.
 
-```sql
--- 1. Welcome notification on signup
-DROP TRIGGER IF EXISTS on_auth_user_created_notify ON auth.users;
-CREATE TRIGGER on_auth_user_created_notify
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_notification();
-
--- 2. Rewrite watchdog_sensor_alerts: thresholds from notification_settings,
---    UUID-or-token device match, 15-min debounce per alert kind.
-CREATE OR REPLACE FUNCTION public.watchdog_sensor_alerts()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE
-  d RECORD; ns RECORD; last_t TIMESTAMPTZ;
-  t_min numeric; t_max numeric; h_min numeric; h_max numeric; s_min int;
-BEGIN
-  SELECT * INTO d FROM public.devices
-   WHERE id::text = NEW.device_id::text OR device_id = NEW.device_id::text
-   LIMIT 1;
-  IF d IS NULL THEN RETURN NEW; END IF;
-
-  SELECT * INTO ns FROM public.notification_settings WHERE user_id = d.user_id;
-
-  t_min := COALESCE(ns.temperature_min, (d.settings->>'temp_min')::numeric, 18);
-  t_max := COALESCE(ns.temperature_max, (d.settings->>'temp_max')::numeric, 30);
-  h_min := COALESCE(ns.humidity_min,    (d.settings->>'hum_min')::numeric, 40);
-  h_max := COALESCE(ns.humidity_max,    (d.settings->>'hum_max')::numeric, 80);
-  s_min := COALESCE(ns.soil_min,        (d.settings->>'soil_min')::int, 20);
-
-  IF NEW.temperature IS NOT NULL AND (NEW.temperature > t_max OR NEW.temperature < t_min) THEN
-    SELECT MAX(created_at) INTO last_t FROM public.user_notifications
-     WHERE user_id=d.user_id AND title='🌡️ Температура'
-       AND created_at > now() - interval '15 minutes';
-    IF last_t IS NULL THEN
-      INSERT INTO public.user_notifications (user_id, device_id, title, message, type)
-      VALUES (d.user_id, d.id, '🌡️ Температура',
-        format('%.1f°C поза межами %s–%s°C на "%s"', NEW.temperature, t_min, t_max, d.name),
-        'warning');
-    END IF;
-  END IF;
-
-  IF NEW.humidity IS NOT NULL AND (NEW.humidity > h_max OR NEW.humidity < h_min) THEN
-    SELECT MAX(created_at) INTO last_t FROM public.user_notifications
-     WHERE user_id=d.user_id AND title='💧 Вологість'
-       AND created_at > now() - interval '15 minutes';
-    IF last_t IS NULL THEN
-      INSERT INTO public.user_notifications (user_id, device_id, title, message, type)
-      VALUES (d.user_id, d.id, '💧 Вологість',
-        format('%.0f%% поза межами %s–%s%% на "%s"', NEW.humidity, h_min, h_max, d.name),
-        'warning');
-    END IF;
-  END IF;
-
-  IF NEW.soil_moisture IS NOT NULL THEN
-    IF NEW.soil_moisture = 0 THEN
-      SELECT MAX(created_at) INTO last_t FROM public.user_notifications
-       WHERE user_id=d.user_id AND title='🔌 Sensor Offline'
-         AND created_at > now() - interval '15 minutes';
-      IF last_t IS NULL THEN
-        INSERT INTO public.user_notifications (user_id, device_id, title, message, type)
-        VALUES (d.user_id, d.id, '🔌 Sensor Offline',
-                'Soil probe reading 0%. Check cable.', 'warning');
-      END IF;
-    ELSIF NEW.soil_moisture < s_min THEN
-      SELECT MAX(created_at) INTO last_t FROM public.user_notifications
-       WHERE user_id=d.user_id AND title='🌵 Dry Soil'
-         AND created_at > now() - interval '15 minutes';
-      IF last_t IS NULL THEN
-        INSERT INTO public.user_notifications (user_id, device_id, title, message, type)
-        VALUES (d.user_id, d.id, '🌵 Dry Soil',
-          format('Вологість ґрунту %s%% (мін %s%%) на "%s"', NEW.soil_moisture, s_min, d.name),
-          'warning');
-      END IF;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END $$;
-
--- 3. sensor_data: cache + watchdog
-DROP TRIGGER IF EXISTS trg_update_device_latest_state ON public.sensor_data;
-CREATE TRIGGER trg_update_device_latest_state
-AFTER INSERT ON public.sensor_data
-FOR EACH ROW EXECUTE FUNCTION public.update_device_latest_state();
-
-DROP TRIGGER IF EXISTS trg_watchdog_sensor_alerts ON public.sensor_data;
-CREATE TRIGGER trg_watchdog_sensor_alerts
-AFTER INSERT ON public.sensor_data
-FOR EACH ROW EXECUTE FUNCTION public.watchdog_sensor_alerts();
-
--- 4. device_logs: cache + error watchdog
-DROP TRIGGER IF EXISTS trg_update_device_on_new_log ON public.device_logs;
-CREATE TRIGGER trg_update_device_on_new_log
-AFTER INSERT ON public.device_logs
-FOR EACH ROW EXECUTE FUNCTION public.update_device_on_new_log();
-
-DROP TRIGGER IF EXISTS trg_watchdog_error_handler ON public.device_logs;
-CREATE TRIGGER trg_watchdog_error_handler
-AFTER INSERT ON public.device_logs
-FOR EACH ROW EXECUTE FUNCTION public.watchdog_error_handler();
-
--- 5. Device offline alert (insert-only; webhook delivers to Telegram)
-CREATE OR REPLACE FUNCTION public.notify_device_status_change()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-BEGIN
-  IF OLD.status = 'online' AND NEW.status = 'offline' THEN
-    INSERT INTO public.user_notifications (user_id, device_id, title, message, type)
-    VALUES (NEW.user_id, NEW.id, '🔴 Пристрій офлайн',
-            format('Пристрій "%s" перейшов у офлайн.', NEW.name), 'warning');
-  END IF;
-  RETURN NEW;
-END $$;
-
-DROP TRIGGER IF EXISTS trg_notify_device_status_change ON public.devices;
-CREATE TRIGGER trg_notify_device_status_change
-AFTER UPDATE OF status ON public.devices
-FOR EACH ROW EXECUTE FUNCTION public.notify_device_status_change();
-
--- 6. Drop orphaned legacy functions (broken pg_net/current_setting calls)
-DROP FUNCTION IF EXISTS public.notify_sensor_threshold_exceeded() CASCADE;
-DROP FUNCTION IF EXISTS public.notify_user_telegram() CASCADE;
-
--- (Cascade delete trigger intentionally NOT created — soft-delete arch.)
+```text
+HANDOVER.md                  <- головна точка входу: "читай мене першим"
+docs/handover/
+  01-overview.md             <- що це за продукт, для кого, ключові сценарії
+  02-architecture.md         <- схема: React SPA -> Supabase -> ESP8266 -> Telegram
+  03-tech-stack.md           <- версії, залежності, обмеження (date-fns 3.6.0 і т.д.)
+  04-project-structure.md    <- карта папок і всіх ключових файлів з поясненням
+  05-database.md             <- усі таблиці, колонки, RLS, функції, тригери
+  06-edge-functions.md       <- кожна функція: вхід, вихід, секрети, хто викликає
+  07-hardware-protocol.md    <- контракт ESP8266: телеметрія, settings JSON, коди режимів
+  08-business-rules.md       <- усі "не ламати": Master Plant, сушка, Pump Lock, reboot 6с
+  09-features.md             <- кожна сторінка/модуль: що робить, де код
+  10-notifications.md        <- повний потік сповіщень (watchdog -> bell -> Telegram)
+  11-i18n.md                 <- uk/en/ru, захищені терміни, правила перекладу
+  12-ui-design-system.md     <- тема, токени, мобільні правила, патерни карток
+  13-auth-roles.md           <- авторизація, ролі user/admin/developer, адмінка
+  14-deployment.md           <- Lovable publish, Supabase, змінні, секрети (лише назви)
+  15-known-issues.md         <- відкриті баги, техборг, ризики безпеки
+  16-roadmap.md              <- Tier 2 / Tier 3 з аудиту, що не зроблено
+  17-changelog.md            <- хронологія рішень з історії розробки
+  18-ai-prompt.md            <- готовий промпт-інструкція для нового ШІ
+  19-glossary.md             <- терміни: VPD, Master Plant, lifecycle, soak time...
 ```
 
-### Priority 2 — Real test notification button
+## Зміст ключових розділів
 
-`src/components/NotificationSettings.tsx` — replace `sendTestNotification`:
+- **HANDOVER.md** — 1 сторінка: що це, як запустити, порядок читання, 10 найважливіших правил, контакти/доступи, які треба передати окремо (Supabase, Lovable, Telegram бот, GitHub).
+- **05-database.md** — актуальний стан із живої БД (не зі старих гайдів): таблиці, ключі `id` (UUID) проти `device_id` (токен заліза), колонки `status` (online/offline) і `lifecycle` (active/archived), `is_demo`, усі тригери, включно з дублікатами, які варто прибрати.
+- **07-hardware-protocol.md** — повна схема `devices.settings`: `pump_mode`, `pump_time_sec`, `soak_time_sec`, `light_mode`, `timezone` (POSIX) + `timezone_iana`, `reboot_cmd`, коди помилок `PUMP_DRY_LOCK`/`NO_WATER`.
+- **08-business-rules.md** — перенос усіх правил з пам'яті проекту та `SYSTEM_LOGIC_STATE.md` в один список з поясненням "чому".
+- **15-known-issues.md** — чесний список: дублікати тригерів на `devices`/`device_logs`/`auth.users` (подвійні сповіщення), `cascade_delete_device_data` суперечить архіву, жорстко прописаний URL у тригері Telegram, застарілі документи (`DEPLOYMENT_GUIDE.md`, `MIGRATION_GUIDE.md`), попередження лінтера безпеки.
+- **18-ai-prompt.md** — блок для копіювання в будь-який ШІ: роль, стек, жорсткі правила, які файли читати першими, заборони (не редагувати `types.ts`, не робити hard delete пристроїв, не перекладати бренд-терміни).
 
-```ts
-const sendTestNotification = async () => {
-  if (!user) return;
-  const { error } = await supabase.from('user_notifications').insert({
-    user_id: user.id,
-    title: '🔔 Тестове сповіщення',
-    message: 'Якщо ви бачите це у дзвіночку (та Telegram, якщо підключений) — ланцюжок сповіщень працює.',
-    type: 'info',
-  });
-  if (error) {
-    toast({ title: 'Помилка', description: error.message, variant: 'destructive' });
-    return;
-  }
-  toast({ title: 'Надіслано', description: 'Перевірте дзвіночок у шапці та Telegram.' });
-};
-```
+## Прибирання
 
-### Out of scope
-- Cascade delete trigger (excluded per instruction).
-- Email channel (still cosmetic).
-- `notification-system` orphan edge function (superseded by webhook).
+- Старі документи (`DEPLOYMENT_GUIDE.md`, `deployment-guide.md`, `README-DEPLOYMENT.md`, `DEPLOYMENT.md`, `MIGRATION_GUIDE.md`, `MASTER_PROMPT_FULL.md`) не видаляються, а позначаються вгорі як "застаріло, див. HANDOVER.md".
+- `README.md` оновлюється коротким описом і посиланням на HANDOVER.md.
+- `SYSTEM_LOGIC_STATE.md` оновлюється до поточного стану.
+- Створюється `AGENTS.md` з архітектурними правилами для ШІ-агентів.
 
-Approve to execute.
+## Технічні деталі
+
+- Стан БД збирається реальними read-only запитами (таблиці, колонки, RLS-політики, тригери), а не з застарілих файлів.
+- Кожна сторінка, хук і edge-функція читається, щоб опис відповідав коду.
+- Секрети описуються лише назвами, без значень.
+- Код застосунку не змінюється — лише документація.
+- Наприкінці: перевірка, що всі посилання між документами працюють, та копія архіву `handover.zip` у Files для зручної передачі.
