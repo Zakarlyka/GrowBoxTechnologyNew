@@ -1,3 +1,5 @@
+> **DEPRECATED** — may be outdated. See HANDOVER.md and docs/handover/.
+
 # 🌱 Grow Box Technology - Ready for Deployment
 
 ## 🎯 Quick Deployment to adm.tools

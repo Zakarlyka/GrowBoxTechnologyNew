@@ -1,3 +1,5 @@
+> **DEPRECATED** — may be outdated. See HANDOVER.md and docs/handover/.
+
 # 🌱 AGRO HOGWARDS - ПОВНИЙ МАЙСТЕР-ПРОМПТ ДЛЯ ВІДТВОРЕННЯ ПРОЕКТУ
 
 **Версія:** 5.0 ULTIMATE  

@@ -1,3 +1,5 @@
+> **New here? Read [HANDOVER.md](HANDOVER.md) first.**
+
 # IoT Platform - ESP32 Device Management
 
 ## Опис проєкту

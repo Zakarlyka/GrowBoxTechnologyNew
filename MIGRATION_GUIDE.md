@@ -1,3 +1,5 @@
+> **DEPRECATED** — may be outdated. See HANDOVER.md and docs/handover/.
+
 # 🌿 Agro Hogwards - Complete Migration & Restoration Guide
 
 > **Version:** 2.1 | **Last Updated:** 2026-01-21  

@@ -1,3 +1,5 @@
+> See also docs/handover/ (current state, Oct 2026). Archive = devices.lifecycle; pump_mode 1=auto 0=off.
+
 # 🧠 SYSTEM LOGIC & STATE JOURNAL
 > **Last Updated:** 2026-01-21  
 > **Purpose:** Single source of truth for AI assistants. Read this FIRST before making changes.

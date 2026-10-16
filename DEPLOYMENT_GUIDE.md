@@ -1,3 +1,5 @@
+> **DEPRECATED** — may be outdated. See HANDOVER.md and docs/handover/.
+
 # 🚀 Посібник з розгортання Grow Box Technology
 
 ## 📋 Зміст
