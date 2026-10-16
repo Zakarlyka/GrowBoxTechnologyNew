@@ -1,3 +1,5 @@
+> **DEPRECATED** — may be outdated. See HANDOVER.md and docs/handover/.
+
 # Deployment Guide - Grow Box Technology
 
 This guide explains how to deploy your Grow Box Technology IoT platform to various hosting providers.

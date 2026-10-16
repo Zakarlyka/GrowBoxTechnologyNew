@@ -1,3 +1,5 @@
+> **DEPRECATED** — may be outdated. See HANDOVER.md and docs/handover/.
+
 # IoT Platform - Deployment Guide
 
 ## Швидке розгортання на VPS (Ubuntu 20.04/22.04)
